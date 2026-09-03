@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  estructura:
+    name: estructura
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verificar carpetas requeridas
+        run: |
+          set -euo pipefail
+          requeridas=(
+            docs/adr
+            docs/documento-maestro
+            docs/manuales
+            iso/live-build
+            iso/xfce4
+            iso/calamares
+            packages/nimbo-audit
+            packages/nimbo-net
+            security/luks-tpm
+            security/air-gapped
+            security/hardening
+            repro
+            apt-repo
+            ci
+            .github/workflows
+          )
+          faltan=0
+          for dir in "${requeridas[@]}"; do
+            if [ -d "$dir" ]; then
+              echo "OK   $dir"
+            else
+              echo "FALTA $dir"
+              faltan=1
+            fi
+          done
+          if [ "$faltan" -ne 0 ]; then
+            echo "::error::Faltan carpetas requeridas de la estructura del Paso 0."
+            exit 1
+          fi
+          echo "Estructura completa."

@@ -1,0 +1,19 @@
+# CODEOWNERS — mapea cada área a su dueño (usuarios reales de GitHub).
+# GitHub aplica la última regla que coincide, de arriba abajo.
+# Juan José  -> @Duque-Londono
+# Alejandro  -> @Alejandro-murillo
+
+# docs/ es de ambos
+/docs/                      @Duque-Londono @Alejandro-murillo
+
+# Áreas de Juan José
+/iso/                       @Duque-Londono
+/repro/                     @Duque-Londono
+/apt-repo/                  @Duque-Londono
+/ci/                        @Duque-Londono
+/.github/                   @Duque-Londono
+/packages/nimbo-audit/      @Duque-Londono
+
+# Áreas de Alejandro
+/packages/nimbo-net/        @Alejandro-murillo
+/security/                  @Alejandro-murillo

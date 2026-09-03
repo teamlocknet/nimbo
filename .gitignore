@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+dist/
+build/
+*.egg-info/
+
+# Artefactos de build
+*.iso
+.build/
+cache/
+
+# Entorno
+.env
+.env.*
+
+# Basura de sistema operativo
+.DS_Store
+Thumbs.db
+*~
+.*.swp
