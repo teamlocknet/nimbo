@@ -6,11 +6,13 @@
 .build/
 cache/
 chroot/
-chroot.packages.live
-chroot.packages.install
+chroot.*
 binary/
+binary.*
+live-image-*
 *.iso
 *.img
+*.zsync
 *.buildlog
 *.log
 
