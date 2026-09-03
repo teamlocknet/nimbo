@@ -2,7 +2,11 @@
 # build-in-container.sh — construye la ISO live mínima dentro de un contenedor
 # Debian bookworm con podman. Aísla la toolchain de Debian del host (aquí Fedora).
 #
-# Uso:   ./build-in-container.sh
+# En este host (Fedora) DEBE correr rootful, porque debootstrap necesita crear
+# device nodes (mknod), imposible en podman rootless:
+#
+#     sudo ./build-in-container.sh
+#
 # Salida: live-image-amd64.hybrid.iso (en esta misma carpeta)
 set -euo pipefail
 
@@ -19,7 +23,9 @@ IMAGE="${NIMBO_BASE_IMAGE:-docker.io/library/debian:bookworm-slim}"
 
 # --- Determinismo de tiempo ----------------------------------------------------
 # SOURCE_DATE_EPOCH = timestamp del commit HEAD (determinista y trazable).
-SOURCE_DATE_EPOCH="$(git -C "$HERE" log -1 --pretty=%ct 2>/dev/null || date +%s)"
+# -c safe.directory='*' evita el aviso de "dubious ownership" cuando se corre con sudo
+# sobre un repo propiedad de otro usuario.
+SOURCE_DATE_EPOCH="$(git -c safe.directory='*' -C "$HERE" log -1 --pretty=%ct 2>/dev/null || date +%s)"
 export SOURCE_DATE_EPOCH
 
 echo ">> Imagen base       : $IMAGE"
@@ -28,11 +34,12 @@ echo ">> Directorio montado : $HERE -> /build"
 echo
 
 # --- Build ---------------------------------------------------------------------
-# --privileged: live-build usa debootstrap/chroot/mounts.
-# Se intenta ROOTLESS primero. Si los mounts fallan, NO se usa sudo aquí: correr el
-# MISMO comando anteponiendo 'sudo' (ver README §Privilegios).
+# --privileged : live-build usa debootstrap/chroot/mknod (exige rootful, ver arriba).
+# --network=host: en Fedora el podman rootful no resuelve DNS con su backend propio;
+#                 con la red del host, apt alcanza los mirrors de Debian.
 exec podman run --rm -t \
     --privileged \
+    --network=host \
     -v "$HERE":/build:Z \
     -w /build \
     -e SOURCE_DATE_EPOCH \

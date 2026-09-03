@@ -14,9 +14,8 @@ binary/
 *.buildlog
 *.log
 
-# Estado generado por `lb config` (derivado de auto/config; se regenera)
-config/binary
-config/bootstrap
-config/chroot
-config/common
-config/source
+# Todo config/ lo genera `lb config` a partir de auto/config (se regenera).
+# Sólo versionamos auto/. Si más adelante añadimos hooks/includes propios,
+# se des-ignorarán rutas concretas (p. ej. !config/hooks/).
+config/
+local/
