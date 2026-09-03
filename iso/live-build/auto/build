@@ -1,0 +1,14 @@
+#!/bin/sh
+# auto/build — envuelve `lb build` fijando higiene de reproducibilidad.
+set -e
+
+# SOURCE_DATE_EPOCH lo fija build-in-container.sh (timestamp del commit HEAD).
+# Si no viniera del entorno, caemos a un valor para no romper el build manual.
+: "${SOURCE_DATE_EPOCH:=$(date +%s)}"
+export SOURCE_DATE_EPOCH
+export TZ=UTC
+export LC_ALL=C.UTF-8
+
+echo ">> auto/build: SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH TZ=$TZ LC_ALL=$LC_ALL"
+
+lb build noauto "${@}" 2>&1 | tee binary.buildlog

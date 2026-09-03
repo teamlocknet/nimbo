@@ -1,0 +1,22 @@
+# Artefactos generados por live-build en esta carpeta: pesados y/o no deterministas.
+# NO commitear. El .gitignore raíz (Paso 0) cubre lo genérico (*.iso, cache/, .build/);
+# este añade lo específico de live-build para que no quede basura suelta aquí.
+
+# Salida y estado de build
+.build/
+cache/
+chroot/
+chroot.packages.live
+chroot.packages.install
+binary/
+*.iso
+*.img
+*.buildlog
+*.log
+
+# Estado generado por `lb config` (derivado de auto/config; se regenera)
+config/binary
+config/bootstrap
+config/chroot
+config/common
+config/source
