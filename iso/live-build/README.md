@@ -36,6 +36,20 @@ sudo ./build-in-container.sh
 - Fija `SOURCE_DATE_EPOCH` al timestamp del commit HEAD (determinista y trazable).
 - Tarda ~10–20 min (debootstrap + squashfs + ISO).
 
+### Motor de contenedor (paridad dev/CI)
+
+El script es **agnóstico del motor** vía `CONTAINER_ENGINE` (por defecto `podman`):
+
+```bash
+sudo ./build-in-container.sh                    # local (Fedora): podman rootful
+CONTAINER_ENGINE=docker ./build-in-container.sh # CI (ubuntu): docker --privileged
+```
+
+La CI (`.github/workflows/build-iso.yml`, Paso 1B) reutiliza **este mismo script** con
+`CONTAINER_ENGINE=docker`, así local y la nube corren **exactamente la misma lógica de
+build** (no se reinventa la receta). El `:Z` de SELinux y el `-t` de tty se aplican solo
+cuando corresponde (podman/terminal); todo lo demás es idéntico.
+
 **Salida:** `live-image-amd64.hybrid.iso` en esta carpeta.
 **Tamaño obtenido:** **260 MB** (272 629 760 bytes) · live-build `20230502` · kernel
 `6.1.0-52-amd64` (Debian 12 bookworm).
@@ -71,21 +85,22 @@ Este paso aplica **higiene** de reproducibilidad, pero **NO persigue bit-idénti
 
 **Ya aplicado:**
 - `SOURCE_DATE_EPOCH` = timestamp del commit HEAD (afecta timestamps de muchos artefactos).
+  En CI se pasa explícito; el script lo respeta si viene del entorno.
 - Entorno de build determinista: `TZ=UTC`, `LC_ALL=C.UTF-8`.
 - Sin `apt-recommends` ni `apt-indices`: menos superficie y menos ruido.
+- **Imagen base anclada por digest** del índice multi-arch
+  (`debian:bookworm-slim@sha256:88200866…4171`), no por tag móvil. Así docker (CI) y podman
+  (local) parten del mismo bit de base. Sobreescribible con `NIMBO_BASE_IMAGE=`.
 
 **Fuentes de no-determinismo aún abiertas (a cerrar en 1C):**
 1. **Versiones de paquetes**: los mirrors por defecto (`deb.debian.org`) son *rolling*; dos
    builds en fechas distintas pueden traer versiones distintas. → **Decisión anotada:** anclar
    a **`snapshot.debian.org`** (mirror con fecha fija) vía `--mirror-*` en `auto/config`. NO
    implementado aquí para no arriesgar el primer arranque; es el siguiente paso de repro.
-2. **Imagen base del contenedor**: hoy tag `debian:bookworm-slim` (móvil). → Anclar por
-   **digest** (`debian@sha256:…`) con `NIMBO_BASE_IMAGE=`. Trivial y sin riesgo de arranque;
-   se hará al entrar a repro.
-3. **Orden de archivos y metadatos en squashfs** (mtimes, orden de inodos).
-4. **Metadatos de compresión** (gzip/xz: nivel, timestamps embebidos) del squashfs y del
+2. **Orden de archivos y metadatos en squashfs** (mtimes, orden de inodos).
+3. **Metadatos de compresión** (gzip/xz: nivel, timestamps embebidos) del squashfs y del
    initrd.
-5. **`SOURCE_DATE_EPOCH`** no cubre todo (algunos generadores ignoran la variable) — se
+4. **`SOURCE_DATE_EPOCH`** no cubre todo (algunos generadores ignoran la variable) — se
    documentarán los residuos con `diffoscope`.
 
 ## Decisiones abiertas
