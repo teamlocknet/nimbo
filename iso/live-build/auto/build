@@ -9,6 +9,13 @@ export SOURCE_DATE_EPOCH
 export TZ=UTC
 export LC_ALL=C.UTF-8
 
-echo ">> auto/build: SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH TZ=$TZ LC_ALL=$LC_ALL"
+# Compresión del squashfs DETERMINISTA (ver docs/adr/ADR-001).
+# La compresión xz multihilo de mksquashfs no es determinista (el ensamblado de
+# bloques/fragmentos varía con el scheduling de hilos). -processors 1 la hace
+# secuencial → reproducible por construcción, a cambio de más tiempo de build.
+# MKSQUASHFS_OPTIONS es el punto de extensión oficial de live-build (binary_rootfs).
+export MKSQUASHFS_OPTIONS="-processors 1 ${MKSQUASHFS_OPTIONS:-}"
+
+echo ">> auto/build: SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH TZ=$TZ LC_ALL=$LC_ALL MKSQUASHFS_OPTIONS='$MKSQUASHFS_OPTIONS'"
 
 lb build noauto "${@}" 2>&1 | tee binary.buildlog
