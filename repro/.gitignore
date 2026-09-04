@@ -1,0 +1,4 @@
+# Salidas del arnés de reproducibilidad: ISOs, manifiestos y reportes son
+# artefactos (pesados / generados) — no se versionan. Solo versionamos los scripts
+# del arnés y el README.
+out/
