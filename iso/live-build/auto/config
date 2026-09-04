@@ -1,0 +1,25 @@
+#!/bin/sh
+# auto/config — opciones de `lb config` para la ISO live mínima de nimbo.
+# Objetivo de este ladrillo (Paso 1A): que arranque a consola/login. SIN escritorio.
+set -e
+
+lb config noauto \
+    --distribution bookworm \
+    --archive-areas "main" \
+    --binary-images iso-hybrid \
+    --debian-installer none \
+    --memtest none \
+    --apt-indices false \
+    --apt-recommends false \
+    --iso-application "nimbo (codename)" \
+    --iso-volume "nimbo-live" \
+    --bootappend-live "boot=live components hostname=nimbo-live username=nimbo console=tty0 console=ttyS0,115200" \
+    "${@}"
+
+# Notas:
+# - Sin entorno de escritorio: consola mínima (live-boot + live-config ya vienen por
+#   defecto). Xfce4/hardening son un paso posterior — aquí reducimos variables.
+# - console=ttyS0 permite verificar el arranque en QEMU headless (getty por serial).
+# - Sólo 'main' (todo FOSS). Sin apt-indices ni recommends: más pequeño y determinista.
+# - Mirrors por defecto (deb.debian.org). Anclar a snapshot.debian.org es el siguiente
+#   paso de reproducibilidad (ver README), no se implementa aquí.
