@@ -1,0 +1,91 @@
+name: build-iso
+
+# Compila la ISO live en la nube reutilizando EXACTAMENTE el mismo build en
+# contenedor Debian que en local (paridad dev/CI): build-in-container.sh con
+# CONTAINER_ENGINE=docker. No reinventa la receta.
+#
+# NO compara builds ni persigue bit-idéntico (eso es el Paso 1C). No hace boot-test
+# (los runners no tienen KVM).
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["iso/live-build/**"]
+  pull_request:
+    branches: [main]
+    paths: ["iso/live-build/**"]
+
+# Cancela runs viejos de la misma rama: no encolar builds pesados en pushes seguidos.
+concurrency:
+  group: build-iso-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-iso:
+    name: build-iso
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Metadatos (short SHA, SOURCE_DATE_EPOCH)
+        id: meta
+        run: |
+          echo "short_sha=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          echo "epoch=$(git log -1 --pretty=%ct)" >> "$GITHUB_OUTPUT"
+
+      - name: Liberar espacio en disco del runner
+        run: |
+          echo "== Antes =="; df -h /
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc \
+                      /usr/local/.ghcup /opt/hostedtoolcache/CodeQL \
+                      /usr/local/share/boost /usr/share/swift || true
+          sudo docker image prune -af || true
+          echo "== Después =="; df -h /
+
+      - name: Instalar xorriso (para validar la ISO)
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends xorriso
+
+      - name: Construir la ISO en contenedor Debian (paridad con local)
+        working-directory: iso/live-build
+        env:
+          CONTAINER_ENGINE: docker
+          SOURCE_DATE_EPOCH: ${{ steps.meta.outputs.epoch }}
+        run: ./build-in-container.sh
+
+      - name: Validar la ISO
+        working-directory: iso/live-build
+        run: |
+          set -euo pipefail
+          ISO="$(ls live-image-*.iso)"
+          echo ">> ISO: $ISO"
+          file "$ISO"
+          xorriso -indev "$ISO" -toc 2>/dev/null | head -20 || true
+          bytes="$(stat -c%s "$ISO")"
+          echo ">> Tamaño: $bytes bytes ($(du -h "$ISO" | cut -f1))"
+          # Sanity: entre 100 MB y 2 GB (una ISO consola mínima ~260 MB).
+          test "$bytes" -gt 104857600
+          test "$bytes" -lt 2147483648
+          echo ">> ISO válida."
+
+      - name: Calcular SHA-256 (base para 1C)
+        working-directory: iso/live-build
+        run: |
+          set -euo pipefail
+          ISO="$(ls live-image-*.iso)"
+          sha256sum "$ISO" | tee "$ISO.sha256"
+
+      - name: Subir la ISO como artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nimbo-iso-${{ steps.meta.outputs.short_sha }}
+          path: |
+            iso/live-build/live-image-*.iso
+            iso/live-build/live-image-*.iso.sha256
+          if-no-files-found: error
+          retention-days: 7
