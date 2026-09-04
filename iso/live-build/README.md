@@ -91,16 +91,18 @@ Este paso aplica **higiene** de reproducibilidad, pero **NO persigue bit-idénti
 - **Imagen base anclada por digest** del índice multi-arch
   (`debian:bookworm-slim@sha256:88200866…4171`), no por tag móvil. Así docker (CI) y podman
   (local) parten del mismo bit de base. Sobreescribible con `NIMBO_BASE_IMAGE=`.
+- **Compresión del squashfs determinista** (`mksquashfs -processors 1`, vía
+  `MKSQUASHFS_OPTIONS` en `auto/build`). La compresión xz multihilo no es determinista;
+  single-thread la hace reproducible a cambio de más tiempo de build. Ver
+  [ADR-001](../../docs/adr/ADR-001-compresion-determinista-squashfs.md).
 
 **Fuentes de no-determinismo aún abiertas (a cerrar en 1C):**
 1. **Versiones de paquetes**: los mirrors por defecto (`deb.debian.org`) son *rolling*; dos
    builds en fechas distintas pueden traer versiones distintas. → **Decisión anotada:** anclar
    a **`snapshot.debian.org`** (mirror con fecha fija) vía `--mirror-*` en `auto/config`. NO
    implementado aquí para no arriesgar el primer arranque; es el siguiente paso de repro.
-2. **Orden de archivos y metadatos en squashfs** (mtimes, orden de inodos).
-3. **Metadatos de compresión** (gzip/xz: nivel, timestamps embebidos) del squashfs y del
-   initrd.
-4. **`SOURCE_DATE_EPOCH`** no cubre todo (algunos generadores ignoran la variable) — se
+2. **Metadatos de compresión** (gzip/xz: nivel, timestamps embebidos) del initrd.
+3. **`SOURCE_DATE_EPOCH`** no cubre todo (algunos generadores ignoran la variable) — se
    documentarán los residuos con `diffoscope`.
 
 ## Decisiones abiertas
