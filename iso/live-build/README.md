@@ -108,10 +108,14 @@ Este paso aplica **higiene** de reproducibilidad, pero **NO persigue bit-idénti
   [ADR-003](../../docs/adr/ADR-003-cache-apt-determinista-squashfs.md).
 
 **Fuentes de no-determinismo aún abiertas (a cerrar en 1C):**
-1. **Versiones de paquetes**: los mirrors por defecto (`deb.debian.org`) son *rolling*; dos
-   builds en fechas distintas pueden traer versiones distintas. → **Decisión anotada:** anclar
-   a **`snapshot.debian.org`** (mirror con fecha fija) vía `--mirror-*` en `auto/config`. NO
-   implementado aquí para no arriesgar el primer arranque; es el siguiente paso de repro.
+1. **Versiones de paquetes**: ~~los mirrors por defecto (`deb.debian.org`) son *rolling*~~
+   **CERRADO (1C.5, [ADR-004](../../docs/adr/ADR-004-anclaje-temporal-snapshot-debian-org.md)):**
+   el **build** se ancla a `snapshot.debian.org` con un timestamp fijo y versionado
+   (`NIMBO_SNAPSHOT` en `auto/config`) → mismo commit ⇒ mismas versiones de paquete a lo largo
+   del tiempo (reproducibilidad temporal). El **runtime** del producto se deja en
+   `deb.debian.org` a propósito (doble estándar build/runtime, ver ADR-004). El `Valid-Until`
+   del archivo de seguridad se maneja con `Acquire::Check-Valid-Until=false` **manteniendo la
+   firma GPG** (`LB_APT_SECURE=true`) — práctica recomendada para snapshots, no un hack.
 2. **Metadatos de compresión** (gzip/xz: nivel, timestamps embebidos) del initrd.
 3. **`SOURCE_DATE_EPOCH`** no cubre todo (algunos generadores ignoran la variable) — se
    documentarán los residuos con `diffoscope`.
