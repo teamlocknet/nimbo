@@ -26,17 +26,32 @@ snapshot cuyo `Valid-Until` ya pasó, `apt` considera los metadatos caducados y 
 
 ## Decisión
 
-Anclar el **build** a `snapshot.debian.org` con un timestamp fijo, versionado en
-`iso/live-build/auto/config`:
+Anclar el **build** a `snapshot.debian.org` con un timestamp fijo, definido en **una sola
+fuente de verdad**, `iso/live-build/snapshot.env`:
 
 ```
 NIMBO_SNAPSHOT="20260901T000000Z"
 ```
 
-- **Mirrors anclados (build):** `--(parent-)mirror-bootstrap`, `--(parent-)mirror-chroot` y
-  `--(parent-)mirror-chroot-security` → `.../archive/debian/${NIMBO_SNAPSHOT}/` y
-  `.../archive/debian-security/${NIMBO_SNAPSHOT}/`. Son los que determinan las versiones de
-  paquete y, por tanto, los bytes de la ISO.
+Ese archivo lo **sourcean los dos scripts** que necesitan el anclaje —`build-in-container.sh`
+(toolchain) y `auto/config` (producto)— de modo que el timestamp vive en **un único sitio** y
+un bump futuro es una sola línea, sin acoplar ambos scripts entre sí.
+
+- **Paquetes del PRODUCTO (mirrors de build en `auto/config`):** `--(parent-)mirror-bootstrap`,
+  `--(parent-)mirror-chroot` y `--(parent-)mirror-chroot-security` →
+  `.../archive/debian/${NIMBO_SNAPSHOT}/` y `.../archive/debian-security/${NIMBO_SNAPSHOT}/`
+  (https; para entonces `ca-certificates` ya está instalado). Determinan las versiones de
+  paquete del sistema y, por tanto, los bytes de la ISO.
+- **TOOLCHAIN (`live-build`, en `build-in-container.sh`):** antes de `apt-get install
+  live-build ca-certificates`, se re-apunta el apt del contenedor al mismo snapshot
+  (`http://snapshot.debian.org/archive/debian/${NIMBO_SNAPSHOT}/ bookworm main`). Así el propio
+  generador de la ISO queda fijo, no *rolling*.
+  - **Por qué toolchain=http y producto=https (no es incoherencia):** la imagen base
+    `bookworm-slim` **no trae `ca-certificates`** — se instala precisamente en ese `apt-get`.
+    El primer apt, por tanto, no puede hablar TLS todavía, así que usa **http**. La seguridad
+    no depende del transporte sino de la **firma GPG del `Release`**, que apt verifica en
+    ambos casos (no se toca `apt-secure`). Una vez instalado `ca-certificates`, los mirrors del
+    producto (debootstrap/chroot) ya usan **https**. El transporte no altera los bytes.
 - **Doble estándar deliberado (build anclado / runtime libre):** los mirrors `binary` —el
   `sources.list` que queda **dentro** de la ISO— **NO** se anclan; se dejan en los defaults de
   live-build (`deb.debian.org` / `security.debian.org`). El **build** se fija a snapshot por
@@ -55,10 +70,17 @@ Se ancla a **bookworm** de forma consciente: es la base sobre la que se construy
 En la fecha de este ADR bookworm es **oldstable** (trixie/Debian 13 ya es stable); se ancla a
 oldstable **a propósito** para no mezclar "reproducibilidad" con "cambio de versión de Debian".
 
-**Coherencia con el digest de la imagen base (1B):** la imagen del contenedor
-(`debian:bookworm-slim` anclada por digest) aporta solo la *toolchain* (live-build/debootstrap);
-los *paquetes del producto* salen del snapshot anclado. Ambos anclajes son de la era bookworm →
-coherentes: uno fija las herramientas, el otro fija el contenido.
+**Las CUATRO capas del build quedan ancladas** (cadena de reproducibilidad completa):
+
+1. **Imagen base del contenedor** → por *digest* (Paso 1B): fija el entorno de arranque.
+2. **Toolchain** (`live-build` y deps) → por *snapshot* (Paso 1C.6): fija el generador de la ISO.
+3. **Paquetes del producto** (debootstrap + chroot + security) → por *snapshot* (Paso 1C.5):
+   fija el contenido del sistema.
+4. **Receta determinista** → compresión/orden/caché APT (ADR-001/002/003): fija cómo se
+   empaqueta ese contenido.
+
+Las capas 2 y 3 comparten el **mismo** `NIMBO_SNAPSHOT` (de `snapshot.env`) → toolchain y
+producto se mueven siempre juntos. Todas son de la era bookworm → coherentes.
 
 ## Consecuencias
 
@@ -81,25 +103,22 @@ coherentes: uno fija las herramientas, el otro fija el contenido.
 
 1. Elegir un timestamp nuevo de snapshot.d.o (p. ej. tras un point-release o un lote de
    parches de seguridad relevantes).
-2. Editar `NIMBO_SNAPSHOT` en `iso/live-build/auto/config` (una línea) y actualizar este ADR
-   (nuevo timestamp + motivo).
+2. Editar `NIMBO_SNAPSHOT` en `iso/live-build/snapshot.env` (**una sola línea, un solo sitio**;
+   toolchain y producto se re-anclan juntos) y actualizar este ADR (nuevo timestamp + motivo).
 3. Correr la compuerta `repro-verify.yml`: debe seguir en **MATCH** con el nuevo anclaje.
 4. Es un cambio **consciente y trazable** (commit + ADR), nunca automático.
 
-## Residual conocido (verificado con los ojos en la compuerta)
+## Residuales
 
-- **La *toolchain* (`live-build`) no está anclada a snapshot.** `build-in-container.sh`
-  instala `live-build` + `ca-certificates` con `apt-get install` desde los mirrors del
-  contenedor (`deb.debian.org bookworm`), que son *rolling*. La **imagen base** está fija por
-  digest (1B) y los **paquetes del producto** por snapshot (este ADR), pero el paquete
-  `live-build` que se instala encima podría cambiar con un point-release de bookworm. Riesgo
-  **bajo** (bookworm es oldstable, casi congelado) pero **no nulo** para la garantía "por
-  construcción". Cierre limpio a futuro (follow-up, fuera del alcance de 1C.5): apuntar también
-  el `apt-get install` del contenedor a `${NIMBO_SNAPSHOT}` antes de instalar la toolchain.
-- **`Valid-Until` aún no ejercido:** en la corrida de verificación (2026-09-05) el `Release`
-  de seguridad del snapshot seguía dentro de su ventana (`Valid-Until: 2026-09-07`), así que
-  `Check-Valid-Until=false` estaba puesto y aceptado por apt pero no llegó a **dispararse**;
-  lo hará en builds posteriores al 7-sep-2026, que es justo cuando hace falta.
+- **Toolchain no anclada → RESUELTO en 1C.6.** Antes `build-in-container.sh` instalaba
+  `live-build` desde `deb.debian.org bookworm` (*rolling*). Ahora ese `apt-get` sale del mismo
+  snapshot (`live-build 1:20230502`, congelado). La cadena queda completa a 4 capas (ver
+  arriba); ya no hay superficie *rolling* en el build.
+- **`Valid-Until` aún no ejercido (nota, no acción):** en las corridas de verificación
+  (2026-09-05) el `Release` de seguridad del snapshot seguía dentro de su ventana
+  (`Valid-Until: 2026-09-07`), así que `Check-Valid-Until=false` estaba puesto y aceptado por
+  apt pero no llegó a **dispararse**; lo hará en builds posteriores al 7-sep-2026, que es justo
+  cuando hace falta. La defensa está montada; nada que hacer.
 
 ## Decisión abierta relacionada (NO se resuelve aquí)
 
