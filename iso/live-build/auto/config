@@ -3,9 +3,31 @@
 # Objetivo de este ladrillo (Paso 1A): que arranque a consola/login. SIN escritorio.
 set -e
 
+# --- Anclaje temporal a snapshot.debian.org (Paso 1C.5, ver docs/adr/ADR-004) --------
+# Timestamp FIJO y versionado en el repo (es parte de "el commit"): garantiza que el
+# mismo commit compilado en fechas distintas baje EXACTAMENTE los mismos bytes de
+# paquete → reproducibilidad TEMPORAL, no solo entre runners simultáneos. snapshot.d.o
+# es inmutable por timestamp. Bump futuro = editar esta línea + actualizar ADR-004.
+NIMBO_SNAPSHOT="20260901T000000Z"
+SNAP_DEBIAN="https://snapshot.debian.org/archive/debian/${NIMBO_SNAPSHOT}/"
+SNAP_SECURITY="https://snapshot.debian.org/archive/debian-security/${NIMBO_SNAPSHOT}/"
+
+# DOBLE ESTÁNDAR deliberado (ver ADR-004):
+#   - BUILD anclado a snapshot: mirrors de bootstrap + chroot (+ security) → reproducible.
+#   - RUNTIME libre: el sources.list DENTRO de la ISO (mirrors 'binary') se deja en los
+#     defaults de live-build (deb.debian.org / security.debian.org) → usabilidad del
+#     producto + vía de update offline; su contenido es un string fijo, así que sigue
+#     siendo determinista. NO se anclan los mirrors 'binary' a snapshot a propósito.
 lb config noauto \
     --distribution bookworm \
     --archive-areas "main" \
+    --parent-mirror-bootstrap "$SNAP_DEBIAN" \
+    --parent-mirror-chroot "$SNAP_DEBIAN" \
+    --parent-mirror-chroot-security "$SNAP_SECURITY" \
+    --mirror-bootstrap "$SNAP_DEBIAN" \
+    --mirror-chroot "$SNAP_DEBIAN" \
+    --mirror-chroot-security "$SNAP_SECURITY" \
+    --apt-options "--yes -o Acquire::Check-Valid-Until=false -o Acquire::Retries=5" \
     --binary-images iso-hybrid \
     --debian-installer none \
     --memtest none \
@@ -21,5 +43,8 @@ lb config noauto \
 #   defecto). Xfce4/hardening son un paso posterior — aquí reducimos variables.
 # - console=ttyS0 permite verificar el arranque en QEMU headless (getty por serial).
 # - Sólo 'main' (todo FOSS). Sin apt-indices ni recommends: más pequeño y determinista.
-# - Mirrors por defecto (deb.debian.org). Anclar a snapshot.debian.org es el siguiente
-#   paso de reproducibilidad (ver README), no se implementa aquí.
+# - Valid-Until: el Release de 'main' de bookworm no trae Valid-Until, pero el de
+#   'bookworm-security' SÍ (corto). Con snapshots viejos ese metadato queda "caduco" y
+#   apt aborta. Check-Valid-Until=false lo relaja MANTENIENDO LB_APT_SECURE=true (la
+#   firma GPG se sigue verificando): es la práctica recomendada de Debian para builds
+#   desde snapshot, no un hack. Retries=5 amortigua la intermitencia de snapshot.d.o.
