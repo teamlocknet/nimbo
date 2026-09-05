@@ -46,8 +46,15 @@ IMAGE="${NIMBO_BASE_IMAGE:-docker.io/library/debian@sha256:88200866dfff7ea7f5cbc
 SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-$(git -c safe.directory='*' -C "$HERE" log -1 --pretty=%ct 2>/dev/null || date +%s)}"
 export SOURCE_DATE_EPOCH
 
+# --- Anclaje temporal: fuente ÚNICA del timestamp (Paso 1C.6, ver ADR-004) -----
+# snapshot.env define NIMBO_SNAPSHOT; lo sourcean TANTO este script (para anclar la
+# toolchain, abajo) como auto/config (para los mirrors del producto). Un solo sitio.
+. "$HERE/snapshot.env"
+export NIMBO_SNAPSHOT
+
 echo ">> Motor             : $ENGINE"
 echo ">> Imagen base       : $IMAGE"
+echo ">> Snapshot (anclaje): $NIMBO_SNAPSHOT  (toolchain + producto)"
 echo ">> SOURCE_DATE_EPOCH  : $SOURCE_DATE_EPOCH ($(date -u -d "@$SOURCE_DATE_EPOCH" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo '?'))"
 echo ">> Directorio montado : $HERE -> /build"
 echo
@@ -63,11 +70,23 @@ exec "$ENGINE" run --rm "${TTY_OPT[@]}" \
     -v "$HERE":/build"$VOL_OPT" \
     -w /build \
     -e SOURCE_DATE_EPOCH \
+    -e NIMBO_SNAPSHOT \
     -e TZ=UTC \
     -e LC_ALL=C.UTF-8 \
     -e DEBIAN_FRONTEND=noninteractive \
     "$IMAGE" \
     bash -euo pipefail -c '
+        # --- Anclar la TOOLCHAIN al mismo snapshot (Paso 1C.6, ver ADR-004) --------
+        # El apt de bookworm-slim apunta por defecto a deb.debian.org (rolling): el
+        # paquete live-build que se instalara ahi podria cambiar con un point-release
+        # y romper la reproducibilidad temporal. Lo anclamos al MISMO snapshot que el
+        # producto. http (no https): bookworm-slim no trae ca-certificates todavia
+        # (se instala en este mismo apt-get); la seguridad la da la firma GPG, que apt
+        # sigue verificando (NO se toca apt-secure). Solo se necesita debian/main.
+        printf "deb http://snapshot.debian.org/archive/debian/%s/ bookworm main\n" "$NIMBO_SNAPSHOT" > /etc/apt/sources.list
+        rm -f /etc/apt/sources.list.d/debian.sources   # quita el default deb822 si existe
+        printf "Acquire::Check-Valid-Until \"false\";\nAcquire::Retries \"5\";\n" > /etc/apt/apt.conf.d/99nimbo-snapshot
+        echo ">> Toolchain anclada a snapshot $NIMBO_SNAPSHOT (http, GPG intacta)"
         apt-get update
         apt-get install -y --no-install-recommends live-build ca-certificates
         lb clean --purge || true
