@@ -81,9 +81,11 @@ genera solo en cada build. El cambio versionado es sólo `auto/build`.
   si en el futuro un paquete los introduce, se decidirá el escape en una vuelta aparte.
 - **Reversible**: si una versión futura de `mksquashfs`/live-build ordena el scan de forma
   determinista por defecto, se puede retirar el sortfile con un ADR que reemplace a éste.
-- **Coherencia**: complementa a [ADR-001](ADR-001-compresion-determinista-squashfs.md)
-  (ADR-001 cerró la compresión multihilo; ADR-002 cierra el orden de empaquetado). Juntos
-  buscan el bit-idéntico local; ninguno mete todavía la comparación al CI (vuelta futura).
+- **Coherencia**: parte de la terna del squashfs reproducible —
+  [ADR-001](ADR-001-compresion-determinista-squashfs.md) (compresión multihilo) · ADR-002
+  (orden de empaquetado) · [ADR-003](ADR-003-cache-apt-determinista-squashfs.md) (caché APT,
+  la causa que este ADR dejó al descubierto). Juntos buscan el bit-idéntico local; ninguno
+  mete todavía la comparación al CI (vuelta futura).
 
 ## Fecha
 
