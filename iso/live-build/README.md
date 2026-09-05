@@ -95,12 +95,30 @@ Este paso aplica **higiene** de reproducibilidad, pero **NO persigue bit-idénti
   `MKSQUASHFS_OPTIONS` en `auto/build`). La compresión xz multihilo no es determinista;
   single-thread la hace reproducible a cambio de más tiempo de build. Ver
   [ADR-001](../../docs/adr/ADR-001-compresion-determinista-squashfs.md).
+- **Orden de empaquetado del squashfs determinista** (`-sort` con un sortfile completo).
+  mksquashfs empaqueta los datos en orden de scan (`readdir`), no determinista entre dos
+  `debootstrap`. `auto/build` genera en build-time `config/rootfs/squashfs.sort` con todos
+  los ficheros del rootfs en orden `LC_ALL=C`, y live-build lo pasa a mksquashfs
+  (`-sort squashfs.sort`) de forma nativa. Ver
+  [ADR-002](../../docs/adr/ADR-002-orden-determinista-empaquetado-squashfs.md).
+- **Caché binario de APT desactivado** (`Dir::Cache::pkgcache/srcpkgcache ""` en
+  `apt.conf.d`). APT reserializa `/var/cache/apt/*.bin` en cada invocación con contenido no
+  determinista (no lo cubre `SOURCE_DATE_EPOCH`); `auto/build` lo desactiva tras `lb chroot`
+  para que no se escriba en ninguna etapa. Ver
+  [ADR-003](../../docs/adr/ADR-003-cache-apt-determinista-squashfs.md).
 
 **Fuentes de no-determinismo aún abiertas (a cerrar en 1C):**
-1. **Versiones de paquetes**: los mirrors por defecto (`deb.debian.org`) son *rolling*; dos
-   builds en fechas distintas pueden traer versiones distintas. → **Decisión anotada:** anclar
-   a **`snapshot.debian.org`** (mirror con fecha fija) vía `--mirror-*` en `auto/config`. NO
-   implementado aquí para no arriesgar el primer arranque; es el siguiente paso de repro.
+1. **Versiones de paquetes**: ~~los mirrors por defecto (`deb.debian.org`) son *rolling*~~
+   **CERRADO (1C.5 + 1C.6, [ADR-004](../../docs/adr/ADR-004-anclaje-temporal-snapshot-debian-org.md)):**
+   el **build** se ancla a `snapshot.debian.org` con un timestamp fijo y versionado en **una
+   sola fuente de verdad** (`snapshot.env` → `NIMBO_SNAPSHOT`, sourceado por `auto/config` y
+   `build-in-container.sh`). Quedan ancladas las **4 capas**: imagen base (digest, 1B) +
+   **toolchain `live-build`** (snapshot, 1C.6) + paquetes del producto (snapshot, 1C.5) +
+   receta determinista (ADR-001/002/003) → mismo commit ⇒ mismo hash a lo largo del tiempo.
+   El **runtime** del producto se deja en `deb.debian.org` a propósito (doble estándar
+   build/runtime, ver ADR-004). El `Valid-Until` del archivo de seguridad se maneja con
+   `Acquire::Check-Valid-Until=false` **manteniendo la firma GPG** — práctica recomendada para
+   snapshots, no un hack. (Toolchain vía http por ca-certs; producto vía https — ver ADR-004.)
 2. **Metadatos de compresión** (gzip/xz: nivel, timestamps embebidos) del initrd.
 3. **`SOURCE_DATE_EPOCH`** no cubre todo (algunos generadores ignoran la variable) — se
    documentarán los residuos con `diffoscope`.
