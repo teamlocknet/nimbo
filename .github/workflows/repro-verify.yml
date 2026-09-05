@@ -1,0 +1,219 @@
+name: repro-verify
+
+# COMPUERTA de reproducibilidad bit a bit (Paso 1C.4). Compila la ISO DOS VECES,
+# en RUNNERS INDEPENDIENTES del MISMO commit, y FALLA si los SHA-256 no coinciden.
+# Esto cierra el "verificado por un tercero" del criterio del Acta (RNF-SEC-07).
+#
+# Reutiliza EXACTAMENTE el build de 1A/1B/1C (build-in-container.sh con la receta
+# reproducible de ADR-001/002/003). NO reimplementa el build ni toca la receta:
+# solo AÑADE la verificación cruzada en CI.
+#
+# Diseño:
+#   prep    -> calcula UN solo SOURCE_DATE_EPOCH (del commit) para ambos builds.
+#   build   -> matrix leg=[A,B]; cada leg en su propia VM limpia (el "tercero" real);
+#              publica su SHA-256 + identificadores de runner como artifact de texto.
+#   verify  -> compara los dos SHA entre sí (nada hardcodeado) y FALLA si difieren;
+#              además AFIRMA en el summary que A y B corrieron en runners distintos.
+#
+# NO sube las ISOs (260 MB c/u): la compuerta solo necesita los hashes.
+# NO hace boot-test (los runners no tienen KVM). NO ancla snapshot.debian.org (1C.5).
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "iso/live-build/**"
+      - ".github/workflows/repro-verify.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "iso/live-build/**"
+      - ".github/workflows/repro-verify.yml"
+
+# Grupo propio (no colisiona con build-iso): cancela runs viejos de la misma rama.
+concurrency:
+  group: repro-verify-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  prep:
+    name: prep (epoch único)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      short_sha: ${{ steps.meta.outputs.short_sha }}
+      epoch: ${{ steps.meta.outputs.epoch }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Metadatos (short SHA, SOURCE_DATE_EPOCH del commit)
+        id: meta
+        run: |
+          set -euo pipefail
+          short_sha="$(git rev-parse --short HEAD)"
+          epoch="$(git log -1 --pretty=%ct)"
+          echo "short_sha=$short_sha" >> "$GITHUB_OUTPUT"
+          echo "epoch=$epoch" >> "$GITHUB_OUTPUT"
+          {
+            echo "### repro-verify — entrada compartida"
+            echo ""
+            echo "- commit: \`$short_sha\`"
+            echo "- SOURCE_DATE_EPOCH: \`$epoch\` ($(date -u -d "@$epoch" +%Y-%m-%dT%H:%M:%SZ))"
+            echo ""
+            echo "Ambos builds (A y B) usan este MISMO epoch — determinismo de tiempo explícito."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  build:
+    name: build (${{ matrix.leg }})
+    needs: prep
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        leg: [A, B]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Liberar espacio en disco del runner
+        run: |
+          echo "== Antes =="; df -h /
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc \
+                      /usr/local/.ghcup /opt/hostedtoolcache/CodeQL \
+                      /usr/local/share/boost /usr/share/swift || true
+          sudo docker image prune -af || true
+          echo "== Después =="; df -h /
+
+      - name: Construir la ISO en contenedor Debian (paridad con local, receta reproducible)
+        working-directory: iso/live-build
+        env:
+          CONTAINER_ENGINE: docker
+          SOURCE_DATE_EPOCH: ${{ needs.prep.outputs.epoch }}
+        run: ./build-in-container.sh
+
+      - name: Calcular SHA-256 + identificar el runner
+        id: hash
+        working-directory: iso/live-build
+        run: |
+          set -euo pipefail
+          ISO="$(ls live-image-*.iso)"
+          # Sanity mínima: build sano (la validación estructural con xorriso ya vive
+          # en build-iso.yml; aquí lo que importa es el hash sobre una ISO no vacía).
+          bytes="$(stat -c%s "$ISO")"
+          echo ">> ISO: $ISO ($bytes bytes)"
+          test "$bytes" -gt 104857600
+          sha="$(sha256sum "$ISO" | awk '{print $1}')"
+          echo ">> SHA-256 (leg ${{ matrix.leg }}): $sha"
+
+          # Identificadores del runner (la prueba de "tercero"). El identificador
+          # DURO es boot_id: /proc/sys/kernel/random/boot_id es un UUID aleatorio
+          # que el kernel genera EN CADA ARRANQUE -> dos VMs distintas SIEMPRE
+          # difieren. (El hostname NO sirve: viene horneado en la imagen y colisiona
+          # entre VMs distintas.) machine-id es un respaldo por-instalación; hostname
+          # queda solo como dato informativo.
+          host="$(hostname)"
+          boot_id="$(cat /proc/sys/kernel/random/boot_id 2>/dev/null || echo '?')"
+          machine_id="$(cat /etc/machine-id 2>/dev/null || echo '?')"
+          echo ">> runner: boot_id=$boot_id machine_id=$machine_id hostname=$host"
+          mkdir -p "$RUNNER_TEMP/out"
+          {
+            echo "leg=${{ matrix.leg }}"
+            echo "sha256=$sha"
+            echo "boot_id=$boot_id"
+            echo "machine_id=$machine_id"
+            echo "hostname=$host"
+            echo "runner_name=${RUNNER_NAME:-?}"
+          } > "$RUNNER_TEMP/out/leg-${{ matrix.leg }}.txt"
+
+          {
+            echo "### build leg ${{ matrix.leg }}"
+            echo ""
+            echo "- runner boot_id: \`$boot_id\`  (único por arranque de VM)"
+            echo "- machine-id: \`$machine_id\`  ·  hostname: \`$host\`"
+            echo "- SHA-256: \`$sha\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publicar SHA-256 + runner como artifact (solo texto, no la ISO)
+        uses: actions/upload-artifact@v4
+        with:
+          name: iso-sha-${{ matrix.leg }}
+          path: ${{ runner.temp }}/out/leg-${{ matrix.leg }}.txt
+          if-no-files-found: error
+          retention-days: 7
+
+  verify:
+    name: verify (compuerta)
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Descargar los SHA de A y B
+        uses: actions/download-artifact@v4
+        with:
+          path: legs
+          pattern: iso-sha-*
+          merge-multiple: true
+
+      - name: Comparar SHA-256 y afirmar runners distintos (COMPUERTA)
+        run: |
+          set -euo pipefail
+          A="legs/leg-A.txt"; B="legs/leg-B.txt"
+          test -f "$A" || { echo "::error::falta el artifact del leg A"; exit 1; }
+          test -f "$B" || { echo "::error::falta el artifact del leg B"; exit 1; }
+
+          # shellcheck disable=SC1090
+          get() { grep -E "^$2=" "$1" | head -1 | cut -d= -f2-; }
+          sha_a="$(get "$A" sha256)";   sha_b="$(get "$B" sha256)"
+          boot_a="$(get "$A" boot_id)"; boot_b="$(get "$B" boot_id)"
+          host_a="$(get "$A" hostname)"; host_b="$(get "$B" hostname)"
+
+          echo ">> leg A: sha=$sha_a  boot_id=$boot_a  host=$host_a"
+          echo ">> leg B: sha=$sha_b  boot_id=$boot_b  host=$host_b"
+
+          # --- Prueba 1: runners distintos (el "tercero" del Acta) ---------------
+          # boot_id es el identificador duro (único por arranque de VM). Dos VMs
+          # GitHub-hosted distintas SIEMPRE difieren aquí, aunque compartan hostname.
+          if [ "$boot_a" != "$boot_b" ]; then
+            runners_line="runner A (boot_id \`$boot_a\`) ≠ runner B (boot_id \`$boot_b\`), distintos ✅"
+            echo ">> runners: distintos (boot_id A != boot_id B)"
+          else
+            # Borde raro: no falla la compuerta (el hash sigue siendo la prueba dura),
+            # pero se deja VISIBLE que esta corrida no demostró independencia de VM.
+            runners_line="runner A = runner B (boot_id \`$boot_a\`) ⚠️ (mismo runner: independencia NO demostrada en esta corrida)"
+            echo "::warning::ambos legs comparten boot_id ($boot_a): independencia no demostrada"
+          fi
+
+          # --- Prueba 2: hashes idénticos (compuerta dura) ----------------------
+          if [ "$sha_a" = "$sha_b" ]; then
+            verdict="MATCH (bit-idéntico) ✅"
+            gate_ok=1
+          else
+            verdict="DIFFER ❌"
+            gate_ok=0
+          fi
+
+          {
+            echo "## Veredicto de reproducibilidad (1C.4)"
+            echo ""
+            echo "| Prueba | Resultado |"
+            echo "|---|---|"
+            echo "| Hashes | $verdict |"
+            echo "| Runners | $runners_line |"
+            echo ""
+            echo "\`\`\`"
+            echo "leg A  sha=$sha_a  boot_id=$boot_a  host=$host_a"
+            echo "leg B  sha=$sha_b  boot_id=$boot_b  host=$host_b"
+            echo "\`\`\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$gate_ok" -ne 1 ]; then
+            echo "::error::Los SHA-256 de A y B NO coinciden: la ISO no es reproducible en este commit."
+            exit 1
+          fi
+          echo ">> COMPUERTA: MATCH — ISO reproducible entre runners independientes."

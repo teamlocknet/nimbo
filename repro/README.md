@@ -63,3 +63,20 @@ Solo mide. **No** cierra no-determinismos, **no** toca `snapshot.debian.org`, **
 compresión/squashfs, **no** entra al workflow de CI (la comparación en CI es una vuelta
 futura, igual que el build local de 1A precedió al CI de 1B). No modifica `iso/live-build/`
 (lo invoca, no lo reescribe).
+
+## La compuerta en CI (Paso 1C.4)
+
+Este arnés (`build-twice.sh`) es la verificación **local**: dos builds en la misma máquina.
+La verificación **por un tercero** —dos builds en **runners independientes** del mismo
+commit— vive en CI, en **`.github/workflows/repro-verify.yml`**:
+
+- Un job `prep` fija un único `SOURCE_DATE_EPOCH` (del commit) para ambos builds.
+- Una matrix `leg=[A,B]` compila la ISO **dos veces, cada leg en su propia VM limpia** de
+  GitHub-hosted (reutilizando `build-in-container.sh`, sin tocar la receta), y publica su
+  SHA-256 como artifact de texto (no sube la ISO: la compuerta solo necesita el hash).
+- Un job `verify` compara los dos SHA **entre sí** (nada hardcodeado) y **FALLA** si difieren;
+  además **afirma en el summary** que A y B corrieron en runners distintos. Así el resumen
+  muestra las dos pruebas del Acta de un vistazo: **hashes idénticos** Y **runners distintos**.
+
+Triggers: `workflow_dispatch` + `push`/`pull_request` a `main` con filtro a
+`iso/live-build/**`. Es la compuerta que cierra el "verificado por un tercero" de RNF-SEC-07.
