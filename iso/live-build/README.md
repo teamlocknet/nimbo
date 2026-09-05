@@ -101,6 +101,11 @@ Este paso aplica **higiene** de reproducibilidad, pero **NO persigue bit-idénti
   los ficheros del rootfs en orden `LC_ALL=C`, y live-build lo pasa a mksquashfs
   (`-sort squashfs.sort`) de forma nativa. Ver
   [ADR-002](../../docs/adr/ADR-002-orden-determinista-empaquetado-squashfs.md).
+- **Caché binario de APT desactivado** (`Dir::Cache::pkgcache/srcpkgcache ""` en
+  `apt.conf.d`). APT reserializa `/var/cache/apt/*.bin` en cada invocación con contenido no
+  determinista (no lo cubre `SOURCE_DATE_EPOCH`); `auto/build` lo desactiva tras `lb chroot`
+  para que no se escriba en ninguna etapa. Ver
+  [ADR-003](../../docs/adr/ADR-003-cache-apt-determinista-squashfs.md).
 
 **Fuentes de no-determinismo aún abiertas (a cerrar en 1C):**
 1. **Versiones de paquetes**: los mirrors por defecto (`deb.debian.org`) son *rolling*; dos
