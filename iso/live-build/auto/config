@@ -3,12 +3,13 @@
 # Objetivo de este ladrillo (Paso 1A): que arranque a consola/login. SIN escritorio.
 set -e
 
-# --- Anclaje temporal a snapshot.debian.org (Paso 1C.5, ver docs/adr/ADR-004) --------
+# --- Anclaje temporal a snapshot.debian.org (Pasos 1C.5/1C.6, ver docs/adr/ADR-004) --
 # Timestamp FIJO y versionado en el repo (es parte de "el commit"): garantiza que el
 # mismo commit compilado en fechas distintas baje EXACTAMENTE los mismos bytes de
 # paquete → reproducibilidad TEMPORAL, no solo entre runners simultáneos. snapshot.d.o
-# es inmutable por timestamp. Bump futuro = editar esta línea + actualizar ADR-004.
-NIMBO_SNAPSHOT="20260901T000000Z"
+# es inmutable por timestamp. El valor vive en UN solo sitio (snapshot.env), que también
+# sourcea build-in-container.sh para anclar la toolchain: bump = editar snapshot.env.
+. "$(dirname "$0")/../snapshot.env"
 SNAP_DEBIAN="https://snapshot.debian.org/archive/debian/${NIMBO_SNAPSHOT}/"
 SNAP_SECURITY="https://snapshot.debian.org/archive/debian-security/${NIMBO_SNAPSHOT}/"
 
