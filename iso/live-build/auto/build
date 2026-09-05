@@ -18,4 +18,55 @@ export MKSQUASHFS_OPTIONS="-processors 1 ${MKSQUASHFS_OPTIONS:-}"
 
 echo ">> auto/build: SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH TZ=$TZ LC_ALL=$LC_ALL MKSQUASHFS_OPTIONS='$MKSQUASHFS_OPTIONS'"
 
-lb build noauto "${@}" 2>&1 | tee binary.buildlog
+# `lb build` = bootstrap + chroot + installer + binary. Lo partimos en sus etapas
+# nativas para intercalar, ENTRE chroot y binary, la generación del sortfile que da a
+# mksquashfs un orden de empaquetado determinista (ver docs/adr/ADR-002). Se hace aquí
+# —no en build-in-container.sh— para preservar el MKSQUASHFS_OPTIONS de ADR-001.
+lb bootstrap noauto "${@}" 2>&1 | tee    binary.buildlog
+lb chroot    noauto "${@}" 2>&1 | tee -a binary.buildlog
+
+# --- Caché binario de APT determinista (ver docs/adr/ADR-003) ------------------
+# APT reserializa /var/cache/apt/{pkgcache,srcpkgcache}.bin en CADA invocación; su
+# contenido no es determinista (no lo cubre SOURCE_DATE_EPOCH) → dos builds difieren
+# aunque las versiones de paquete sean idénticas. Un `rm` NO basta: la etapa `binary`
+# vuelve a correr APT en el chroot anidado (p. ej. mksquashfs se instala ahí antes de
+# empaquetar) y regenera los .bin. La vía limpia es DESACTIVAR el caché por config, así
+# APT no los escribe en ninguna invocación (el chroot anidado hereda este apt.conf.d).
+mkdir -p chroot/etc/apt/apt.conf.d
+cat > chroot/etc/apt/apt.conf.d/99nimbo-reproducible <<'APTCONF'
+// nimbo: reproducibilidad — APT no escribe el caché binario (no determinista).
+Dir::Cache::pkgcache "";
+Dir::Cache::srcpkgcache "";
+APTCONF
+rm -f chroot/var/cache/apt/pkgcache.bin chroot/var/cache/apt/srcpkgcache.bin
+
+# --- Orden determinista de empaquetado del squashfs (ver docs/adr/ADR-002) ----
+# mksquashfs 4.5.1 empaqueta los datos en orden de scan (readdir), NO determinista
+# entre dos debootstrap. Su punto de extensión limpio es un sortfile: live-build lo
+# consume nativamente si existe config/rootfs/squashfs.sort (-> `-sort squashfs.sort`).
+# Con TODOS los ficheros listados en orden estable de bytes, el empaquetado deja de
+# depender de readdir y pasa a ser determinista. El sortfile es dinámico (depende del
+# árbol que produce debootstrap) => se genera aquí desde el chroot real. config/ está
+# en .gitignore, así que no se commitea.
+#
+# Guard fail-loud: el formato del sortfile es «ruta prioridad» separado por espacios;
+# un nombre de fichero con espacios rompería el orden EN SILENCIO. Preferimos abortar
+# (determinismo primero) a perder reproducibilidad sin avisar. En un bookworm mínimo
+# (solo main, sin escritorio ni recommends) no se esperan; si aparecieran, se decide
+# el escape en una vuelta aparte.
+if find chroot -xdev -type f -name '* *' -print -quit | grep -q .; then
+    echo "ERROR (auto/build): hay ficheros con espacios en el nombre en el rootfs;" >&2
+    echo "  el sortfile de mksquashfs no los soporta. Abortando (determinismo primero)." >&2
+    find chroot -xdev -type f -name '* *' >&2
+    exit 1
+fi
+
+mkdir -p config/rootfs
+# %p arranca en «chroot/...», que es exactamente como mksquashfs recorre su dir fuente.
+# Prioridad 0 para todos: al estar TODOS listados, el orden lo fija el sortfile (no el
+# readdir). LC_ALL=C => orden de bytes estable e independiente del locale.
+find chroot -xdev -type f -printf '%p 0\n' | LC_ALL=C sort > config/rootfs/squashfs.sort
+echo ">> auto/build: squashfs.sort generado con $(wc -l < config/rootfs/squashfs.sort) entradas"
+
+lb installer noauto "${@}" 2>&1 | tee -a binary.buildlog
+lb binary    noauto "${@}" 2>&1 | tee -a binary.buildlog
