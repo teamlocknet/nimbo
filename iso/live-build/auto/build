@@ -25,6 +25,21 @@ echo ">> auto/build: SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH TZ=$TZ LC_ALL=$LC_ALL 
 lb bootstrap noauto "${@}" 2>&1 | tee    binary.buildlog
 lb chroot    noauto "${@}" 2>&1 | tee -a binary.buildlog
 
+# --- Caché binario de APT determinista (ver docs/adr/ADR-003) ------------------
+# APT reserializa /var/cache/apt/{pkgcache,srcpkgcache}.bin en CADA invocación; su
+# contenido no es determinista (no lo cubre SOURCE_DATE_EPOCH) → dos builds difieren
+# aunque las versiones de paquete sean idénticas. Un `rm` NO basta: la etapa `binary`
+# vuelve a correr APT en el chroot anidado (p. ej. mksquashfs se instala ahí antes de
+# empaquetar) y regenera los .bin. La vía limpia es DESACTIVAR el caché por config, así
+# APT no los escribe en ninguna invocación (el chroot anidado hereda este apt.conf.d).
+mkdir -p chroot/etc/apt/apt.conf.d
+cat > chroot/etc/apt/apt.conf.d/99nimbo-reproducible <<'APTCONF'
+// nimbo: reproducibilidad — APT no escribe el caché binario (no determinista).
+Dir::Cache::pkgcache "";
+Dir::Cache::srcpkgcache "";
+APTCONF
+rm -f chroot/var/cache/apt/pkgcache.bin chroot/var/cache/apt/srcpkgcache.bin
+
 # --- Orden determinista de empaquetado del squashfs (ver docs/adr/ADR-002) ----
 # mksquashfs 4.5.1 empaqueta los datos en orden de scan (readdir), NO determinista
 # entre dos debootstrap. Su punto de extensión limpio es un sortfile: live-build lo
