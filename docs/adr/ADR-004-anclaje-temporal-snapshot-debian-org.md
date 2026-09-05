@@ -86,6 +86,21 @@ coherentes: uno fija las herramientas, el otro fija el contenido.
 3. Correr la compuerta `repro-verify.yml`: debe seguir en **MATCH** con el nuevo anclaje.
 4. Es un cambio **consciente y trazable** (commit + ADR), nunca automático.
 
+## Residual conocido (verificado con los ojos en la compuerta)
+
+- **La *toolchain* (`live-build`) no está anclada a snapshot.** `build-in-container.sh`
+  instala `live-build` + `ca-certificates` con `apt-get install` desde los mirrors del
+  contenedor (`deb.debian.org bookworm`), que son *rolling*. La **imagen base** está fija por
+  digest (1B) y los **paquetes del producto** por snapshot (este ADR), pero el paquete
+  `live-build` que se instala encima podría cambiar con un point-release de bookworm. Riesgo
+  **bajo** (bookworm es oldstable, casi congelado) pero **no nulo** para la garantía "por
+  construcción". Cierre limpio a futuro (follow-up, fuera del alcance de 1C.5): apuntar también
+  el `apt-get install` del contenedor a `${NIMBO_SNAPSHOT}` antes de instalar la toolchain.
+- **`Valid-Until` aún no ejercido:** en la corrida de verificación (2026-09-05) el `Release`
+  de seguridad del snapshot seguía dentro de su ventana (`Valid-Until: 2026-09-07`), así que
+  `Check-Valid-Until=false` estaba puesto y aceptado por apt pero no llegó a **dispararse**;
+  lo hará en builds posteriores al 7-sep-2026, que es justo cuando hace falta.
+
 ## Decisión abierta relacionada (NO se resuelve aquí)
 
 - **D9 — Qué Debian Stable se envía finalmente (trixie/Debian 13 vs bookworm).** Este ADR
