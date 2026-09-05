@@ -109,13 +109,16 @@ Este paso aplica **higiene** de reproducibilidad, pero **NO persigue bit-idénti
 
 **Fuentes de no-determinismo aún abiertas (a cerrar en 1C):**
 1. **Versiones de paquetes**: ~~los mirrors por defecto (`deb.debian.org`) son *rolling*~~
-   **CERRADO (1C.5, [ADR-004](../../docs/adr/ADR-004-anclaje-temporal-snapshot-debian-org.md)):**
-   el **build** se ancla a `snapshot.debian.org` con un timestamp fijo y versionado
-   (`NIMBO_SNAPSHOT` en `auto/config`) → mismo commit ⇒ mismas versiones de paquete a lo largo
-   del tiempo (reproducibilidad temporal). El **runtime** del producto se deja en
-   `deb.debian.org` a propósito (doble estándar build/runtime, ver ADR-004). El `Valid-Until`
-   del archivo de seguridad se maneja con `Acquire::Check-Valid-Until=false` **manteniendo la
-   firma GPG** (`LB_APT_SECURE=true`) — práctica recomendada para snapshots, no un hack.
+   **CERRADO (1C.5 + 1C.6, [ADR-004](../../docs/adr/ADR-004-anclaje-temporal-snapshot-debian-org.md)):**
+   el **build** se ancla a `snapshot.debian.org` con un timestamp fijo y versionado en **una
+   sola fuente de verdad** (`snapshot.env` → `NIMBO_SNAPSHOT`, sourceado por `auto/config` y
+   `build-in-container.sh`). Quedan ancladas las **4 capas**: imagen base (digest, 1B) +
+   **toolchain `live-build`** (snapshot, 1C.6) + paquetes del producto (snapshot, 1C.5) +
+   receta determinista (ADR-001/002/003) → mismo commit ⇒ mismo hash a lo largo del tiempo.
+   El **runtime** del producto se deja en `deb.debian.org` a propósito (doble estándar
+   build/runtime, ver ADR-004). El `Valid-Until` del archivo de seguridad se maneja con
+   `Acquire::Check-Valid-Until=false` **manteniendo la firma GPG** — práctica recomendada para
+   snapshots, no un hack. (Toolchain vía http por ca-certs; producto vía https — ver ADR-004.)
 2. **Metadatos de compresión** (gzip/xz: nivel, timestamps embebidos) del initrd.
 3. **`SOURCE_DATE_EPOCH`** no cubre todo (algunos generadores ignoran la variable) — se
    documentarán los residuos con `diffoscope`.
