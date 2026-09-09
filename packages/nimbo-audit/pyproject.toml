@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nimbo-audit"
+version = "0.1.0"
+description = "CLI de auditoría del sistema (codename nimbo): init/capture/report de engagements con evidencia verificable."
+readme = "README.md"
+# Debian Stable (bookworm) trae Python 3.11; no usamos features > 3.11.
+requires-python = ">=3.11"
+license = { text = "GPL-3.0-or-later" }
+dependencies = [
+    "typer>=0.12",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[project.scripts]
+# El comando es 'nimbo-audit'; el namespace del paquete es 'nimbo_audit'
+# (slug canónico renombrable con un find-and-replace global).
+nimbo-audit = "nimbo_audit.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
