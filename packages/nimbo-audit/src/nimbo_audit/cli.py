@@ -9,13 +9,19 @@ from typing import Optional
 
 import typer
 
+from nimbo_audit.comandos.capture import ComandoCapture, resolver_engagement_activo
 from nimbo_audit.comandos.init import ComandoInit
 from nimbo_audit.errores import (
+    ArchivoNoAccesibleError,
     EngagementExistenteError,
+    EngagementNoActivoError,
+    EvidenciaDuplicadaError,
+    InterrupcionMemoriaError,
     NimboAuditError,
     NombreInvalidoError,
 )
 from nimbo_audit.repositorio.engagement_repo import RepositorioEngagementJSON
+from nimbo_audit.repositorio.evidencia_repo import RepositorioEvidenciaJSON
 
 app = typer.Typer(
     help="CLI de auditoría (codename nimbo): inicializa y gestiona engagements.",
@@ -77,6 +83,60 @@ def init(
         raise typer.Exit(code=1)
 
     typer.echo(f"[OK] Engagement '{cliente}' inicializado en {ruta}")
+
+
+@app.command(help="Registra un archivo como evidencia con integridad SHA-256 (RF-03 / CU-02).")
+def capture(
+    archivo: Path = typer.Argument(..., help="Archivo a registrar como evidencia."),
+    dir: Optional[Path] = typer.Option(
+        None,
+        "--dir",
+        "-d",
+        help="Raíz del engagement (por defecto se detecta subiendo desde el directorio actual).",
+    ),
+) -> None:
+    try:
+        raiz = resolver_engagement_activo(Path.cwd(), dir)
+    except EngagementNoActivoError:
+        typer.echo(
+            "[ERROR] No hay un engagement activo. Ubícate dentro de un engagement "
+            "o indícalo con --dir <ruta>.",
+            err=True,
+        )
+        raise typer.Exit(code=1)
+
+    repo = RepositorioEvidenciaJSON(raiz)
+    comando = ComandoCapture(archivo, repo)
+
+    try:
+        evidencia = comando.ejecutar()
+    except ArchivoNoAccesibleError:
+        typer.echo(
+            "[ERROR] No se pudo acceder al archivo especificado. Verifique la ruta.",
+            err=True,
+        )
+        raise typer.Exit(code=1)
+    except EvidenciaDuplicadaError:
+        typer.echo(
+            f"[ERROR] Ya existe evidencia registrada con el nombre '{archivo.name}'. "
+            "No se sobrescribe evidencia en silencio.",
+            err=True,
+        )
+        raise typer.Exit(code=1)
+    except InterrupcionMemoriaError:
+        typer.echo(
+            "[AVISO] La operación fue interrumpida por restricción de memoria. "
+            "El archivo no fue registrado; el engagement queda intacto.",
+            err=True,
+        )
+        raise typer.Exit(code=1)
+    except NimboAuditError as exc:  # red de seguridad: nunca traceback crudo
+        typer.echo(f"[ERROR] {exc}", err=True)
+        raise typer.Exit(code=1)
+
+    typer.echo(
+        f"[OK] Evidencia registrada: {archivo} (SHA-256: {evidencia.sha256})"
+    )
 
 
 def main() -> None:
