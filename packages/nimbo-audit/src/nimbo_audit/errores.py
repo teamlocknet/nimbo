@@ -16,3 +16,23 @@ class NombreInvalidoError(NimboAuditError):
 
 class EngagementExistenteError(NimboAuditError):
     """Ya existe un engagement con ese identificador y no se pidió --force."""
+
+
+class EngagementNoActivoError(NimboAuditError):
+    """No se pudo determinar un engagement activo (ni por cwd ni por --dir)."""
+
+
+class ArchivoNoAccesibleError(NimboAuditError):
+    """El archivo de evidencia no existe o no es accesible (CU-02 3a)."""
+
+
+class EvidenciaDuplicadaError(NimboAuditError):
+    """Ya hay evidencia registrada con ese nombre: no se sobrescribe en silencio."""
+
+
+class InterrupcionMemoriaError(NimboAuditError):
+    """El cálculo del hash se interrumpió por restricción de memoria (RNF-08).
+
+    Se traduce a un `[AVISO]` limpio; el archivo NO queda registrado y el estado
+    del engagement permanece intacto.
+    """
