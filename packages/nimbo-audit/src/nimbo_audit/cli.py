@@ -11,17 +11,20 @@ import typer
 
 from nimbo_audit.comandos.capture import ComandoCapture, resolver_engagement_activo
 from nimbo_audit.comandos.init import ComandoInit
+from nimbo_audit.comandos.report import ComandoReport
 from nimbo_audit.errores import (
     ArchivoNoAccesibleError,
     EngagementExistenteError,
     EngagementNoActivoError,
     EvidenciaDuplicadaError,
+    ExportacionPDFError,
     InterrupcionMemoriaError,
     NimboAuditError,
     NombreInvalidoError,
 )
 from nimbo_audit.repositorio.engagement_repo import RepositorioEngagementJSON
 from nimbo_audit.repositorio.evidencia_repo import RepositorioEvidenciaJSON
+from nimbo_audit.servicios.pdf import exportar_pdf
 
 app = typer.Typer(
     help="CLI de auditoría (codename nimbo): inicializa y gestiona engagements.",
@@ -136,6 +139,74 @@ def capture(
 
     typer.echo(
         f"[OK] Evidencia registrada: {archivo} (SHA-256: {evidencia.sha256})"
+    )
+
+
+@app.command(help="Genera el reporte consolidado del engagement (RF-04 / CU-03).")
+def report(
+    dir: Optional[Path] = typer.Option(
+        None,
+        "--dir",
+        "-d",
+        help="Raíz del engagement (por defecto se detecta subiendo desde el directorio actual).",
+    ),
+    pdf: bool = typer.Option(
+        False,
+        "--pdf",
+        help="Exporta también a PDF vía pandoc (opcional; el .md es el entregable primario).",
+    ),
+    yes: bool = typer.Option(
+        False,
+        "--yes",
+        "-y",
+        help="No preguntar: genera el reporte aunque el engagement no tenga datos.",
+    ),
+) -> None:
+    try:
+        raiz = resolver_engagement_activo(Path.cwd(), dir)
+    except EngagementNoActivoError:
+        typer.echo(
+            "[ERROR] No hay un engagement activo. Ubícate dentro de un engagement "
+            "o indícalo con --dir <ruta>.",
+            err=True,
+        )
+        raise typer.Exit(code=1)
+
+    comando = ComandoReport(
+        raiz,
+        RepositorioEngagementJSON(raiz.parent),
+        RepositorioEvidenciaJSON(raiz),
+    )
+
+    # CU-03 1a: engagement sin evidencia ni sesión -> avisar y confirmar.
+    if not yes and not comando.tiene_datos():
+        typer.echo(
+            "[AVISO] El engagement no contiene evidencia ni registros de sesión. "
+            "El reporte generado estará incompleto."
+        )
+        if not typer.confirm("¿Generar un reporte incompleto de todas formas?"):
+            typer.echo("Operación cancelada: no se generó ningún reporte.")
+            raise typer.Exit(code=0)
+
+    try:
+        resultado = comando.ejecutar()
+    except NimboAuditError as exc:  # red de seguridad: nunca traceback crudo
+        typer.echo(f"[ERROR] {exc}", err=True)
+        raise typer.Exit(code=1)
+
+    pdf_generado = False
+    if pdf:
+        ruta_pdf = resultado.ruta_md.with_suffix(".pdf")
+        try:
+            exportar_pdf(resultado.ruta_md, ruta_pdf)
+            pdf_generado = True
+        except ExportacionPDFError as exc:
+            # Degradación graciosa: el .md ya está; el PDF es un extra opcional.
+            typer.echo(f"[AVISO] {exc}")
+
+    sufijo = f" (y reportes/{resultado.nombre[:-3]}.pdf)" if pdf_generado else ""
+    typer.echo(
+        f"[OK] Reporte generado en reportes/{resultado.nombre}{sufijo}"
     )
 
 
