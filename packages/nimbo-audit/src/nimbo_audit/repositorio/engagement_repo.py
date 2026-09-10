@@ -17,7 +17,7 @@ import shutil
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-from nimbo_audit.errores import NombreInvalidoError
+from nimbo_audit.errores import EngagementNoActivoError, NombreInvalidoError
 from nimbo_audit.modelos.engagement import Engagement
 
 # Subdirectorios estándar del engagement (§4.3). `evidencia/index.json` lo
@@ -31,6 +31,10 @@ class RepositorioEngagement(ABC):
 
     @abstractmethod
     def existe(self, engagement_id: str) -> bool: ...
+
+    @abstractmethod
+    def cargar(self, engagement_id: str) -> Engagement:
+        """Lee metadata.json y reconstruye el Engagement (lectura para `report`)."""
 
     @abstractmethod
     def crear_estructura(self, engagement: Engagement) -> Path:
@@ -74,6 +78,20 @@ class RepositorioEngagementJSON(RepositorioEngagement):
 
     def existe(self, engagement_id: str) -> bool:
         return self._resolver_dentro(engagement_id).is_dir()
+
+    def cargar(self, engagement_id: str) -> Engagement:
+        raiz = self._resolver_dentro(engagement_id)
+        archivo = raiz / METADATA
+        if not archivo.is_file():
+            raise EngagementNoActivoError(
+                f"El engagement no tiene metadata legible: {engagement_id!r}"
+            )
+        datos = json.loads(archivo.read_text(encoding="utf-8"))
+        return Engagement(
+            id=datos["id"],
+            fecha_inicio=datos["fecha_inicio"],
+            analista=datos["analista"],
+        )
 
     def crear_estructura(self, engagement: Engagement) -> Path:
         raiz = self._resolver_dentro(engagement.id)
