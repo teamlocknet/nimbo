@@ -30,6 +30,14 @@ class EvidenciaDuplicadaError(NimboAuditError):
     """Ya hay evidencia registrada con ese nombre: no se sobrescribe en silencio."""
 
 
+class ExportacionPDFError(NimboAuditError):
+    """La exportación a PDF no fue posible (pandoc ausente o sin motor PDF).
+
+    Es una degradación graciosa: el CLI la traduce a un `[AVISO]` y el `.md`
+    (entregable primario) SIEMPRE queda generado. Nunca revienta el flujo.
+    """
+
+
 class InterrupcionMemoriaError(NimboAuditError):
     """El cálculo del hash se interrumpió por restricción de memoria (RNF-08).
 
