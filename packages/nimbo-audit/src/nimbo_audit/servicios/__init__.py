@@ -1,6 +1,7 @@
 """Servicios del CLI.
 
-Vacío por ahora. Aquí vivirán en pasos posteriores: hashing SHA-256 de
-evidencia (RF-03, 2B), sesión con script/asciinema (RF-02, 2B) y render
-MD -> PDF (RF-04, 2C). `init` (2A) no necesita ninguno.
+Piezas de lógica reutilizable, inyectables en los comandos: hashing SHA-256 de
+evidencia (`hashing`, RF-03/2B), render Markdown del reporte (`reporte`, RF-04/2C)
+y exportación opcional a PDF vía pandoc (`pdf`, RF-04/2C). El registro de sesión
+(RF-02) llegará en un paso posterior.
 """
