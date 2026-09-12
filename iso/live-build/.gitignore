@@ -39,4 +39,12 @@ config/package-lists/*
 config/includes.chroot/**
 !config/includes.chroot/**/
 !config/includes.chroot/etc/lightdm/lightdm.conf.d/50-nimbo-autologin.conf
+#
+# EXCEPCIÓN 3 (Paso 3A / vuelta 1C): hooks propios de live-build (los ejecuta desde
+# config/hooks/normal|live/*.binary). Versionamos EXPLÍCITO el normalizador de
+# .disk/archive_trace (reproducibilidad); lb config no genera nada aquí.
+!config/hooks/
+config/hooks/**
+!config/hooks/**/
+!config/hooks/normal/9000-archive-trace.hook.binary
 local/

@@ -143,6 +143,14 @@ Este paso aplica **higiene** de reproducibilidad, pero **NO persigue bit-idénti
   determinista (no lo cubre `SOURCE_DATE_EPOCH`); `auto/build` lo desactiva tras `lb chroot`
   para que no se escriba en ninguna etapa. Ver
   [ADR-003](../../docs/adr/ADR-003-cache-apt-determinista-squashfs.md).
+- **`.disk/archive_trace` normalizado** (hook `config/hooks/normal/9000-archive-trace.hook.binary`).
+  live-build rellena ese fichero descargando la traza del mirror (`project/trace/*`), que
+  `snapshot.debian.org` devuelve **intermitente** (a veces un timestamp, a veces vacío) →
+  rompía la reproducibilidad entre runners aunque el resto de la ISO fuera bit-idéntico
+  (diagnosticado con `diffoscope`: era la ÚNICA diferencia). No lo cubre `SOURCE_DATE_EPOCH`.
+  El hook lo fija a un valor determinista derivado de `NIMBO_SNAPSHOT`; corre en
+  `binary_hooks`, así `SHA256SUM.TXT` y la ISO lo recogen. Era **latente desde 1A** (el
+  `repro-verify` base pasaba por suerte); el Paso 3A lo destapó.
 
 **Fuentes de no-determinismo aún abiertas (a cerrar en 1C):**
 1. **Versiones de paquetes**: ~~los mirrors por defecto (`deb.debian.org`) son *rolling*~~
