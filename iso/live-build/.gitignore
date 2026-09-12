@@ -15,9 +15,36 @@ live-image-*
 *.zsync
 *.buildlog
 *.log
+# Evidencia visual host-side de QEMU (screendumps): regenerable, no se versiona.
+*.png
+*.ppm
 
-# Todo config/ lo genera `lb config` a partir de auto/config (se regenera).
-# Sólo versionamos auto/. Si más adelante añadimos hooks/includes propios,
-# se des-ignorarán rutas concretas (p. ej. !config/hooks/).
-config/
+# Casi todo config/ lo genera `lb config` a partir de auto/config (se regenera) y
+# NO se versiona. EXCEPCIÓN (Paso 3A): la lista curada de paquetes del escritorio
+# vive versionada en config/package-lists/. `lb clean --purge` + `lb config` NO
+# borran config/package-lists/, así que el build (local y CI) la consume tal cual.
+#
+# Idiom de git: para re-incluir un fichero bajo un dir ignorado hay que NO ignorar
+# el dir entero, sino su contenido, re-abrir el subdir y re-ignorar lo demás dentro.
+config/*
+!config/package-lists/
+config/package-lists/*
+!config/package-lists/desktop.list.chroot
+#
+# EXCEPCIÓN 2 (Paso 3A): config/includes.chroot/ es un OVERLAY del repo (live-build
+# lo copia tal cual al rootfs; NO lo genera `lb config`). Ignoramos todo por defecto y
+# versionamos EXPLÍCITO solo nuestros ficheros de producto. El `**/` re-incluye los
+# directorios para que git pueda descender hasta el fichero.
+!config/includes.chroot/
+config/includes.chroot/**
+!config/includes.chroot/**/
+!config/includes.chroot/etc/lightdm/lightdm.conf.d/50-nimbo-autologin.conf
+#
+# EXCEPCIÓN 3 (Paso 3A / vuelta 1C): hooks propios de live-build (los ejecuta desde
+# config/hooks/normal|live/*.binary). Versionamos EXPLÍCITO el normalizador de
+# .disk/archive_trace (reproducibilidad); lb config no genera nada aquí.
+!config/hooks/
+config/hooks/**
+!config/hooks/**/
+!config/hooks/normal/9000-archive-trace.hook.binary
 local/

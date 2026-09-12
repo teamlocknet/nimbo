@@ -1,0 +1,29 @@
+#!/bin/sh
+# 9000-archive-trace.hook.binary — normaliza .disk/archive_trace (reproducibilidad, 1C).
+#
+# PROBLEMA (diagnosticado con diffoscope entre 2 runners de CI):
+#   live-build rellena .disk/archive_trace (bajo binary/) en binary_disk descargando la
+#   traza del mirror (project/trace/*). Contra snapshot.debian.org esa descarga es
+#   INTERMITENTE: un runner recibió "Mon Aug 31 20:35:39 UTC 2026" y otro recibió vacío,
+#   con lo que las ISOs difieren aunque TODO lo demás (squashfs, initrd, grub) sea
+#   bit-idéntico. Es un valor de red/timing en build-time que SOURCE_DATE_EPOCH no cubre;
+#   afecta a cualquier build (latente desde 1A) y este paso solo lo destapó.
+#
+# FIX: fijar el contenido a un valor DETERMINISTA derivado del snapshot anclado (fuente
+# única snapshot.env). Este hook corre en binary_hooks: DESPUÉS de binary_disk (que crea
+# el fichero) y ANTES de binary_checksums/binary_iso, así que SHA256SUM.TXT y la ISO
+# recogen el valor normalizado. No toca el anclaje snapshot (ADR-004) ni la receta del
+# squashfs (ADR-001/002/003).
+#
+# OJO CON EL CWD: live-build ejecuta los hooks binary con `cd binary` primero (los invoca
+# como `../${HOOK}`). Por tanto el CWD aquí es binary/, no la raíz del build: las rutas van
+# relativas a binary/ (el fichero es .disk/archive_trace; snapshot.env queda en ../).
+set -e
+
+[ -r ../snapshot.env ] && . ../snapshot.env
+
+mkdir -p .disk
+printf 'nimbo reproducible build; debian snapshot %s\n' "${NIMBO_SNAPSHOT:-pinned}" \
+    > .disk/archive_trace
+
+echo "P: [hook] .disk/archive_trace normalizado (snapshot ${NIMBO_SNAPSHOT:-pinned})"

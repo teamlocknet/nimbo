@@ -1,0 +1,50 @@
+# desktop.list.chroot — escritorio Xfce4 MÍNIMO para la ISO de nimbo (Paso 3A).
+#
+# live-build instala estos paquetes en el chroot (sufijo .list.chroot). Se versiona
+# en el repo (ver .gitignore de esta carpeta): `lb config` NO la borra.
+#
+# FILOSOFÍA: conjunto quirúrgico, NO metapaquetes. Con `--apt-recommends false`
+# (ver auto/config) los paquetes "Recomienda" NO se arrastran, así que declaramos
+# EXPLÍCITO todo lo imprescindible. Techo de RAM idle: < 500 MB (RNF-04 / Acta).
+#
+# EXCLUIDO deliberadamente (no listar): metapaquetes xfce4 / task-xfce-desktop
+# (arrastran goodies, ofimática, media), xfce4-goodies, plugins extra, gestor de
+# red GUI, navegador (llega por la Vía B / paso de navegación), salvapantallas,
+# temas extra. Cada línea de abajo está porque el escritorio NO arranca sin ella.
+
+# --- Núcleo Xfce (sesión de escritorio imprescindible) ---
+xfce4-session
+xfwm4
+xfce4-panel
+xfce4-settings
+xfdesktop4
+thunar
+xfce4-terminal
+
+# --- Bus de sesión (Xfce necesita dbus-launch) ---
+dbus-x11
+
+# --- Servidor X (explícito: con recommends=false los metapaquetes no traen drivers) ---
+# modesetting (dentro de -core, vía KMS) cubre la std-VGA de QEMU y el HW moderno;
+# fbdev + vesa son el colchón universal para gama baja real.
+xserver-xorg-core
+xserver-xorg-input-libinput
+xserver-xorg-video-fbdev
+xserver-xorg-video-vesa
+
+# --- Login manager (el más ligero con autologin gestionado por live-config) ---
+# El greeter es "Recomienda" de lightdm → explícito.
+lightdm
+lightdm-gtk-greeter
+
+# --- Setup del usuario live (imprescindible; son "Recomienda" de live-config) ---
+# CRÍTICO: sin 'user-setup' el componente 0030-user-setup de live-config NO crea el
+# usuario 'nimbo' (hace pkg_is_installed y sale). Sin usuario: el login falla SIEMPRE
+# y el autologin de lightdm cae al greeter. Con recommends=false hay que declararlos.
+# 'sudo' es "Recomienda" de live-config y esencial en un SO de auditoría (grupo sudo
+# del usuario live). Mismo patrón que los drivers de X: explícito lo que recommends daría.
+user-setup
+sudo
+
+# --- Fuente base (X necesita ≥1 fuente; mínima y determinista) ---
+fonts-dejavu-core
