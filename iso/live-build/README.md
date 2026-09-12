@@ -1,15 +1,15 @@
 # iso/live-build
 
-Configuración de **live-build** para construir la ISO **live mínima** de nimbo (Core OS).
-Este es el **Paso 1A**: probar que live-build produce una ISO que **arranca a consola/login**,
-verificándola en QEMU — *antes* de meterla en CI (1B) y *antes* de perseguir reproducibilidad
-bit a bit (1C).
+Configuración de **live-build** para construir la ISO **live** de nimbo (Core OS),
+verificándola en QEMU. Historia por ladrillos: **1A** arranque a consola/login · **1B**
+compilar en CI · **1C** reproducibilidad bit a bit · **3A** escritorio Xfce4 mínimo +
+medición de RAM idle (ver sección abajo).
 
 **Dueño:** Juan José
 
-> Alcance de este ladrillo: **solo arranque a login**. SIN entorno de escritorio (Xfce4),
-> hardening, Calamares, LUKS/TPM ni paquetes propios — eso son pasos posteriores. Aquí
-> reducimos variables a propósito.
+> Alcance acumulado hasta 3A: ISO que **arranca a un escritorio Xfce4 mínimo** (<500 MB RAM
+> idle). Aún SIN hardening del escritorio (3B), Calamares, LUKS/TPM ni paquetes propios —
+> eso son pasos posteriores. Seguimos reduciendo variables a propósito.
 
 ---
 
@@ -51,8 +51,8 @@ build** (no se reinventa la receta). El `:Z` de SELinux y el `-t` de tty se apli
 cuando corresponde (podman/terminal); todo lo demás es idéntico.
 
 **Salida:** `live-image-amd64.hybrid.iso` en esta carpeta.
-**Tamaño obtenido:** **260 MB** (272 629 760 bytes) · live-build `20230502` · kernel
-`6.1.0-52-amd64` (Debian 12 bookworm).
+**Tamaño obtenido:** **260 MB** en 1A (sin escritorio) → **381 MB** en 3A (con Xfce4 mínimo,
+ver sección Paso 3A) · live-build `20230502` · kernel `6.1.0-52-amd64` (Debian 12 bookworm).
 
 Los artefactos de build (`chroot/`, `binary/`, `cache/`, `config/`, `*.iso`, logs) están en
 `.gitignore`; quedan propiedad de `root` (build rootful) — límpialos con
@@ -75,6 +75,43 @@ espera el prompt de login. Evidencia:
 Verificado (Paso 1A): arranca hasta `serial-getty@ttyS0` → **`nimbo-live login:`**, con la
 línea de kernel `boot=live components hostname=nimbo-live username=nimbo console=tty0
 console=ttyS0,115200`.
+
+---
+
+## Paso 3A — Escritorio Xfce4 mínimo + RAM idle
+
+El escritorio entra por una **lista de paquetes curada** (no un metapaquete): ver
+`config/package-lists/desktop.list.chroot` y `iso/xfce4/README.md` para el qué y el porqué
+de cada paquete. **Tamaño de la ISO con Xfce:** **381 MB** (vs 260 MB de la 1A).
+
+**Login / autologin de la sesión live.** live-config crea el usuario `nimbo` (contraseña por
+defecto `live`) **solo si `user-setup` está instalado**; como es "Recomienda" de live-config
+y la receta usa `--apt-recommends false`, hay que declararlo explícito (junto con `sudo`) en
+la lista de paquetes — si falta, *no se crea el usuario* y tanto el login como el autologin
+fallan. El autologin al escritorio lo fija un drop-in propio
+`config/includes.chroot/etc/lightdm/lightdm.conf.d/50-nimbo-autologin.conf` con la sección
+`[Seat:*]` (live-config 11 escribe la obsoleta `[SeatDefaults]`, que lightdm 1.26 ignora).
+El PAM `lightdm-autologin` de Debian permite a cualquier no-root, así que no hace falta el
+grupo `autologin`. **Nota de seguridad (para 3B):** autologin + usuario con sudo + contraseña
+por defecto es el estándar de un medio *live* efímero; el sistema instalado (Calamares +
+LUKS/TPM) lleva credenciales reales.
+
+### Medir la RAM idle (`< 500 MB`, RNF-04 / Acta)
+
+```bash
+./measure-ram-in-qemu.sh          # usa live-image-amd64.hybrid.iso por defecto
+```
+
+Arnés **host-side y honesto**: NO hornea nada de medición en la ISO. Arranca la VM (VGA std,
+2048 MiB, settle fijo 90 s), captura el escritorio por `screendump` (evidencia visual) y
+entra por la consola serie (getty que ya existe por `console=ttyS0`) con `nimbo`/`live` para
+leer `/proc/meminfo`. Fórmula idéntica a `free`: `used = MemTotal − MemAvailable` (huella
+real en reposo, independiente del tamaño de la VM). Evidencia: `ram-desktop.png` (escritorio)
+y `ram-idle.log` (números + veredicto). Reproducible: mismo settle, misma RAM de VM, misma
+fórmula.
+
+**Medición obtenida:** RAM idle **368 MiB** (`used = 2 014 152 − 1 637 208 kB`) →
+**OK ✅ 368 MiB < 500 MB**. Escritorio Xfce4 arrancado por autologin, en reposo.
 
 ---
 
@@ -130,7 +167,8 @@ Este paso aplica **higiene** de reproducibilidad, pero **NO persigue bit-idénti
   trixie/Debian 13). El cambio es un **one-liner** en `auto/config` (`--distribution`). Se
   registrará en un ADR cuando se decida.
 
-## Lo que NO está en este paso (anti-desborde)
+## Lo que NO está hasta aquí (anti-desborde)
 
-Sin workflow de CI que compile la ISO (Paso 1B), sin `diffoscope` ni build comparado
-(Paso 1C), sin Xfce4/hardening/Calamares/LUKS/TPM, sin paquetes ni CLI.
+Xfce4 arranca (3A), pero **sin personalización ni hardening del escritorio** (3B: temas,
+paneles, sysctl, telemetría off), sin Calamares/LUKS/TPM, sin paquetes propios ni CLI dentro
+de la ISO, y sin navegador (llega por la Vía B / paso de navegación).
