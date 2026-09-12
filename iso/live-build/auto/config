@@ -1,6 +1,12 @@
 #!/bin/sh
-# auto/config — opciones de `lb config` para la ISO live mínima de nimbo.
-# Objetivo de este ladrillo (Paso 1A): que arranque a consola/login. SIN escritorio.
+# auto/config — opciones de `lb config` para la ISO live de nimbo.
+# Paso 1A: arranque a consola/login. Paso 3A: el escritorio Xfce4 MÍNIMO lo aporta la
+# lista curada config/package-lists/desktop.list.chroot (ver ese fichero y el README);
+# aquí NO cambia nada de `lb config` — el escritorio entra por la lista de paquetes,
+# no por opciones de config. live-config (activado por `components` en el bootappend)
+# crea el usuario live (username=nimbo). El autologin del escritorio lo aporta un
+# drop-in propio (config/includes.chroot/etc/lightdm/lightdm.conf.d/): live-config 11
+# escribe la sección obsoleta [SeatDefaults] que lightdm 1.26 ya no lee.
 set -e
 
 # --- Anclaje temporal a snapshot.debian.org (Pasos 1C.5/1C.6, ver docs/adr/ADR-004) --
@@ -40,9 +46,12 @@ lb config noauto \
     "${@}"
 
 # Notas:
-# - Sin entorno de escritorio: consola mínima (live-boot + live-config ya vienen por
-#   defecto). Xfce4/hardening son un paso posterior — aquí reducimos variables.
-# - console=ttyS0 permite verificar el arranque en QEMU headless (getty por serial).
+# - Escritorio Xfce4 mínimo vía config/package-lists/desktop.list.chroot (Paso 3A).
+#   El hardening del escritorio es un paso posterior (3B) — aquí solo arranca a Xfce.
+# - console=ttyS0 mantiene además un getty por serial: nos deja verificar el arranque
+#   y MEDIR la RAM idle en QEMU headless (ver measure-ram-in-qemu.sh) sin hornear nada
+#   de medición en la imagen. La sesión gráfica corre en la VGA; el serial es el canal
+#   de inspección host-side.
 # - Sólo 'main' (todo FOSS). Sin apt-indices ni recommends: más pequeño y determinista.
 # - Valid-Until: el Release de 'main' de bookworm no trae Valid-Until, pero el de
 #   'bookworm-security' SÍ (corto). Con snapshots viejos ese metadato queda "caduco" y
