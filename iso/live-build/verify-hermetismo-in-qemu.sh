@@ -143,18 +143,33 @@ if [ -s "$PCAP" ]; then
     pk_web=$(tcpdump -nr "$PCAP" 'port 80 or port 443' 2>/dev/null | wc -l | tr -d ' ')
     # SYN TCP salidos del guest (intento de conexión saliente) = SYN sin ACK.
     pk_syn=$(tcpdump -nr "$PCAP" "src host ${GUEST_IP} and tcp[tcpflags] & tcp-syn != 0 and tcp[tcpflags] & tcp-ack == 0" 2>/dev/null | wc -l | tr -d ' ')
-    # Listado (para los ojos) de todo lo que NO sea puesta en marcha local: ni ARP, ni
-    # DHCP (67/68), ni IPv6 link-local NDP/RS. Eso es exactamente lo que no debe existir.
-    pk_nonlocal_list=$(tcpdump -nr "$PCAP" 'not arp and not port 67 and not port 68 and not (icmp6 and ip6[40]>=133 and ip6[40]<=137)' 2>/dev/null || true)
+    # Listado (para los ojos) de todo lo que NO sea PUESTA EN MARCHA LOCAL de la NIC. Se
+    # excluye: ARP, DHCP (67/68) y TODO el multicast IPv6 link-local (dst ff02::/16) — que
+    # cubre MLDv1/v2 y NDP/RS/RA, el housekeeping obligatorio de IPv6 al levantar la
+    # interfaz (nunca sale del segmento L2). Clasificar por DESTINO link-local es más
+    # robusto que parsear el tipo ICMPv6, que las cabeceras de extensión (HBH/router-alert
+    # de MLD) desplazan. Un phone-home real iría a una IP GLOBAL/unicast, no a ff02::.
+    pk_nonlocal_list=$(tcpdump -nr "$PCAP" 'not arp and not port 67 and not port 68 and not (ip6 and dst net ff02::/16)' 2>/dev/null || true)
 fi
 
 suspect=$(( pk_dns + pk_ntp + pk_web + pk_syn ))
 
-# Listeners de red = líneas con IP no-loopback en el bloque de sockets del guest.
-listeners=$(printf '%s\n' "$sock_block" \
-    | grep -E 'LISTEN|:[0-9]+' \
-    | grep -vE '127\.0\.0\.1|127\.0\.0\.53|\[::1\]|0100007F|00000000000000000000000001000000' \
-    | grep -E 'LISTEN' || true)
+# Listeners de red = sockets del guest expuestos a la red, leídos de la salida de `ss`.
+# Contamos SOLO filas de datos de ss (Netid tcp/udp; col $5 = Local:Port), evitando así
+# contar cabeceras o etiquetas del propio reporte. Se EXCLUYE, por ser puesta en marcha
+# local permitida y NO un servicio a la escucha:
+#   - loopback (127.0.0.0/8, [::1]);
+#   - puertos de CLIENTE DHCP: udp/68 (DHCPv4) y udp/546 (DHCPv6). Son el socket receptor
+#     de leases del cliente (la "red bajo demanda"), no un servicio que acepte conexiones.
+# Para TCP exige estado LISTEN; un UDP no-DHCP/no-loopback ligado también cuenta.
+listeners=$(printf '%s\n' "$sock_block" | awk '
+    $1=="tcp" || $1=="udp" {
+        la=$5; n=split(la, a, ":"); port=a[n]
+        if (la ~ /^127\./ || la ~ /^\[?::1\]?/) next     # loopback
+        if (port=="68" || port=="546") next               # cliente DHCP (bring-up)
+        if ($1=="tcp" && $2!="LISTEN") next               # TCP solo si LISTEN
+        print
+    }')
 n_listeners=$(printf '%s' "$listeners" | grep -c . || true)
 
 {
@@ -171,12 +186,14 @@ n_listeners=$(printf '%s' "$listeners" | grep -c . || true)
     echo "  HTTP/S(80/443)   : ${pk_web}   [sospechoso si > 0]"
     echo "  SYN TCP saliente : ${pk_syn}   [sospechoso si > 0]"
     echo ""
-    echo "Paquetes NO-locales (ni ARP/DHCP/NDP) — deben ser CERO:"
+    echo "Paquetes NO-locales (ni ARP, DHCP o multicast IPv6 link-local) — deben ser CERO:"
     if [ -n "$pk_nonlocal_list" ]; then printf '%s\n' "$pk_nonlocal_list" | sed 's/^/    /'; else echo "    (ninguno)"; fi
     echo "#----------------------------------------------------------------------"
-    echo "## 2) SOCKETS EN ESCUCHA DEL GUEST (leídos por serie)"
+    echo "## 2) SOCKETS DEL GUEST (leídos por serie)"
     if [ -n "$sock_block" ]; then printf '%s\n' "$sock_block" | sed 's/^/    /'; else echo "    (no se pudo leer; revisar $SERIAL_LOG)"; fi
-    echo "Listeners de red (no-loopback) detectados: ${n_listeners}"
+    echo ""
+    echo "Listeners de red expuestos (excl. loopback y cliente DHCP udp/68,546): ${n_listeners}"
+    if [ -n "$listeners" ]; then echo "  ->"; printf '%s\n' "$listeners" | sed 's/^/    /'; fi
     echo "#======================================================================"
     echo "## VEREDICTO"
     echo "  Paquetes sospechosos (DNS+NTP+web+SYN) : ${suspect}"
