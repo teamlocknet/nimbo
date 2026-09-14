@@ -1,0 +1,89 @@
+#!/bin/sh
+# 0150-nimbo-autologin — autologin del escritorio SOLO en la sesión LIVE (Paso 3B.1, D14).
+#
+# POR QUÉ ES UN SCRIPT live-config Y NO UN FICHERO HORNEADO (la clave de D14):
+#   live-config ejecuta /lib/live/config/* SOLO durante el arranque `boot=live`. Cuando
+#   Calamares instala el sistema a disco, estos scripts NO corren y live-config se retira
+#   -> este drop-in de autologin NUNCA existe en el sistema INSTALADO. Así separamos por
+#   CONSTRUCCIÓN la política D14: LIVE = autologin (medio efímero de arranque rápido);
+#   INSTALADO = credenciales reales (coherente RNF-02, vía Calamares + LUKS/TPM).
+#   El fichero estático anterior (includes.chroot/etc/lightdm/...) se horneaba en el
+#   squashfs y por tanto se filtraba también al instalado; este script lo reemplaza.
+#
+# POR QUÉ HACE FALTA (además de live-config): live-config 11.0.3 (0100-lightdm) escribe la
+# sección OBSOLETA [SeatDefaults], que lightdm 1.26 (bookworm) ya no lee -> su autologin
+# no prende y la ISO se queda en el greeter. Este script corre DESPUÉS (0150 > 0100) y
+# escribe la sección CORRECTA [Seat:*] en un drop-in propio, que es lo que 3A validó
+# (autologin al escritorio Xfce, RAM idle 368 MiB medida).
+#
+# REPRODUCIBILIDAD: el script es un fichero ESTÁTICO en el squashfs (determinista); su
+# efecto ocurre en RUNTIME (arranque), no en build-time -> no altera los bytes de la ISO.
+
+. /lib/live/config.sh
+
+Cmdline ()
+{
+	# Buen ciudadano: respeta los mismos interruptores que live-config y toma el
+	# usuario del bootappend (username=nimbo), sin hardcodearlo aquí.
+	for _PARAMETER in ${LIVE_CONFIG_CMDLINE}
+	do
+		case "${_PARAMETER}" in
+			live-config.noautologin|noautologin)
+				LIVE_CONFIG_NOAUTOLOGIN="true"
+				;;
+
+			live-config.nox11autologin|nox11autologin)
+				LIVE_CONFIG_NOX11AUTOLOGIN="true"
+				;;
+
+			live-config.username=*|username=*)
+				LIVE_USERNAME="${_PARAMETER#*username=}"
+				;;
+		esac
+	done
+}
+
+Init ()
+{
+	# Si el usuario pidió desactivar autologin (consola o gráfico), no hacemos nada.
+	case "${LIVE_CONFIG_NOAUTOLOGIN}" in
+		true) exit 0 ;;
+	esac
+	case "${LIVE_CONFIG_NOX11AUTOLOGIN}" in
+		true) exit 0 ;;
+	esac
+
+	# Sin lightdm no hay nada que configurar; y evitamos re-ejecutar el componente.
+	if ! pkg_is_installed "lightdm" || \
+	   component_was_executed "nimbo-autologin"
+	then
+		exit 0
+	fi
+
+	echo -n " nimbo-autologin"
+}
+
+Config ()
+{
+	_USER="${LIVE_USERNAME:-nimbo}"
+
+	mkdir -p /etc/lightdm/lightdm.conf.d
+	cat > /etc/lightdm/lightdm.conf.d/50-nimbo-autologin.conf <<EOF
+# 50-nimbo-autologin.conf — generado en el ARRANQUE LIVE por live-config
+# (/lib/live/config/0150-nimbo-autologin). NO existe en el sistema instalado (D14).
+# Sección [Seat:*] correcta para lightdm 1.26 (bookworm); la [SeatDefaults] que escribe
+# live-config 0100-lightdm es obsoleta y lightdm 1.26 la ignora.
+[Seat:*]
+autologin-user=${_USER}
+autologin-user-timeout=0
+autologin-session=xfce
+EOF
+
+	# Fichero de estado (idiom live-config: evita re-ejecución en el mismo arranque).
+	mkdir -p /var/lib/live/config
+	touch /var/lib/live/config/nimbo-autologin
+}
+
+Cmdline
+Init
+Config

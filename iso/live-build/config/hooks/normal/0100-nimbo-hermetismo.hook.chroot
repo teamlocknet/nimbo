@@ -1,0 +1,58 @@
+#!/bin/sh
+# 0100-nimbo-hermetismo.hook.chroot — HERMETISMO / telemetría off (Paso 3B.1, RNF-01).
+#
+# Corre en build-time DENTRO del chroot (sufijo .hook.chroot). Es DETERMINISTA (crea
+# symlinks y un fichero de config con contenido fijo) → parte del "commit", no rompe la
+# reproducibilidad bit a bit (ADR-001/002/003/004): no descarga nada, no depende de red
+# ni de reloj, no toca el squashfs.sort ni el anclaje snapshot.
+#
+# QUÉ CIERRA (y por qué es lo ÚNICO que hay que cerrar en nuestra base):
+#   La introspección del chroot real de 3A (398 paquetes, `--apt-recommends false` desde
+#   1A) confirma que la telemetría "clásica" NUNCA entró — no hay que desactivar lo que no
+#   existe, y documentarlo vale más que fingir que lo apagamos:
+#     - popularity-contest : NO instalado (es Recommends; recommends=false lo cortó).
+#     - reportbug / apport / whoopsie : NO instalados (whoopsie/apport son de Ubuntu).
+#     - systemd-timesyncd  : NO instalado  -> cero NTP saliente a vendors.
+#     - systemd-resolved   : NO instalado  -> sin DNS-fallback (8.8.8.8) de vendor.
+#     - avahi-daemon/cups/exim4/postfix/openssh-server/NetworkManager/unattended-upgrades:
+#       NO instalados -> sin mDNS, sin listeners de red, sin MTA, sin auto-update.
+#   El ÚNICO canal de "phone home" en reposo que SÍ trae el base son los timers de apt:
+#   apt-daily.timer / apt-daily-upgrade.timer -> `apt.systemd.daily update|install`, que
+#   incluso llaman `apt-helper wait-online` y salen al mirror. Y su ruta GEMELA por cron:
+#   /etc/cron.daily/apt-compat (activa si los timers no lo están). Cerramos AMBAS.
+#
+# COHERENCIA AIR-GAPPED (RF-CORE-06): un SO de auditoría no se auto-actualiza en silencio;
+# las actualizaciones van por `nimbo-update-offline` + verificación GPG. Deshabilitar el
+# auto-update de apt no es solo hermetismo: es la política del producto. El mask persiste
+# también al sistema instalado (va en el squashfs); es INTENCIONAL y correcto, no una fuga.
+set -e
+
+echo "P: [hook] hermetismo 3B.1 — cerrando auto-update de apt (timers + cron + config)"
+
+# --- (1) Enmascarar los timers y servicios de apt-daily -----------------------------
+# `mask` = symlink de la unidad a /dev/null: systemd la rechaza a arrancar aunque algo
+# intente habilitarla o un .wants la arrastre. Lo hacemos con symlinks EXPLÍCITOS (no
+# `systemctl mask`) para no depender de un systemd en marcha dentro del chroot y para que
+# el resultado sea idéntico byte a byte en cada build (determinismo primero).
+for unit in apt-daily.timer apt-daily-upgrade.timer apt-daily.service apt-daily-upgrade.service; do
+    ln -sf /dev/null "/etc/systemd/system/${unit}"
+    echo "P: [hook]   masked ${unit} -> /dev/null"
+done
+
+# --- (2) Neutralizar apt periódico por CONFIG (cinturón y tirantes) ------------------
+# APT::Periodic::Enable "0" hace que `apt.systemd.daily` salga sin hacer nada, venga por
+# donde venga (el timer de systemd O el cron.daily/apt-compat). Belt-and-suspenders: aun
+# si el mask fallara o un update de apt reescribiera unidades, el periódico queda inerte.
+cat > /etc/apt/apt.conf.d/99nimbo-no-telemetry <<'APTCONF'
+// nimbo — HERMETISMO (Paso 3B.1, RNF-01): sin auto-update / telemetría de apt.
+// Desactiva apt.systemd.daily por ambas vías (systemd timer y cron.daily/apt-compat).
+// Las actualizaciones son OFFLINE y verificadas por GPG (nimbo-update-offline, RF-CORE-06).
+APT::Periodic::Enable "0";
+APT::Periodic::Update-Package-Lists "0";
+APT::Periodic::Unattended-Upgrade "0";
+APT::Periodic::Download-Upgradeable-Packages "0";
+APT::Periodic::AutocleanInterval "0";
+APTCONF
+echo "P: [hook]   escrito /etc/apt/apt.conf.d/99nimbo-no-telemetry (APT::Periodic off)"
+
+echo "P: [hook] hermetismo 3B.1 aplicado (surface: solo apt-daily; cron/fstrim/e2scrub se conservan — locales)"

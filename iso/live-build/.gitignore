@@ -18,6 +18,8 @@ live-image-*
 # Evidencia visual host-side de QEMU (screendumps): regenerable, no se versiona.
 *.png
 *.ppm
+# Evidencia host-side de hermetismo (Paso 3B.1): captura de tráfico del guest en idle.
+*.pcap
 
 # Casi todo config/ lo genera `lb config` a partir de auto/config (se regenera) y
 # NO se versiona. EXCEPCIÓN (Paso 3A): la lista curada de paquetes del escritorio
@@ -38,7 +40,10 @@ config/package-lists/*
 !config/includes.chroot/
 config/includes.chroot/**
 !config/includes.chroot/**/
-!config/includes.chroot/etc/lightdm/lightdm.conf.d/50-nimbo-autologin.conf
+# Paso 3B.1 (D14): el autologin ya NO es un fichero horneado en /etc/lightdm (se filtraba
+# al sistema instalado); ahora lo genera EN EL ARRANQUE LIVE un script live-config, que
+# es live-only por construcción. Versionamos ese script.
+!config/includes.chroot/lib/live/config/0150-nimbo-autologin
 #
 # EXCEPCIÓN 3 (Paso 3A / vuelta 1C): hooks propios de live-build (los ejecuta desde
 # config/hooks/normal|live/*.binary). Versionamos EXPLÍCITO el normalizador de
@@ -47,4 +52,6 @@ config/includes.chroot/**
 config/hooks/**
 !config/hooks/**/
 !config/hooks/normal/9000-archive-trace.hook.binary
+# Paso 3B.1: hook chroot de hermetismo (enmascara apt-daily* + APT::Periodic off).
+!config/hooks/normal/0100-nimbo-hermetismo.hook.chroot
 local/
