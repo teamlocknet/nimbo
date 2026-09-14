@@ -4,9 +4,12 @@
 # lista curada config/package-lists/desktop.list.chroot (ver ese fichero y el README);
 # aquí NO cambia nada de `lb config` — el escritorio entra por la lista de paquetes,
 # no por opciones de config. live-config (activado por `components` en el bootappend)
-# crea el usuario live (username=nimbo). El autologin del escritorio lo aporta un
-# drop-in propio (config/includes.chroot/etc/lightdm/lightdm.conf.d/): live-config 11
-# escribe la sección obsoleta [SeatDefaults] que lightdm 1.26 ya no lee.
+# crea el usuario live (username=nimbo). El autologin del escritorio lo genera EN EL
+# ARRANQUE LIVE un script live-config propio (config/includes.chroot/lib/live/config/
+# 0150-nimbo-autologin, Paso 3B.1/D14): escribe la sección [Seat:*] correcta (live-config
+# 11 escribe la obsoleta [SeatDefaults] que lightdm 1.26 ignora) y, por ser live-config,
+# NO existe en el sistema instalado. Hardening del base (hermetismo/apt-daily off) en el
+# hook config/hooks/normal/0100-nimbo-hermetismo.hook.chroot (Paso 3B.1).
 set -e
 
 # --- Anclaje temporal a snapshot.debian.org (Pasos 1C.5/1C.6, ver docs/adr/ADR-004) --
@@ -47,7 +50,8 @@ lb config noauto \
 
 # Notas:
 # - Escritorio Xfce4 mínimo vía config/package-lists/desktop.list.chroot (Paso 3A).
-#   El hardening del escritorio es un paso posterior (3B) — aquí solo arranca a Xfce.
+#   Hardening del BASE (hermetismo/apt-daily off) en 3B.1 (hook 0100-nimbo-hermetismo);
+#   sysctl fino de kernel/red y política de cuentas/PAM quedan para 3B.2.
 # - console=ttyS0 mantiene además un getty por serial: nos deja verificar el arranque
 #   y MEDIR la RAM idle en QEMU headless (ver measure-ram-in-qemu.sh) sin hornear nada
 #   de medición en la imagen. La sesión gráfica corre en la VGA; el serial es el canal
