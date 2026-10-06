@@ -27,7 +27,7 @@ permissions:
 jobs:
   build-iso:
     name: build-iso
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 40
     steps:
       - name: Checkout

@@ -42,7 +42,7 @@ permissions:
 jobs:
   prep:
     name: prep (epoch único)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:
       short_sha: ${{ steps.meta.outputs.short_sha }}
@@ -71,7 +71,7 @@ jobs:
   build:
     name: build (${{ matrix.leg }})
     needs: prep
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 40
     strategy:
       fail-fast: false
@@ -150,7 +150,7 @@ jobs:
   verify:
     name: verify (compuerta)
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - name: Descargar los SHA de A y B
