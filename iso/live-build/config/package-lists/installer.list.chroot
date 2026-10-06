@@ -1,0 +1,21 @@
+# installer.list.chroot — instalador Calamares para la ISO de nimbo (Paso 3C, ADR-006).
+#
+# Mismo criterio que desktop.list.chroot: conjunto quirúrgico, sin metapaquetes y con
+# `--apt-recommends false`. NADA de esta lista debe quedar en el sistema INSTALADO salvo
+# `cryptsetup` y `dosfstools`: el resto lo retira el propio instalador al terminar
+# (módulo `packages` + /usr/lib/nimbo/calamares/nimbo-final.sh).
+
+# --- Instalador (ÚNICO paquete de bookworm-backports; ver config/archives/*.pref.chroot) ---
+calamares
+
+# --- kpmcore autoriza su helper por polkit en el bus de sistema (externalcommandhelper.cpp:
+#     isCallerAuthorized → PolkitQt1). Sin polkitd el particionado falla aunque sea root. ---
+polkitd
+
+# --- unpackfs: monta el squashfs y copia con rsync; unsquashfs cuenta ficheros ---
+rsync
+squashfs-tools
+
+# --- Se QUEDAN en el instalado: LUKS2 (cryptsetup) y la ESP en FAT (mkfs/fsck.vfat) ---
+cryptsetup
+dosfstools

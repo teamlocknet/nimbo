@@ -20,6 +20,10 @@ live-image-*
 *.ppm
 # Evidencia host-side de hermetismo (Paso 3B.1): captura de tráfico del guest en idle.
 *.pcap
+# Arnés de instalación (Paso 3C.1): disco destino y NVRAM de OVMF del guest.
+*.qcow2
+*.fd
+installed-*.txt
 
 # Casi todo config/ lo genera `lb config` a partir de auto/config (se regenera) y
 # NO se versiona. EXCEPCIÓN (Paso 3A): la lista curada de paquetes del escritorio
@@ -32,6 +36,15 @@ config/*
 !config/package-lists/
 config/package-lists/*
 !config/package-lists/desktop.list.chroot
+# Paso 3C.1: lista del instalador (Calamares + lo mínimo que necesita).
+!config/package-lists/installer.list.chroot
+#
+# EXCEPCIÓN 4 (Paso 3C.1, ADR-006): pinning de la excepción de backports. La LISTA de
+# origen (nimbo-backports.list.chroot) la genera auto/config desde snapshot.env y NO se
+# versiona; el pinning sí.
+!config/archives/
+config/archives/*
+!config/archives/nimbo-backports.pref.chroot
 #
 # EXCEPCIÓN 2 (Paso 3A): config/includes.chroot/ es un OVERLAY del repo (live-build
 # lo copia tal cual al rootfs; NO lo genera `lb config`). Ignoramos todo por defecto y
@@ -44,6 +57,12 @@ config/includes.chroot/**
 # al sistema instalado); ahora lo genera EN EL ARRANQUE LIVE un script live-config, que
 # es live-only por construcción. Versionamos ese script.
 !config/includes.chroot/lib/live/config/0150-nimbo-autologin
+# Paso 3C.1: instalador. Config de Calamares, scripts del destino, lanzador live.
+!config/includes.chroot/lib/live/config/0160-nimbo-instalador
+!config/includes.chroot/etc/calamares/**
+!config/includes.chroot/usr/lib/nimbo/calamares/**
+!config/includes.chroot/usr/bin/nimbo-instalar
+!config/includes.chroot/usr/share/applications/nimbo-instalar.desktop
 #
 # EXCEPCIÓN 3 (Paso 3A / vuelta 1C): hooks propios de live-build (los ejecuta desde
 # config/hooks/normal|live/*.binary). Versionamos EXPLÍCITO el normalizador de
@@ -54,4 +73,7 @@ config/hooks/**
 !config/hooks/normal/9000-archive-trace.hook.binary
 # Paso 3B.1: hook chroot de hermetismo (enmascara apt-daily* + APT::Periodic off).
 !config/hooks/normal/0100-nimbo-hermetismo.hook.chroot
+# Paso 3C.1: pool APT local determinista + auditoría de la excepción de backports.
+!config/hooks/normal/0200-nimbo-pool-local.hook.chroot
+!config/hooks/normal/0210-nimbo-backports-audit.hook.chroot
 local/

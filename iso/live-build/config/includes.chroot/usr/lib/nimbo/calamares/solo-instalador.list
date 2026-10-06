@@ -1,0 +1,13 @@
+# solo-instalador.list — paquetes que existen en la ISO live pero NO deben quedar en el
+# sistema instalado. FUENTE ÚNICA: la leen nimbo-final.sh (los purga en el destino) y el
+# hook 0200-nimbo-pool-local (para calcular el pool relativo al sistema ya limpio).
+# Una línea por paquete; '#' = comentario.
+calamares
+polkitd
+rsync
+squashfs-tools
+live-boot
+live-boot-initramfs-tools
+live-config
+live-config-systemd
+user-setup

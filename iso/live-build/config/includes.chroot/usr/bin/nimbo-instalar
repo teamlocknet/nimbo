@@ -1,0 +1,6 @@
+#!/bin/sh
+# nimbo-instalar — lanza el instalador (Calamares) desde la sesión LIVE. Live-only: lo
+# borra nimbo-final.sh en el sistema instalado. El usuario live tiene sudo sin contraseña
+# (live-config); se pasa el DISPLAY/XAUTHORITY de la sesión para que root pueda dibujar.
+exec sudo env DISPLAY="${DISPLAY:-:0}" XAUTHORITY="${XAUTHORITY:-$HOME/.Xauthority}" \
+    QT_AUTO_SCREEN_SCALE_FACTOR=1 calamares "$@"

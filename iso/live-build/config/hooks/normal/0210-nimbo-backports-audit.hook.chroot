@@ -1,0 +1,29 @@
+#!/bin/sh
+# 0210-nimbo-backports-audit.hook.chroot — AUDITORÍA de la excepción de backports (ADR-006).
+#
+# Corre en build-time DENTRO del chroot, con los paquetes ya instalados. Deja en el log del
+# build la evidencia del pinning (`apt-cache policy`) y FALLA el build si del chroot forma
+# parte cualquier paquete de backports que no sea `calamares`, o si `calamares` no viene de
+# backports (la versión de bookworm, 3.2.61, no tiene luksGeneration ni noEncrypt).
+set -e
+
+echo "P: [hook] auditoría backports 3C.1 — apt-cache policy calamares"
+apt-cache policy calamares | sed 's/^/P: [hook]   /'
+echo "P: [hook] auditoría backports 3C.1 — prioridades por origen (apt-cache policy)"
+apt-cache policy | grep -B1 -A2 'backports' | sed 's/^/P: [hook]   /' || true
+
+BPO=$(dpkg-query -W -f='${Package} ${Version}\n' | grep '~bpo' || true)
+echo "P: [hook] paquetes ~bpo instalados en el chroot:"
+echo "${BPO:-(ninguno)}" | sed 's/^/P: [hook]   /'
+
+OTROS=$(printf '%s\n' "${BPO}" | awk 'NF && $1 != "calamares"')
+if [ -n "${OTROS}" ]; then
+    echo "E: [hook] paquetes de backports NO autorizados (ADR-006 solo admite calamares):" >&2
+    echo "${OTROS}" >&2
+    exit 1
+fi
+if ! printf '%s\n' "${BPO}" | grep -q '^calamares '; then
+    echo "E: [hook] calamares NO viene de backports: sin luksGeneration/noEncrypt (ADR-006)" >&2
+    exit 1
+fi
+echo "P: [hook] auditoría backports OK — único paquete de backports: ${BPO}"

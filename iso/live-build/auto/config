@@ -22,6 +22,19 @@ set -e
 SNAP_DEBIAN="https://snapshot.debian.org/archive/debian/${NIMBO_SNAPSHOT}/"
 SNAP_SECURITY="https://snapshot.debian.org/archive/debian-security/${NIMBO_SNAPSHOT}/"
 
+# --- Excepción ACOTADA de backports: solo `calamares` (Paso 3C.1, ver docs/adr/ADR-006) ---
+# El Calamares de bookworm (3.2.61) solo crea LUKS1 y cifra /boot; el 3.3.8 de
+# bookworm-backports trae luksGeneration + noEncrypt. Se añade backports como origen del
+# CHROOT, servido por el MISMO snapshot (el timestamp sigue viviendo solo en snapshot.env).
+#   - Sufijo .list.chroot: live-build lo retira al cerrar la etapa chroot → NO queda en la
+#     ISO ni en el sistema instalado. Deliberadamente NO hay .list.binary.
+#   - El pinning (config/archives/nimbo-backports.pref.chroot, versionado) deja pasar solo
+#     `calamares`; el hook 0210-nimbo-backports-audit falla el build si entra algo más.
+# Se genera aquí (no se versiona) para no duplicar el timestamp del snapshot.
+mkdir -p "$(dirname "$0")/../config/archives"
+printf 'deb %s bookworm-backports main\n' "$SNAP_DEBIAN" \
+    > "$(dirname "$0")/../config/archives/nimbo-backports.list.chroot"
+
 # DOBLE ESTÁNDAR deliberado (ver ADR-004):
 #   - BUILD anclado a snapshot: mirrors de bootstrap + chroot (+ security) → reproducible.
 #   - RUNTIME libre: el sources.list DENTRO de la ISO (mirrors 'binary') se deja en los
@@ -56,6 +69,8 @@ lb config noauto \
 #   y MEDIR la RAM idle en QEMU headless (ver measure-ram-in-qemu.sh) sin hornear nada
 #   de medición en la imagen. La sesión gráfica corre en la VGA; el serial es el canal
 #   de inspección host-side.
+# - Instalador Calamares (Paso 3C.1): config/package-lists/installer.list.chroot + overlay
+#   config/includes.chroot/etc/calamares + pool APT local (hook 0200-nimbo-pool-local).
 # - Sólo 'main' (todo FOSS). Sin apt-indices ni recommends: más pequeño y determinista.
 # - Valid-Until: el Release de 'main' de bookworm no trae Valid-Until, pero el de
 #   'bookworm-security' SÍ (corto). Con snapshots viejos ese metadato queda "caduco" y
