@@ -2,5 +2,11 @@
 # nimbo-instalar — lanza el instalador (Calamares) desde la sesión LIVE. Live-only: lo
 # borra nimbo-final.sh en el sistema instalado. El usuario live tiene sudo sin contraseña
 # (live-config); se pasa el DISPLAY/XAUTHORITY de la sesión para que root pueda dibujar.
+#
+# Idioma: el instalador abre en español. LANG solo le dice a Qt qué traducción elegir
+# (la ISO no trae `locales`, así que es_CO no está generado); LC_CTYPE=C.UTF-8 —que glibc
+# siempre tiene— garantiza UTF-8 real para que contraseñas con ñ/tildes no se corrompan.
+# Calamares no tiene traducción es_CO: usa la genérica "es". Se puede cambiar en la
+# primera pantalla.
 exec sudo env DISPLAY="${DISPLAY:-:0}" XAUTHORITY="${XAUTHORITY:-$HOME/.Xauthority}" \
-    QT_AUTO_SCREEN_SCALE_FACTOR=1 calamares "$@"
+    LANG=es_CO.UTF-8 LC_CTYPE=C.UTF-8 QT_AUTO_SCREEN_SCALE_FACTOR=1 calamares "$@"

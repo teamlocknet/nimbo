@@ -72,6 +72,18 @@ Evidencia (análisis estático de paquetes y fuentes del snapshot `20260901T0000
    lleva embebido el prefijo `/EFI/debian`. Es un nombre técnico en la ESP, no una marca;
    la entrada del menú de arranque sí se llama `nimbo`.
 
+9. **Contraseñas: se sugiere, no se obliga** (decisión de Juan José, 2026-10-06). En la
+   pantalla de usuario la casilla "exigir contraseñas fuertes" viene **marcada** (mínimo
+   8 caracteres, con aviso visible si no se cumple) y **se puede desmarcar** para usar
+   cualquier contraseña (`allowWeakPasswords: true`, `allowWeakPasswordsDefault: false`).
+   La contraseña **LUKS** tampoco tiene mínimo: Calamares 3.3.8 solo exige que no esté
+   vacía y que coincida al repetirla, **sin medir su fortaleza ni avisar**; no hay opción
+   de configuración para ello y no se parchea. La coherencia es "ninguna de las dos se
+   impone"; la advertencia sobre la de LUKS va en la guía de instalación.
+10. **Teclado de consola en el instalado** (`console-setup` + `kbd`): el initramfs lleva
+    la distribución elegida en el instalador, para que la contraseña LUKS se teclee en el
+    arranque con el mismo teclado con que se definió.
+
 **Opciones descartadas:**
 
 - **B — `/boot` cifrado dentro de la raíz LUKS2 con PBKDF2.** GRUB puede abrirlo, pero

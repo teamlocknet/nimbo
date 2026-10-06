@@ -58,7 +58,7 @@ lb config noauto \
     --apt-recommends false \
     --iso-application "nimbo (codename)" \
     --iso-volume "nimbo-live" \
-    --bootappend-live "boot=live components hostname=nimbo-live username=nimbo console=tty0 console=ttyS0,115200" \
+    --bootappend-live "boot=live components hostname=nimbo-live username=nimbo user-fullname=nimbo console=tty0 console=ttyS0,115200" \
     "${@}"
 
 # Notas:

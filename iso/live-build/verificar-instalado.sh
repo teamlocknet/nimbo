@@ -53,8 +53,11 @@ for img in /boot/initrd.img-*; do
     cont=$(lsinitramfs "$img" 2>/dev/null)
     printf '%s\n' "$cont" | grep -q 'sbin/cryptsetup$' && ok "$img contiene sbin/cryptsetup" || ko "$img SIN cryptsetup"
     printf '%s\n' "$cont" | grep -q 'scripts/local-top/cryptroot$' && ok "$img contiene scripts/local-top/cryptroot" || ko "$img SIN cryptroot"
+    printf '%s\n' "$cont" | grep -q -E 'etc/console-setup/.*kmap|etc/boottime\.kmap' && ok "$img lleva el teclado de consola (keymap de console-setup)" || ko "$img SIN keymap: la contraseña LUKS se teclearía en distribución US"
     printf '%s\n' "$cont" | grep -q 'scripts/live' && ko "$img aún contiene scripts de live-boot" || ok "$img sin scripts de live-boot"
 done
+
+p "  teclado configurado: $(grep -E '^XKB(LAYOUT|VARIANT)=' /etc/default/keyboard 2>/dev/null | tr '\n' ' ')"
 
 sec "3. D14: sin autologin"
 if grep -rqs '^[[:space:]]*autologin-user' /etc/lightdm; then ko "lightdm tiene autologin: $(grep -rs '^[[:space:]]*autologin-user' /etc/lightdm | head -2)"; else ok "ningún autologin-user en /etc/lightdm"; fi
