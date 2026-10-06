@@ -1,14 +1,17 @@
 # CLAUDE.md — Guía de reenclaje para Claude Code
 
 > Lee este archivo **primero** cada vez que entres al proyecto. Te reorienta en 2 minutos.
-> La **fuente de verdad viva** es `docs/documento-maestro/documento_maestro_v1_1.md`;
-> este archivo es el índice operativo. Si hay conflicto, gana el documento maestro.
+> La **fuente de verdad viva** es el maestro vivo, que está **FUERA del repo**:
+> `~/OS_Ciberseguridad/documento_maestro_v2_1.md`. El `documento_maestro_v2_0.md` de
+> `docs/documento-maestro/` es histórico y está desactualizado: no usarlo como fuente.
+> Este archivo es el índice operativo. Si hay conflicto, gana el maestro vivo.
 
 ---
 
 ## 1. Qué es este proyecto
 
-**Sistema operativo de auditoría de ciberseguridad basado en Debian Stable.** Proyecto
+**Sistema operativo de auditoría de ciberseguridad basado en Debian, rama con soporte LTS
+(bookworm — [ADR-005](docs/adr/ADR-005-quedarse-en-bookworm-v1.md)).** Proyecto
 de grado del grupo **LockNet** (SENA · ADSO). Un equipo de ciberseguridad lo instala y lo
 usa el mismo día: navegación endurecida, red privada del propio equipo y trazabilidad de
 auditorías con evidencia verificable por hash — **todo offline, reproducible bit a bit y
@@ -37,7 +40,8 @@ Decisión registrada en `docs/adr/ADR-000-codename-y-nombre.md` (Aceptado).
 | Cosa | Ruta |
 |---|---|
 | **Este repo (todo el trabajo)** | `/home/juan/Proyectos/nimbo_repo` |
-| Documento maestro (fuente de verdad) | `docs/documento-maestro/documento_maestro_v1_1.md` |
+| Documento maestro vivo (fuente de verdad, **fuera del repo**) | `~/OS_Ciberseguridad/documento_maestro_v2_1.md` |
+| Documento maestro histórico (desactualizado, no usar) | `docs/documento-maestro/documento_maestro_v2_0.md` |
 | Decisiones de arquitectura | `docs/adr/` (empieza en `ADR-000`) |
 | Remoto GitHub | `https://github.com/teamlocknet/nimbo.git` (repo **público**, org LockNet) |
 
@@ -111,7 +115,7 @@ nimbo/
         └── ci.yml           # job `estructura` (verifica que existan las carpetas)
 ```
 
-**Arquitectura (DAS v2.0, 3 capas):** Capa 1 Debian Stable + systemd (endurecido) · Capa 2
+**Arquitectura (DAS v2.0, 3 capas):** Capa 1 Debian bookworm (LTS) + systemd (endurecido) · Capa 2
 Xfce4 optimizado (<500 MB idle) · Capa 3 scripts Python 3 desacoplados (si un script falla,
 kernel/red/escritorio siguen). **CLI:** patrones **Command** (una clase por subcomando:
 `init`/`capture`/`report`) + **Repository** (abstrae el FS; permite migrar JSON→SQLite sin
@@ -122,7 +126,7 @@ reescribir el reporte). Sin API externa: opera sobre el FS local.
 
 ## 7. Stack
 
-Debian Stable + **live-build** · Xfce4 · **Python 3 / Typer** · **GitHub Actions** +
+Debian bookworm (rama LTS, ADR-005) + **live-build** · Xfce4 · **Python 3 / Typer** · **GitHub Actions** +
 **Pages** · **aptly** · **WireGuard** vía **Tailscale** (o Headscale) · **Calamares** ·
 **LUKS + systemd-cryptenroll + TPM 2.0** (**swtpm** en pruebas) · **QEMU/KVM** headless ·
 **GPG** · **diffoscope** · **Git**. Todo FOSS, infra **$0**.

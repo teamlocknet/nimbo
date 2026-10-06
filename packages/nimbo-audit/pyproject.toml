@@ -7,7 +7,7 @@ name = "nimbo-audit"
 version = "0.1.0"
 description = "CLI de auditoría del sistema (codename nimbo): init/capture/report de engagements con evidencia verificable."
 readme = "README.md"
-# Debian Stable (bookworm) trae Python 3.11; no usamos features > 3.11.
+# Debian bookworm (rama LTS, ADR-005) trae Python 3.11; no usamos features > 3.11.
 requires-python = ">=3.11"
 license = { text = "GPL-3.0-or-later" }
 dependencies = [
