@@ -49,7 +49,7 @@ jobs:
       epoch: ${{ steps.meta.outputs.epoch }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Metadatos (short SHA, SOURCE_DATE_EPOCH del commit)
         id: meta
@@ -79,7 +79,7 @@ jobs:
         leg: [A, B]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Liberar espacio en disco del runner
         run: |
@@ -140,7 +140,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Publicar SHA-256 + runner como artifact (solo texto, no la ISO)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: iso-sha-${{ matrix.leg }}
           path: ${{ runner.temp }}/out/leg-${{ matrix.leg }}.txt
@@ -154,7 +154,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Descargar los SHA de A y B
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: legs
           pattern: iso-sha-*
