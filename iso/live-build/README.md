@@ -184,6 +184,42 @@ admite la **puesta en marcha local** de la NIC (ARP/DHCP/NDP). Evidencia: `herme
 
 ---
 
+## Paso 3C.1 — ISO instalable (Calamares + LUKS2)
+
+Decisiones en [ADR-006](../../docs/adr/ADR-006-cadena-de-arranque-instalador.md); mapa de
+archivos y guía de instalación en [`iso/calamares/README.md`](../calamares/README.md).
+
+- **Instalador:** Calamares 3.3.8 de `bookworm-backports` (único paquete de backports;
+  el hook `0210-nimbo-backports-audit` falla el build si entra otro).
+- **Disco instalado:** ESP + `/boot` ext4 en claro + raíz ext4 sobre LUKS2 (casilla de
+  cifrado premarcada). GRUB + shim, `initramfs-tools`.
+- **Pool APT local** en `/usr/share/nimbo/pool` (hook `0200-nimbo-pool-local`): GRUB,
+  `cryptsetup-initramfs` y lo que necesitará `nimbo-tpm-setup`, instalables sin red.
+- **El instalado no lleva** Calamares, paquetes live, backports ni autologin: lo purga y
+  lo comprueba `nimbo-final.sh` durante la instalación.
+
+Mediciones del primer build (2026-10-06, commit `4c33129`):
+
+| | Línea base 3B.1 | 3C.1 |
+|---|---|---|
+| Tamaño de la ISO | 381 MiB | **451 MiB** (+70) |
+| Paquetes en el squashfs | 398 | **554** (+156, 0 quitados) |
+| Paquetes `~bpo` | 0 | 1 (`calamares 3.3.8-1~bpo12+1`) |
+| Pool local | — | 30 paquetes, 8100 KiB |
+| RAM idle live (`measure-ram-in-qemu.sh`) | 378 MiB | **370 MiB** |
+
+### Instalar y verificar en QEMU (`install-in-qemu.sh`)
+
+```bash
+./install-in-qemu.sh instalar     # ISO en UEFI (OVMF) + disco qcow2 vacío
+./install-in-qemu.sh arrancar     # arranca el disco instalado: pide la contraseña LUKS
+#   dentro del instalado:  sudo mount -o ro /dev/vdb1 /mnt && sudo sh /mnt/verificar-instalado.sh
+./install-in-qemu.sh informe      # recoge el informe del log serie y compara paquetes
+```
+
+**Pendiente de verificar:** instalación completa con los ojos, RAM idle del instalado,
+MATCH de la compuerta con Calamares dentro, Secure Boot activo y BIOS legacy.
+
 ## Reproducibilidad — estado y deuda conocida
 
 Este paso aplica **higiene** de reproducibilidad, pero **NO persigue bit-idéntico todavía**
