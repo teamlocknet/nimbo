@@ -126,6 +126,7 @@ producto se mueven siempre juntos. Todas son de la era bookworm → coherentes.
   ancla a bookworm por continuidad de 1A–1C; **saltar de versión de Debian es otra decisión**,
   a tomar aparte (se registrará en su propio ADR y en el documento maestro). Aquí solo queda
   **anotado como pendiente**.
+  > **Nota (2026-10-06): D9 resuelta → ver [ADR-005](ADR-005-quedarse-en-bookworm-v1.md).**
 
 ## Fecha
 
