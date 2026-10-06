@@ -240,9 +240,9 @@ Este paso aplica **higiene** de reproducibilidad, pero **NO persigue bit-idénti
 ## Decisiones abiertas
 
 - **Distro fijada a Debian 12 (bookworm)** para este ladrillo, por ser la base más probada
-  con live-build. **"Qué Debian Stable se envía finalmente" queda PENDIENTE** (candidato:
-  trixie/Debian 13). El cambio es un **one-liner** en `auto/config` (`--distribution`). Se
-  registrará en un ADR cuando se decida.
+  con live-build. **Resuelto (D9): la v1.0 se queda en bookworm, rama con soporte LTS** —
+  ver [ADR-005](../../docs/adr/ADR-005-quedarse-en-bookworm-v1.md). No se migra a
+  trixie/Debian 13.
 
 ## Lo que NO está hasta aquí (anti-desborde)
 
