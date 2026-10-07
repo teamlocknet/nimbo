@@ -14,8 +14,21 @@ export DEBIAN_FRONTEND=noninteractive
 # --- (1) Paquetes: instalador + live, y sus dependencias huérfanas --------------------------
 PAQUETES=$(grep -v '^[[:space:]]*#' "$LISTA" | grep -v '^[[:space:]]*$' | tr '\n' ' ')
 echo "nimbo-final: purgando: $PAQUETES"
+# SuggestsImportant=false: por defecto APT conserva lo que algún paquete instalado solo
+# "Sugiere" (apt sugiere gnupg; perl-modules y perl se recomiendan en círculo...), y eso
+# dejaba en el instalado ~17 paquetes de gnupg y perl que solo trajo Calamares. Lo que
+# alguien "Recomienda" o "Depende" se conserva igual.
 # shellcheck disable=SC2086
-apt-get --yes --purge autoremove $PAQUETES
+apt-get --yes --purge -o APT::AutoRemove::SuggestsImportant=false autoremove $PAQUETES
+
+# --- (1b) Teclado de consola para el initramfs ----------------------------------------------
+# El módulo `keyboard` ya escribió /etc/default/keyboard con la distribución elegida.
+# Se regenera la caché de console-setup para que el initramfs (que Calamares reconstruye
+# después de este script) lleve ESA distribución: la contraseña LUKS se teclea en el
+# arranque con el mismo teclado con que se definió.
+if command -v setupcon >/dev/null 2>&1; then
+    setupcon --save-only || echo "nimbo-final: AVISO — setupcon --save-only falló" >&2
+fi
 
 # --- (2) Lo que NO pertenece a ningún paquete (vino por includes.chroot) --------------------
 # apt no lo quita: se borra explícito. Incluye este mismo directorio (el script ya está

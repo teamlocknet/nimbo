@@ -35,10 +35,11 @@ ${APT} --download-only install cryptsetup-initramfs
 # --- (b) Lo que se instala DESPUÉS (nimbo-tpm-setup): relativo al sistema YA LIMPIO ----------
 # nimbo-final.sh purga el instalador y los paquetes live con autoremove. Una dependencia de
 # dracut/tpm2-tools que hoy esté satisfecha por un paquete que luego se purga faltaría en
-# el pool. Se simula esa purga y se resuelve contra un `status` sin esos paquetes.
+# el pool. Se simula esa purga (con las MISMAS opciones que nimbo-final.sh) y se resuelve
+# contra un `status` sin esos paquetes.
 SOLO=$(grep -v '^[[:space:]]*#' "${LISTA}" | grep -v '^[[:space:]]*$' | tr '\n' ' ')
 # shellcheck disable=SC2086
-apt-get --simulate --purge autoremove ${SOLO} | awk '$1=="Purg"{print $2}' | LC_ALL=C sort -u > /tmp/nimbo-purgados
+apt-get --simulate --purge -o APT::AutoRemove::SuggestsImportant=false autoremove ${SOLO} | awk '$1=="Purg"{print $2}' | LC_ALL=C sort -u > /tmp/nimbo-purgados
 echo "P: [hook]   la limpieza del instalado purgará $(wc -l < /tmp/nimbo-purgados) paquetes"
 # Primer fichero (lista, una línea por paquete) con RS por defecto; el segundo (status)
 # en modo párrafo: la asignación RS= entre ambos la aplica awk al llegar a ella.

@@ -123,18 +123,21 @@ cmd_informe() {
     [ -s "$INFORME" ] || { echo "ERROR: el log serie no contiene el informe. ¿Se ejecutó verificar-instalado.sh como root?"; exit 1; }
     awk '/NIMBO_PKGS_BEGIN/{f=1;next} /NIMBO_PKGS_END/{f=0} f' "$INFORME" > "$PAQUETES"
 
-    grep -v -E '^NIMBO_|^[a-z0-9][a-z0-9+.:-]*\t' "$INFORME" | sed '/^== 7\./,$d'
+    sed '/^== 7\./,$d' "$INFORME" | grep -v '^NIMBO_'
     echo
     echo "== Paquetes: instalado vs línea base 3B.1 =="
     echo "   instalado : $(wc -l < "$PAQUETES") paquetes"
     if [ -f "$BASE" ]; then
-        local b; b="$(mktemp)"; grep -v '^#' "$BASE" | cut -f1 | LC_ALL=C sort > "$b"
+        # Nombres sin sufijo de arquitectura (":amd64") y orden de bytes en AMBAS listas.
+        local b i; b="$(mktemp)"; i="$(mktemp)"
+        grep -v '^#' "$BASE" | cut -f1 | sed 's/:.*//' | LC_ALL=C sort -u > "$b"
+        cut -f1 "$PAQUETES" | sed 's/:.*//' | LC_ALL=C sort -u > "$i"
         echo "   base 3B.1 : $(wc -l < "$b") paquetes"
         echo "   -- en el instalado y NO en la base (deberían ser solo arranque/cifrado):"
-        cut -f1 "$PAQUETES" | LC_ALL=C sort | comm -23 - "$b" | sed 's/^/      + /'
+        LC_ALL=C comm -23 "$i" "$b" | sed 's/^/      + /'
         echo "   -- en la base y NO en el instalado (deberían ser solo paquetes live):"
-        cut -f1 "$PAQUETES" | LC_ALL=C sort | comm -13 - "$b" | sed 's/^/      - /'
-        rm -f "$b"
+        LC_ALL=C comm -13 "$i" "$b" | sed 's/^/      - /'
+        rm -f "$b" "$i"
     fi
     echo
     grep '^VEREDICTO' "$INFORME" || true
