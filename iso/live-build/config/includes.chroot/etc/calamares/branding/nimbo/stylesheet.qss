@@ -1,0 +1,21 @@
+/* nimbo — hoja de estilo del instalador (Calamares la carga sola desde el branding).
+ *
+ * D14: el sistema instalado SIEMPRE pide inicio de sesión. Calamares 3.3.8 no tiene
+ * opción para ocultar la casilla "iniciar sesión automáticamente" y no se parchea el
+ * binario; aquí se la colapsa a tamaño cero para que no se vea ni se ofrezca.
+ * Aunque alguien llegara a activarla con el teclado, no tiene efecto: no hay módulo
+ * displaymanager ni grupo de autologin (lo comprueban nimbo-final.sh y
+ * verificar-instalado.sh). */
+#checkBoxDoAutoLogin {
+    max-height: 0px;
+    min-height: 0px;
+    max-width: 0px;
+    min-width: 0px;
+    margin: 0px;
+    padding: 0px;
+    border: none;
+}
+#checkBoxDoAutoLogin::indicator {
+    width: 0px;
+    height: 0px;
+}

@@ -37,9 +37,9 @@ del instalador está allí y no en esta carpeta:
    > ⚠️ El cifrado es **opcional**: si desmarcas la casilla, el sistema se instala **sin
    > LUKS** y `nimbo-tpm-setup` no podrá vincular nada al TPM después.
 5. **Usuario:** nombre y contraseña. La casilla *exigir contraseñas fuertes* viene
-   marcada (mínimo 8 caracteres); puedes desmarcarla si quieres otra contraseña. La
-   casilla de inicio de sesión automático viene desmarcada y, aunque se marque, **no
-   tiene efecto**: el sistema instalado nunca entra solo (D14).
+   marcada (mínimo 8 caracteres); puedes desmarcarla si quieres otra contraseña. No
+   hay opción de inicio de sesión automático: el sistema instalado **siempre pide
+   usuario y contraseña** (D14).
 6. Al terminar, reinicia y retira la ISO. El arranque pide la contraseña LUKS y llega a
    la pantalla de inicio de sesión.
 
