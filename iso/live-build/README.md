@@ -200,15 +200,23 @@ archivos y guía de instalación en [`iso/calamares/README.md`](../calamares/REA
 - **El instalado no lleva** Calamares, paquetes live, backports ni autologin: lo purga y
   lo comprueba `nimbo-final.sh` durante la instalación.
 
-Mediciones del primer build (2026-10-06, commit `4c33129`):
+Mediciones (build del 2026-10-06, commit `2a2c5d5`, ISO `c8873cdb…d037`):
 
 | | Línea base 3B.1 | 3C.1 |
 |---|---|---|
-| Tamaño de la ISO | 381 MiB | **451 MiB** (+70) |
-| Paquetes en el squashfs | 398 | **554** (+156, 0 quitados) |
+| Tamaño de la ISO | 381 MiB | **453 MiB** (+72) |
+| Paquetes en el squashfs | 398 | **557** (+159, 0 quitados) |
 | Paquetes `~bpo` | 0 | 1 (`calamares 3.3.8-1~bpo12+1`) |
 | Pool local | — | 30 paquetes, 8100 KiB |
-| RAM idle live (`measure-ram-in-qemu.sh`) | 378 MiB | **370 MiB** |
+| RAM idle live (`measure-ram-in-qemu.sh`) | 378 MiB | **366 MiB** |
+| RAM idle del instalado cifrado | — | 326 MiB (a los 66 s) |
+| RAM idle del instalado sin cifrar | — | 324 MiB (a los 60 s) |
+| Paquetes del instalado cifrado | — | 417 = base − 5 live + 24 arranque/cifrado/teclado |
+| Paquetes del instalado sin cifrar | — | 416 (igual, sin `cryptsetup-initramfs`) |
+
+Las dos instalaciones (una por lanzador) se hicieron con los ojos en QEMU + OVMF y
+`verificar-instalado.sh` dio **0 fallos** en ambas. Las cifras de RAM del instalado se
+tomaron antes de los 90 s de reposo, así que son orientativas.
 
 ### Instalar y verificar en QEMU (`install-in-qemu.sh`)
 
@@ -222,8 +230,8 @@ Mediciones del primer build (2026-10-06, commit `4c33129`):
 ./install-in-qemu.sh --sin-cifrar instalar | arrancar | informe
 ```
 
-**Pendiente de verificar:** instalación completa con los ojos, RAM idle del instalado,
-MATCH de la compuerta con Calamares dentro, Secure Boot activo y BIOS legacy.
+**Pendiente de verificar:** Secure Boot activo, arranque en BIOS legacy y RAM idle del
+instalado con ≥ 90 s de reposo.
 
 ## Reproducibilidad — estado y deuda conocida
 
