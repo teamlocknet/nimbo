@@ -1,0 +1,80 @@
+#!/bin/sh
+# 0190-nimbo-calamares-sincifrar.hook.chroot — segunda configuración de Calamares, SIN
+# cifrado, DERIVADA de la principal (Paso 3C.1, ADR-006).
+#
+# POR QUÉ EXISTE: en Calamares 3.3.8, con la casilla de cifrado premarcada
+# (preCheckEncryption: true) desmarcarla deja "Siguiente" desactivado; y si se deja
+# desmarcada por defecto, marcarla con la contraseña vacía permite avanzar. No se parchea
+# Calamares: el lanzador recomendado cifra SIEMPRE, y un segundo lanzador "avanzado" abre
+# esta configuración, donde la casilla NO existe (enableLuksAutomatedPartitioning: false).
+#
+# UNA SOLA FUENTE: nada se duplica en el repo. Este hook genera los dos ficheros
+# derivados a partir de /etc/calamares (overlay includes.chroot) y FALLA EL BUILD si la
+# transformación no aplica (p. ej. si alguien renombra una clave en el original).
+#   /etc/calamares/modules/partition_sincifrar.conf   <- partition.conf
+#   /etc/calamares-sincifrar/settings.conf            <- settings.conf
+#   /etc/calamares-sincifrar/{modules,branding,qml}   -> enlaces a lo compartido
+# `calamares -c DIR` exige DIR/qml y, con -c, la búsqueda "local" de módulos apunta a
+# DIR/modules: por eso el enlace a qml y la ruta de módulos explícita.
+#
+# Determinista: sed sobre ficheros versionados + enlaces; sin red ni reloj.
+set -e
+
+SRC=/etc/calamares
+ALT=/etc/calamares-sincifrar
+MODLIB=/usr/lib/x86_64-linux-gnu/calamares/modules
+QML=/usr/share/calamares/qml
+
+fallo() { echo "E: [hook] calamares-sincifrar: $*" >&2; exit 1; }
+cuenta() { grep -c -- "$1" "$2" || true; }
+
+[ -f "${SRC}/settings.conf" ] && [ -f "${SRC}/modules/partition.conf" ] || fallo "falta la configuración principal en ${SRC}"
+[ -d "${MODLIB}" ] || fallo "no existe ${MODLIB} (¿cambió la ruta de módulos de Calamares?)"
+[ -d "${QML}" ]    || fallo "no existe ${QML}"
+
+echo "P: [hook] calamares-sincifrar — generando la configuración derivada sin cifrado"
+
+# --- (1) partition_sincifrar.conf ------------------------------------------------------------
+P_SRC="${SRC}/modules/partition.conf"
+P_DST="${SRC}/modules/partition_sincifrar.conf"
+[ "$(cuenta '^enableLuksAutomatedPartitioning: true$' "${P_SRC}")" = 1 ] || fallo "partition.conf: se esperaba 1 'enableLuksAutomatedPartitioning: true'"
+[ "$(cuenta '^preCheckEncryption: true$' "${P_SRC}")" = 1 ]              || fallo "partition.conf: se esperaba 1 'preCheckEncryption: true'"
+sed -e 's/^enableLuksAutomatedPartitioning: true$/enableLuksAutomatedPartitioning: false/' \
+    -e 's/^preCheckEncryption: true$/preCheckEncryption: false/' \
+    "${P_SRC}" > "${P_DST}"
+[ "$(cuenta '^enableLuksAutomatedPartitioning: false$' "${P_DST}")" = 1 ] || fallo "partition_sincifrar.conf: no quedó el cifrado deshabilitado"
+[ "$(cuenta '^preCheckEncryption: false$' "${P_DST}")" = 1 ]              || fallo "partition_sincifrar.conf: no quedó preCheckEncryption: false"
+
+# --- (2) settings.conf alternativo -----------------------------------------------------------
+S_SRC="${SRC}/settings.conf"
+S_DST="${ALT}/settings.conf"
+[ "$(cuenta '^  - partition$' "${S_SRC}")" = 2 ]  || fallo "settings.conf: se esperaban 2 entradas '  - partition' (show + exec)"
+[ "$(cuenta '^instances:$' "${S_SRC}")" = 1 ]     || fallo "settings.conf: se esperaba 1 línea 'instances:'"
+[ "$(cuenta '^modules-search:' "${S_SRC}")" = 1 ] || fallo "settings.conf: se esperaba 1 línea 'modules-search:'"
+mkdir -p "${ALT}"
+sed -e 's/^  - partition$/  - partition@sincifrar/' \
+    -e 's/^instances:$/instances:\n- id:       sincifrar\n  module:   partition\n  config:   partition_sincifrar.conf/' \
+    -e "s#^modules-search:.*#modules-search: [ ${MODLIB} ]#" \
+    "${S_SRC}" > "${S_DST}"
+[ "$(cuenta '^  - partition@sincifrar$' "${S_DST}")" = 2 ]                 || fallo "settings alternativo: no quedaron 2 'partition@sincifrar'"
+[ "$(cuenta '^  - partition$' "${S_DST}")" = 0 ]                           || fallo "settings alternativo: queda un 'partition' sin instancia"
+[ "$(cuenta '^  config:   partition_sincifrar.conf$' "${S_DST}")" = 1 ]    || fallo "settings alternativo: falta la instancia sincifrar"
+[ "$(cuenta "^modules-search: \[ ${MODLIB} \]\$" "${S_DST}")" = 1 ]        || fallo "settings alternativo: falta la ruta de módulos explícita"
+
+# --- (3) Lo compartido, por enlace -----------------------------------------------------------
+ln -sfn ../calamares/modules  "${ALT}/modules"
+ln -sfn ../calamares/branding "${ALT}/branding"
+ln -sfn "${QML}"              "${ALT}/qml"
+
+# --- Permisos y mtimes fijos (mismo criterio que el pool local) ------------------------------
+chown -h root:root "${ALT}" "${ALT}/settings.conf" "${ALT}/modules" "${ALT}/branding" "${ALT}/qml" "${P_DST}"
+chmod 0755 "${ALT}"; chmod 0644 "${S_DST}" "${P_DST}"
+if [ -n "${SOURCE_DATE_EPOCH:-}" ]; then
+    find "${ALT}" "${P_DST}" -exec touch -h -d "@${SOURCE_DATE_EPOCH}" {} +
+else
+    find "${ALT}" "${P_DST}" -exec touch -h -r /usr/lib/os-release {} +
+fi
+
+echo "P: [hook] calamares-sincifrar: diferencias respecto a la configuración principal:"
+diff "${S_SRC}" "${S_DST}" | sed 's/^/P: [hook]   settings  /' || true
+diff "${P_SRC}" "${P_DST}" | sed 's/^/P: [hook]   partition /' || true

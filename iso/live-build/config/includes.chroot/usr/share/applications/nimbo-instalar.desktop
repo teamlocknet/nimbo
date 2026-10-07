@@ -1,10 +1,10 @@
 [Desktop Entry]
 Type=Application
 Version=1.0
-Name=Instalar nimbo
-Name[en]=Install nimbo
-Comment=Instala nimbo en el disco de este equipo
-Comment[en]=Install nimbo to this computer's disk
+Name=Instalar nimbo (cifrado, recomendado)
+Name[en]=Install nimbo (encrypted, recommended)
+Comment=Instala nimbo en el disco de este equipo, cifrado con LUKS2
+Comment[en]=Install nimbo to this computer's disk, encrypted with LUKS2
 Exec=nimbo-instalar
 Icon=/etc/calamares/branding/nimbo/nimbo.png
 Terminal=false

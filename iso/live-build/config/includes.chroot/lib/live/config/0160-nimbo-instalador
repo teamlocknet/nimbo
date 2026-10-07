@@ -37,8 +37,14 @@ Config ()
 	if [ -d "${_HOME}" ]
 	then
 		mkdir -p "${_HOME}/Desktop"
-		cp /usr/share/applications/nimbo-instalar.desktop "${_HOME}/Desktop/nimbo-instalar.desktop"
-		chmod 0755 "${_HOME}/Desktop/nimbo-instalar.desktop"
+		for _LANZADOR in nimbo-instalar.desktop nimbo-instalar-sincifrar.desktop
+		do
+			if [ -e "/usr/share/applications/${_LANZADOR}" ]
+			then
+				cp "/usr/share/applications/${_LANZADOR}" "${_HOME}/Desktop/${_LANZADOR}"
+				chmod 0755 "${_HOME}/Desktop/${_LANZADOR}"
+			fi
+		done
 		chown -R "${_USER}:${_USER}" "${_HOME}/Desktop"
 	fi
 

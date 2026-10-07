@@ -63,6 +63,7 @@ config/includes.chroot/**
 !config/includes.chroot/usr/lib/nimbo/calamares/**
 !config/includes.chroot/usr/bin/nimbo-instalar
 !config/includes.chroot/usr/share/applications/nimbo-instalar.desktop
+!config/includes.chroot/usr/share/applications/nimbo-instalar-sincifrar.desktop
 #
 # EXCEPCIÓN 3 (Paso 3A / vuelta 1C): hooks propios de live-build (los ejecuta desde
 # config/hooks/normal|live/*.binary). Versionamos EXPLÍCITO el normalizador de
@@ -74,6 +75,8 @@ config/hooks/**
 # Paso 3B.1: hook chroot de hermetismo (enmascara apt-daily* + APT::Periodic off).
 !config/hooks/normal/0100-nimbo-hermetismo.hook.chroot
 # Paso 3C.1: pool APT local determinista + auditoría de la excepción de backports.
+# Segunda configuración de Calamares (sin cifrado) DERIVADA de la principal en build-time.
+!config/hooks/normal/0190-nimbo-calamares-sincifrar.hook.chroot
 !config/hooks/normal/0200-nimbo-pool-local.hook.chroot
 !config/hooks/normal/0210-nimbo-backports-audit.hook.chroot
 local/

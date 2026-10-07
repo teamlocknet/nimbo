@@ -9,6 +9,13 @@
 #   ./install-in-qemu.sh informe          # extrae del log serie el informe de verificación
 #   ./install-in-qemu.sh limpiar          # borra disco, NVRAM y logs del arnés
 #
+# DOS VARIANTES (ADR-006), cada una con su propio disco y sus logs, para tener las dos
+# instalaciones a la vez. Antepón --sin-cifrar a cualquier orden para la segunda:
+#   ./install-in-qemu.sh instalar              -> lanzador "Instalar nimbo (cifrado, recomendado)"
+#   ./install-in-qemu.sh --sin-cifrar instalar -> lanzador "Instalar nimbo sin cifrar (avanzado)"
+# Con --sin-cifrar los ficheros llevan el sufijo -sincifrar y el verificador se lanza con
+# `--sin-cifrar` (salta solo los chequeos de LUKS).
+#
 # QUÉ DEJA (todo regenerable, ignorado por git):
 #   nimbo-install.qcow2        disco destino (20 GiB, crece bajo demanda)
 #   nimbo-install-vars.fd      NVRAM de OVMF del guest (guarda la entrada de arranque UEFI)
@@ -26,12 +33,18 @@
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DISK="$HERE/nimbo-install.qcow2"
-VARS="$HERE/nimbo-install-vars.fd"
-LOG_LIVE="$HERE/install-serial.log"
-LOG_INST="$HERE/installed-serial.log"
-INFORME="$HERE/installed-informe.txt"
-PAQUETES="$HERE/installed-paquetes.txt"
+SUF=""; VERIF_ARG=""; LANZADOR="Instalar nimbo (cifrado, recomendado)"
+if [ "${1:-}" = "--sin-cifrar" ]; then
+    shift
+    SUF="-sincifrar"; VERIF_ARG=" --sin-cifrar"; LANZADOR="Instalar nimbo sin cifrar (avanzado)"
+fi
+DISK="$HERE/nimbo-install$SUF.qcow2"
+VARS="$HERE/nimbo-install$SUF-vars.fd"
+LOG_LIVE="$HERE/install$SUF-serial.log"
+LOG_INST="$HERE/installed$SUF-serial.log"
+INFORME="$HERE/installed$SUF-informe.txt"
+PAQUETES="$HERE/installed$SUF-paquetes.txt"
+YO="$0${SUF:+ --sin-cifrar}"
 BASE="$HERE/paquetes-linea-base-3b1.txt"
 
 DISK_GB="${NIMBO_DISK_GB:-20}"
@@ -74,7 +87,7 @@ cmd_instalar() {
 
     if [ -e "$DISK" ]; then
         echo "ERROR: ya existe $DISK (¿una instalación previa?)."
-        echo "       Usa '$0 arrancar' para arrancarla, o '$0 limpiar' para empezar de cero."
+        echo "       Usa '$YO arrancar' para arrancarla, o '$YO limpiar' para empezar de cero."
         exit 1
     fi
     qemu-img create -f qcow2 "$DISK" "${DISK_GB}G" >/dev/null
@@ -85,16 +98,21 @@ cmd_instalar() {
     echo ">> OVMF   : $OVMF_CODE"
     echo ">> Serie  : $LOG_LIVE"
     echo
-    echo "   EN LA VM: escritorio live -> icono 'Instalar nimbo' (o menú Aplicaciones > Sistema)."
-    echo "   Deja MARCADA la casilla de cifrado y pon una contraseña que recuerdes."
-    echo "   Al terminar, apaga la VM y ejecuta:  $0 arrancar"
+    echo "   EN LA VM: escritorio live -> icono '$LANZADOR'"
+    echo "   (o menú Aplicaciones > Sistema)."
+    if [ -z "$SUF" ]; then
+        echo "   El cifrado es obligatorio en este lanzador: pon una contraseña LUKS que recuerdes."
+    else
+        echo "   En este lanzador NO debe aparecer la casilla de cifrado."
+    fi
+    echo "   Al terminar, apaga la VM y ejecuta:  $YO arrancar"
     echo
     qemu_base "$VM_MB" "$LOG_LIVE" -cdrom "$iso" -boot menu=on
 }
 
 cmd_arrancar() {
     need qemu-system-x86_64
-    [ -f "$DISK" ] && [ -f "$VARS" ] || { echo "ERROR: no hay instalación ($DISK). Ejecuta primero '$0 instalar'."; exit 1; }
+    [ -f "$DISK" ] && [ -f "$VARS" ] || { echo "ERROR: no hay instalación ($DISK). Ejecuta primero '$YO instalar'."; exit 1; }
     [ -n "$OVMF_CODE" ] || { echo "ERROR: no encuentro OVMF"; exit 1; }
 
     # Disco auxiliar de solo lectura con el verificador (vvfat: un directorio del host
@@ -107,11 +125,15 @@ cmd_arrancar() {
     echo ">> Disco  : $DISK (sin ISO: arranca lo instalado)"
     echo ">> Serie  : $LOG_INST"
     echo
-    echo "   CON LOS OJOS: debe pedir la CONTRASEÑA LUKS antes de arrancar, y llegar al"
+    if [ -z "$SUF" ]; then
+        echo "   CON LOS OJOS: debe pedir la CONTRASEÑA LUKS antes de arrancar, y llegar al"
+    else
+        echo "   CON LOS OJOS: NO debe pedir contraseña de disco, y debe llegar al"
+    fi
     echo "   greeter de lightdm SIN entrar solo (D14). Luego, en una terminal del guest:"
-    echo "       sudo mount -o ro /dev/vdb1 /mnt && sudo sh /mnt/verificar-instalado.sh"
+    echo "       sudo mount -o ro /dev/vdb1 /mnt && sudo sh /mnt/verificar-instalado.sh$VERIF_ARG"
     echo "   (para la RAM idle, espera ~90 s tras iniciar sesión antes de lanzarlo)."
-    echo "   Al terminar, apaga la VM y ejecuta:  $0 informe"
+    echo "   Al terminar, apaga la VM y ejecuta:  $YO informe"
     echo
     qemu_base "$VM_MB_INST" "$LOG_INST" \
         -drive file=fat:ro:"$tools",if=virtio,format=raw,readonly=on
@@ -133,7 +155,7 @@ cmd_informe() {
         grep -v '^#' "$BASE" | cut -f1 | sed 's/:.*//' | LC_ALL=C sort -u > "$b"
         cut -f1 "$PAQUETES" | sed 's/:.*//' | LC_ALL=C sort -u > "$i"
         echo "   base 3B.1 : $(wc -l < "$b") paquetes"
-        echo "   -- en el instalado y NO en la base (deberían ser solo arranque/cifrado):"
+        echo "   -- en el instalado y NO en la base (deberían ser solo arranque/cifrado/teclado):"
         LC_ALL=C comm -23 "$i" "$b" | sed 's/^/      + /'
         echo "   -- en la base y NO en el instalado (deberían ser solo paquetes live):"
         LC_ALL=C comm -13 "$i" "$b" | sed 's/^/      - /'
@@ -155,5 +177,5 @@ case "${1:-}" in
     arrancar) cmd_arrancar ;;
     informe)  cmd_informe ;;
     limpiar)  cmd_limpiar ;;
-    *) sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'; exit 1 ;;
+    *) sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'; exit 1 ;;
 esac

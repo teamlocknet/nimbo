@@ -33,8 +33,8 @@ fi
 # --- (2) Lo que NO pertenece a ningún paquete (vino por includes.chroot) --------------------
 # apt no lo quita: se borra explícito. Incluye este mismo directorio (el script ya está
 # cargado por sh; borrar su fichero no interrumpe la ejecución).
-rm -rf /etc/calamares
-rm -f  /usr/share/applications/nimbo-instalar.desktop
+rm -rf /etc/calamares /etc/calamares-sincifrar
+rm -f  /usr/share/applications/nimbo-instalar.desktop /usr/share/applications/nimbo-instalar-sincifrar.desktop
 rm -f  /usr/bin/nimbo-instalar
 rm -f  /lib/live/config/0150-nimbo-autologin /lib/live/config/0160-nimbo-instalador
 rmdir  /lib/live/config /lib/live 2>/dev/null || true
@@ -67,8 +67,9 @@ for u in apt-daily.timer apt-daily-upgrade.timer apt-daily.service apt-daily-upg
 done
 [ -f /etc/apt/apt.conf.d/99nimbo-no-telemetry ] || ko "falta 99nimbo-no-telemetry"
 # Restos del instalador.
-for f in /etc/calamares /usr/lib/nimbo/calamares /usr/bin/nimbo-instalar \
-         /usr/share/applications/nimbo-instalar.desktop /lib/live/config; do
+for f in /etc/calamares /etc/calamares-sincifrar /usr/lib/nimbo/calamares /usr/bin/nimbo-instalar \
+         /usr/share/applications/nimbo-instalar.desktop \
+         /usr/share/applications/nimbo-instalar-sincifrar.desktop /lib/live/config; do
     [ ! -e "$f" ] || ko "queda $f"
 done
 # D17: lo que necesitará nimbo-tpm-setup es instalable SIN RED desde el pool (simulación).

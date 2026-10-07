@@ -6,6 +6,11 @@
 # existe, también por la consola serie (/dev/ttyS0), que el arnés guarda en el host.
 #
 #   sudo mount -o ro /dev/vdb1 /mnt && sudo sh /mnt/verificar-instalado.sh
+#   sudo mount -o ro /dev/vdb1 /mnt && sudo sh /mnt/verificar-instalado.sh --sin-cifrar
+#
+# --sin-cifrar: para la instalación hecha con el lanzador "avanzado". Salta SOLO los
+# chequeos de LUKS (y comprueba que, en efecto, no hay cifrado); D14, hermetismo,
+# limpieza del instalador, fuentes APT y paquetes se exigen igual.
 #
 # Cada comprobación imprime OK / FALLO; el resumen final da el veredicto.
 set -u
@@ -19,8 +24,25 @@ ko() { p "  FALLO  $*"; fallos=$((fallos+1)); }
 sec(){ p ""; p "== $* =="; }
 
 [ "$(id -u)" = 0 ] || { echo "Ejecuta como root (sudo)."; exit 2; }
+SIN_CIFRAR=0
+[ "${1:-}" = "--sin-cifrar" ] && SIN_CIFRAR=1
 p "NIMBO_VERIF_BEGIN"
+[ "$SIN_CIFRAR" = 1 ] && p "MODO: instalación SIN cifrar (lanzador avanzado)" || p "MODO: instalación CIFRADA (lanzador recomendado)"
 
+if [ "$SIN_CIFRAR" = 1 ]; then
+sec "1. Sin cifrado (modo declarado): coherencia"
+if grep -v '^[[:space:]]*#' /etc/crypttab 2>/dev/null | grep -q '[^[:space:]]'; then ko "/etc/crypttab tiene entradas en una instalación declarada sin cifrar"; else ok "/etc/crypttab sin entradas"; fi
+if findmnt -no SOURCE / | grep -q '^/dev/mapper/'; then ko "/ está sobre un mapper: $(findmnt -no SOURCE /)"; else ok "/ directamente sobre $(findmnt -no SOURCE /) ($(findmnt -no FSTYPE /))"; fi
+if blkid -t TYPE=crypto_LUKS -o device 2>/dev/null | grep -q .; then ko "hay volúmenes LUKS en el disco: $(blkid -t TYPE=crypto_LUKS -o device | tr '\n' ' ')"; else ok "ningún volumen LUKS en el disco"; fi
+dpkg-query -W -f='${db:Status-Status}' cryptsetup-initramfs 2>/dev/null | grep -q '^installed$' && ko "cryptsetup-initramfs instalado sin haber LUKS" || ok "cryptsetup-initramfs no instalado (no hace falta)"
+p "  INFO   /boot: $(findmnt -no SOURCE /boot 2>/dev/null) · firmware: $([ -d /sys/firmware/efi ] && echo UEFI || echo BIOS)"
+
+sec "2. Initramfs"
+for img in /boot/initrd.img-*; do
+    [ -e "$img" ] || { ko "no hay initrd en /boot"; break; }
+    lsinitramfs "$img" 2>/dev/null | grep -q 'scripts/live' && ko "$img aún contiene scripts de live-boot" || ok "$img sin scripts de live-boot"
+done
+else
 sec "1. Cifrado: crypttab + LUKS2 argon2id"
 linea=$(grep -v '^[[:space:]]*#' /etc/crypttab 2>/dev/null | grep -v '^[[:space:]]*$' | head -1)
 if [ -z "$linea" ]; then
@@ -57,6 +79,7 @@ for img in /boot/initrd.img-*; do
     printf '%s\n' "$cont" | grep -q 'scripts/live' && ko "$img aún contiene scripts de live-boot" || ok "$img sin scripts de live-boot"
 done
 
+fi
 p "  teclado configurado: $(grep -E '^XKB(LAYOUT|VARIANT)=' /etc/default/keyboard 2>/dev/null | tr '\n' ' ')"
 
 sec "3. D14: sin autologin"
@@ -77,10 +100,10 @@ bpo=$(dpkg-query -W -f='${Package} ${Version}\n' | grep '~bpo' || true)
 for pk in calamares polkitd rsync squashfs-tools live-boot live-boot-initramfs-tools live-config live-config-systemd user-setup; do
     dpkg-query -W -f='${db:Status-Status}' "$pk" 2>/dev/null | grep -q '^installed$' && ko "sigue instalado: $pk" || ok "no instalado: $pk"
 done
-for f in /etc/calamares /usr/lib/nimbo/calamares /usr/bin/nimbo-instalar /usr/share/applications/nimbo-instalar.desktop /lib/live/config /usr/lib/x86_64-linux-gnu/calamares; do
+for f in /etc/calamares /etc/calamares-sincifrar /usr/lib/nimbo/calamares /usr/bin/nimbo-instalar /usr/share/applications/nimbo-instalar.desktop /usr/share/applications/nimbo-instalar-sincifrar.desktop /lib/live/config /usr/lib/x86_64-linux-gnu/calamares /usr/share/calamares; do
     [ -e "$f" ] && ko "queda en disco: $f" || ok "no existe: $f"
 done
-ls /home/*/Desktop/nimbo-instalar.desktop >/dev/null 2>&1 && ko "hay lanzador del instalador en un escritorio" || ok "ningún lanzador del instalador en /home"
+ls /home/*/Desktop/nimbo-instalar*.desktop >/dev/null 2>&1 && ko "hay lanzador del instalador en un escritorio" || ok "ningún lanzador del instalador en /home"
 p "  sources APT activas:"
 grep -rhs '^[[:space:]]*deb' /etc/apt/sources.list /etc/apt/sources.list.d 2>/dev/null | while read -r l; do p "    $l"; done
 if grep -rhs '^[[:space:]]*deb' /etc/apt/sources.list /etc/apt/sources.list.d 2>/dev/null | grep -v '^deb \[trusted=yes\] file:/usr/share/nimbo/pool \./$' | grep -q .; then ko "hay fuentes APT distintas del pool local"; else ok "única fuente APT: el pool local"; fi

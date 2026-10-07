@@ -191,8 +191,10 @@ archivos y guía de instalación en [`iso/calamares/README.md`](../calamares/REA
 
 - **Instalador:** Calamares 3.3.8 de `bookworm-backports` (único paquete de backports;
   el hook `0210-nimbo-backports-audit` falla el build si entra otro).
-- **Disco instalado:** ESP + `/boot` ext4 en claro + raíz ext4 sobre LUKS2 (casilla de
-  cifrado premarcada). GRUB + shim, `initramfs-tools`.
+- **Disco instalado:** ESP + `/boot` ext4 en claro + raíz ext4 sobre LUKS2. GRUB + shim,
+  `initramfs-tools`.
+- **Dos lanzadores:** el recomendado cifra siempre; el "avanzado" instala sin cifrar con
+  una configuración derivada en el build (hook `0190-nimbo-calamares-sincifrar`).
 - **Pool APT local** en `/usr/share/nimbo/pool` (hook `0200-nimbo-pool-local`): GRUB,
   `cryptsetup-initramfs` y lo que necesitará `nimbo-tpm-setup`, instalables sin red.
 - **El instalado no lleva** Calamares, paquetes live, backports ni autologin: lo purga y
@@ -215,6 +217,9 @@ Mediciones del primer build (2026-10-06, commit `4c33129`):
 ./install-in-qemu.sh arrancar     # arranca el disco instalado: pide la contraseña LUKS
 #   dentro del instalado:  sudo mount -o ro /dev/vdb1 /mnt && sudo sh /mnt/verificar-instalado.sh
 ./install-in-qemu.sh informe      # recoge el informe del log serie y compara paquetes
+
+# Variante sin cifrar (disco y logs propios; el verificador se lanza con --sin-cifrar):
+./install-in-qemu.sh --sin-cifrar instalar | arrancar | informe
 ```
 
 **Pendiente de verificar:** instalación completa con los ojos, RAM idle del instalado,

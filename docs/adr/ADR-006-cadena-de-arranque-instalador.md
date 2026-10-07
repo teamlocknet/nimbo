@@ -41,9 +41,7 @@ Evidencia (análisis estático de paquetes y fuentes del snapshot `20260901T0000
    `shim-signed`; `grub-pc` en BIOS).
 3. **Particionado guiado:** **ESP** + **`/boot` ext4 en claro** + **raíz ext4 sobre LUKS2**
    con el KDF por defecto de cryptsetup 2.6.1 (**argon2id**). GRUB nunca abre el LUKS.
-   La casilla de cifrado del instalador viene **marcada por defecto**
-   (`preCheckEncryption: true`), pero el usuario **puede desmarcarla**: el cifrado es
-   opcional. Calamares 3.3.8 no ofrece una opción para forzarlo y no se parchea.
+   El cifrado se elige con **el lanzador**, no con una casilla (ver punto 11).
 4. **Initramfs en 3C:** **`initramfs-tools`** + `cryptsetup-initramfs` (desbloqueo por
    contraseña). **`nimbo-tpm-setup` cambiará el sistema instalado a `dracut`** cuando el
    usuario opte por el TPM; no es parte de 3C.
@@ -84,6 +82,23 @@ Evidencia (análisis estático de paquetes y fuentes del snapshot `20260901T0000
     la distribución elegida en el instalador, para que la contraseña LUKS se teclee en el
     arranque con el mismo teclado con que se definió.
 
+11. **Dos lanzadores en la sesión live** (decisión de Juan José, 2026-10-06):
+    - **"Instalar nimbo (cifrado, recomendado)":** el cifrado LUKS2 es **obligatorio**. La
+      casilla viene premarcada (`preCheckEncryption: true`) y, por un defecto de
+      Calamares 3.3.8, al desmarcarla el botón *Siguiente* queda desactivado.
+    - **"Instalar nimbo sin cifrar (avanzado)":** abre una segunda configuración
+      (`calamares -c /etc/calamares-sincifrar`) con `enableLuksAutomatedPartitioning:
+      false`: **la casilla de cifrado no existe**. Mismo particionado (ESP + `/boot` +
+      raíz), sin LUKS.
+
+    Por qué no una sola configuración con casilla opcional: en 3.3.8, si la casilla viene
+    desmarcada por defecto, marcarla y dejar la contraseña vacía **permite avanzar**; y si
+    viene marcada, no se puede desmarcar. Sin parchear Calamares no hay forma de tener
+    "marcada por defecto y opcional". Con dos lanzadores, ninguno de los dos casos existe.
+12. **Sin inicio de sesión automático en el instalador** (D14): la casilla se oculta con la
+    hoja de estilo del branding (3.3.8 no tiene opción de configuración para ello) y,
+    además, no hay módulo `displaymanager` ni grupo de autologin que la apliquen.
+
 **Opciones descartadas:**
 
 - **B — `/boot` cifrado dentro de la raíz LUKS2 con PBKDF2.** GRUB puede abrirlo, pero
@@ -113,8 +128,12 @@ Evidencia (análisis estático de paquetes y fuentes del snapshot `20260901T0000
 - **`[trusted=yes]` desactiva la verificación de firma de APT para el pool local.** Es
   aceptable solo mientras la fuente sea local y la ISO se verifique por hash; no debe
   copiarse a ninguna fuente remota.
-- **El cifrado es opcional:** quien desmarque la casilla obtiene un sistema sin LUKS, y
-  `nimbo-tpm-setup` no tendrá nada que vincular. La guía de instalación lo advierte.
+- **Quien instale con el lanzador "sin cifrar" no tiene LUKS**, y `nimbo-tpm-setup` no
+  tendrá nada que vincular: **requisito para ese script (paso futuro): si no encuentra
+  un volumen LUKS2, salir con un mensaje claro**, sin tocar nada.
+- **Dos configuraciones que mantener en sincronía**, resuelto por construcción: la
+  segunda no existe en el repo; la genera el hook `0190-nimbo-calamares-sincifrar` a
+  partir de la principal y el build falla si la transformación deja de aplicar.
 - **Backports entra en la receta:** un origen APT más, anclado al mismo snapshot. La
   compuerta `repro-verify.yml` debe seguir en **MATCH**; sin MATCH no hay merge.
 - **Reversible:** quitar la excepción devuelve a Calamares 3.2.61 (opción C), a costa de
