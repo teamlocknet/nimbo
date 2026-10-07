@@ -1,0 +1,98 @@
+#!/bin/sh
+# 0200-nimbo-pool-local.hook.chroot — POOL APT LOCAL dentro del squashfs (Paso 3C.1, ADR-006).
+#
+# Corre en build-time DENTRO del chroot, con los mirrors de build (snapshot anclado) aún
+# activos. Deja en /usr/share/nimbo/pool los .deb que el sistema necesita SIN RED:
+#   (a) al INSTALAR  : GRUB+shim (UEFI), grub-pc (BIOS) y cryptsetup-initramfs — los instala
+#                      nimbo-arranque.sh en el destino;
+#   (b) DESPUÉS      : dracut + tpm2-tools + libtss2-* para `nimbo-tpm-setup` (D17). El pool
+#                      viaja al disco instalado, así que no hace falta reinsertar la ISO.
+#
+# POR QUÉ NO config/package-lists/*.list.binary (el pool nativo de live-build):
+#   binary_package-lists descarga con Dir::State::status=/dev/null (cierre COMPLETO, ~35 MiB)
+#   y escribe un Release con `date -R` + Packages.gz sin `gzip -n` → no determinista: los dos
+#   legs de la compuerta diferirían. Este pool es RELATIVO a lo ya instalado (~8 MiB) y
+#   determinista: Packages en orden de bytes, sin fechas, sin comprimir, sin Release, y con
+#   los mtimes fijados.
+set -e
+
+POOL=/usr/share/nimbo/pool
+LISTA=/usr/lib/nimbo/calamares/solo-instalador.list
+STATUS_LIMPIO=/tmp/nimbo-status-instalado
+
+echo "P: [hook] pool local 3C.1 — descargando a ${POOL}"
+mkdir -p "${POOL}"
+
+# Mismas opciones que el build (auto/config --apt-options); recommends off como el resto.
+APT="apt-get --yes --no-install-recommends -o Acquire::Check-Valid-Until=false -o Acquire::Retries=5 -o Dir::Cache::archives=${POOL}"
+
+# --- (a) Lo que se instala DURANTE la instalación: relativo al sistema live -----------------
+# Una invocación por conjunto: grub-efi-amd64 y grub-pc se excluyen entre sí.
+${APT} --download-only install grub-efi-amd64 grub-efi-amd64-signed shim-signed efibootmgr
+${APT} --download-only install grub-pc
+${APT} --download-only install cryptsetup-initramfs
+
+# --- (b) Lo que se instala DESPUÉS (nimbo-tpm-setup): relativo al sistema YA LIMPIO ----------
+# nimbo-final.sh purga el instalador y los paquetes live con autoremove. Una dependencia de
+# dracut/tpm2-tools que hoy esté satisfecha por un paquete que luego se purga faltaría en
+# el pool. Se simula esa purga (con las MISMAS opciones que nimbo-final.sh) y se resuelve
+# contra un `status` sin esos paquetes.
+SOLO=$(grep -v '^[[:space:]]*#' "${LISTA}" | grep -v '^[[:space:]]*$' | tr '\n' ' ')
+# shellcheck disable=SC2086
+apt-get --simulate --purge -o APT::AutoRemove::SuggestsImportant=false autoremove ${SOLO} | awk '$1=="Purg"{print $2}' | LC_ALL=C sort -u > /tmp/nimbo-purgados
+echo "P: [hook]   la limpieza del instalado purgará $(wc -l < /tmp/nimbo-purgados) paquetes"
+# Primer fichero (lista, una línea por paquete) con RS por defecto; el segundo (status)
+# en modo párrafo: la asignación RS= entre ambos la aplica awk al llegar a ella.
+awk '
+    FNR == NR { fuera[$1] = 1; next }
+    { n = $0; sub(/^Package: /, "", n); sub(/\n.*/, "", n); if (!(n in fuera)) printf "%s\n\n", $0 }
+' /tmp/nimbo-purgados RS= /var/lib/dpkg/status > "${STATUS_LIMPIO}"
+QUEDAN=$(grep -c '^Package: ' "${STATUS_LIMPIO}")
+TOTAL=$(grep -c '^Package: ' /var/lib/dpkg/status)
+echo "P: [hook]   status del instalado simulado: ${QUEDAN} de ${TOTAL} paquetes"
+if [ "${QUEDAN}" -ge "${TOTAL}" ]; then
+    echo "E: [hook] el filtro del status no quitó nada: el pool (b) saldría incompleto" >&2
+    exit 1
+fi
+${APT} -o Dir::State::status="${STATUS_LIMPIO}" --download-only install \
+    dracut tpm2-tools \
+    libtss2-esys-3.0.2-0 libtss2-mu0 libtss2-rc0 libtss2-tcti-device0 libtss2-tctildr0
+rm -f "${STATUS_LIMPIO}" /tmp/nimbo-purgados
+
+# --- Higiene: restos de APT en el directorio de caché ---------------------------------------
+rm -rf "${POOL}/partial" "${POOL}/lock"
+
+# --- Guard: NADA de backports en el pool (ADR-006: backports solo para calamares) -----------
+if ls "${POOL}" | grep -q '~bpo'; then
+    echo "E: [hook] hay paquetes de backports en el pool local:" >&2
+    ls "${POOL}" | grep '~bpo' >&2
+    exit 1
+fi
+
+# --- Índice DETERMINISTA: repo plano, Packages sin comprimir, sin Release --------------------
+# Orden de bytes (LC_ALL=C), campos de control tal cual vienen en cada .deb y solo
+# Filename/Size/SHA256 añadidos. Ninguna fecha.
+cd "${POOL}"
+: > Packages
+for DEB in $(ls -1 -- *.deb | LC_ALL=C sort); do
+    dpkg-deb -f "${DEB}" >> Packages
+    printf 'Filename: ./%s\nSize: %s\nSHA256: %s\n\n' \
+        "${DEB}" "$(stat -c %s "${DEB}")" "$(sha256sum "${DEB}" | cut -d' ' -f1)" >> Packages
+done
+
+# --- Permisos y mtimes fijos ------------------------------------------------------------------
+# SOURCE_DATE_EPOCH si live-build lo pasa al chroot; si no, el mtime de un fichero de
+# paquete (fijado por el .deb, luego determinista con el snapshot anclado).
+chown -R root:root "${POOL}"
+find "${POOL}" -type d -exec chmod 0755 {} +
+find "${POOL}" -type f -exec chmod 0644 {} +
+if [ -n "${SOURCE_DATE_EPOCH:-}" ]; then
+    find "${POOL}" /usr/share/nimbo -exec touch -h -d "@${SOURCE_DATE_EPOCH}" {} +
+    echo "P: [hook]   mtimes fijados a SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH}"
+else
+    find "${POOL}" /usr/share/nimbo -exec touch -h -r /usr/lib/os-release {} +
+    echo "P: [hook]   mtimes fijados al de /usr/lib/os-release (SOURCE_DATE_EPOCH no llega al chroot)"
+fi
+
+echo "P: [hook] pool local: $(ls -1 "${POOL}"/*.deb | wc -l) paquetes, $(du -sk "${POOL}" | cut -f1) KiB"
+ls -1 "${POOL}" | LC_ALL=C sort | sed 's/^/P: [hook]   /'

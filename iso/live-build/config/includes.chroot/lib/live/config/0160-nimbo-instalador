@@ -1,0 +1,58 @@
+#!/bin/sh
+# 0160-nimbo-instalador — lanzador del instalador en el escritorio de la sesión LIVE
+# (Paso 3C.1). Mismo patrón que 0150-nimbo-autologin (D14): lo ejecuta live-config EN EL
+# ARRANQUE LIVE, escribe en el overlay y por construcción NO existe en el sistema
+# instalado (Calamares copia el squashfs, no el overlay; y nimbo-final.sh borra este script).
+
+. /lib/live/config.sh
+
+Cmdline ()
+{
+	for _PARAMETER in ${LIVE_CONFIG_CMDLINE}
+	do
+		case "${_PARAMETER}" in
+			live-config.username=*|username=*)
+				LIVE_USERNAME="${_PARAMETER#*username=}"
+				;;
+		esac
+	done
+}
+
+Init ()
+{
+	if [ ! -x /usr/bin/calamares ] || \
+	   component_was_executed "nimbo-instalador"
+	then
+		exit 0
+	fi
+
+	echo -n " nimbo-instalador"
+}
+
+Config ()
+{
+	_USER="${LIVE_USERNAME:-nimbo}"
+	_HOME="/home/${_USER}"
+
+	if [ -d "${_HOME}" ]
+	then
+		mkdir -p "${_HOME}/Desktop"
+		for _LANZADOR in nimbo-instalar.desktop nimbo-instalar-sincifrar.desktop
+		do
+			if [ -e "/usr/share/applications/${_LANZADOR}" ]
+			then
+				cp "/usr/share/applications/${_LANZADOR}" "${_HOME}/Desktop/${_LANZADOR}"
+				chmod 0755 "${_HOME}/Desktop/${_LANZADOR}"
+			fi
+		done
+		chown -R "${_USER}:${_USER}" "${_HOME}/Desktop"
+	fi
+
+	# Creating state file
+	mkdir -p /var/lib/live/config
+	touch /var/lib/live/config/nimbo-instalador
+}
+
+Cmdline
+Init
+Config

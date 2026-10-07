@@ -184,6 +184,55 @@ admite la **puesta en marcha local** de la NIC (ARP/DHCP/NDP). Evidencia: `herme
 
 ---
 
+## Paso 3C.1 — ISO instalable (Calamares + LUKS2)
+
+Decisiones en [ADR-006](../../docs/adr/ADR-006-cadena-de-arranque-instalador.md); mapa de
+archivos y guía de instalación en [`iso/calamares/README.md`](../calamares/README.md).
+
+- **Instalador:** Calamares 3.3.8 de `bookworm-backports` (único paquete de backports;
+  el hook `0210-nimbo-backports-audit` falla el build si entra otro).
+- **Disco instalado:** ESP + `/boot` ext4 en claro + raíz ext4 sobre LUKS2. GRUB + shim,
+  `initramfs-tools`.
+- **Dos lanzadores:** el recomendado cifra siempre; el "avanzado" instala sin cifrar con
+  una configuración derivada en el build (hook `0190-nimbo-calamares-sincifrar`).
+- **Pool APT local** en `/usr/share/nimbo/pool` (hook `0200-nimbo-pool-local`): GRUB,
+  `cryptsetup-initramfs` y lo que necesitará `nimbo-tpm-setup`, instalables sin red.
+- **El instalado no lleva** Calamares, paquetes live, backports ni autologin: lo purga y
+  lo comprueba `nimbo-final.sh` durante la instalación.
+
+Mediciones (build del 2026-10-06, commit `2a2c5d5`, ISO `c8873cdb…d037`):
+
+| | Línea base 3B.1 | 3C.1 |
+|---|---|---|
+| Tamaño de la ISO | 381 MiB | **453 MiB** (+72) |
+| Paquetes en el squashfs | 398 | **557** (+159, 0 quitados) |
+| Paquetes `~bpo` | 0 | 1 (`calamares 3.3.8-1~bpo12+1`) |
+| Pool local | — | 30 paquetes, 8100 KiB |
+| RAM idle live (`measure-ram-in-qemu.sh`) | 378 MiB | **366 MiB** |
+| RAM idle del instalado cifrado | — | 326 MiB (a los 66 s) |
+| RAM idle del instalado sin cifrar | — | 324 MiB (a los 60 s) |
+| Paquetes del instalado cifrado | — | 417 = base − 5 live + 24 arranque/cifrado/teclado |
+| Paquetes del instalado sin cifrar | — | 416 (igual, sin `cryptsetup-initramfs`) |
+
+Las dos instalaciones (una por lanzador) se hicieron con los ojos en QEMU + OVMF y
+`verificar-instalado.sh` dio **0 fallos** en ambas. Las cifras de RAM del instalado se
+tomaron antes de los 90 s de reposo, así que son orientativas.
+
+### Instalar y verificar en QEMU (`install-in-qemu.sh`)
+
+```bash
+./install-in-qemu.sh instalar     # ISO en UEFI (OVMF) + disco qcow2 vacío
+./install-in-qemu.sh arrancar     # arranca el disco instalado: pide la contraseña LUKS
+#   dentro del instalado:  sudo mount -o ro /dev/vdb1 /mnt && sudo sh /mnt/verificar-instalado.sh
+./install-in-qemu.sh informe      # recoge el informe del log serie y compara paquetes
+
+# Variante sin cifrar (disco y logs propios; el verificador se lanza con --sin-cifrar):
+./install-in-qemu.sh --sin-cifrar instalar | arrancar | informe
+```
+
+**Pendiente de verificar:** Secure Boot activo, arranque en BIOS legacy y RAM idle del
+instalado con ≥ 90 s de reposo.
+
 ## Reproducibilidad — estado y deuda conocida
 
 Este paso aplica **higiene** de reproducibilidad, pero **NO persigue bit-idéntico todavía**

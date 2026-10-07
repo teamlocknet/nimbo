@@ -1,0 +1,29 @@
+# Branding mínimo de nimbo para Calamares. Sin QML (slideshow de imagen) y sin URLs ni
+# servidor de subida de logs: el instalador no habla con nadie (hermetismo).
+---
+componentName:  nimbo
+welcomeStyleCalamares:   false
+welcomeExpandingLogo:   true
+windowExpanding:    normal
+windowSize: 800px,520px
+windowPlacement: center
+sidebar: widget
+navigation: widget
+strings:
+    productName:         "nimbo"
+    shortProductName:    "nimbo"
+    version:             "0.1 (codename)"
+    shortVersion:        "0.1"
+    versionedName:       "nimbo 0.1"
+    shortVersionedName:  "nimbo 0.1"
+    bootloaderEntryName: "nimbo"
+images:
+    productIcon:         "nimbo.png"
+    productLogo:         "nimbo.png"
+    productWelcome:      "nimbo-bienvenida.png"
+style:
+   SidebarBackground:        "#14202E"
+   SidebarText:              "#FFFFFF"
+   SidebarTextCurrent:       "#14202E"
+   SidebarBackgroundCurrent: "#3DAEE9"
+slideshow: [ "nimbo-bienvenida.png" ]

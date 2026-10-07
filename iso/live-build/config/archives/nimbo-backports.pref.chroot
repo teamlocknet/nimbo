@@ -1,0 +1,13 @@
+Explanation: nimbo — excepción ACOTADA de backports (ADR-006, Paso 3C).
+Explanation: De bookworm-backports entra SOLO `calamares` (3.3.8: luksGeneration + noEncrypt).
+Explanation: Todo lo demás de backports queda con prioridad negativa: APT no puede
+Explanation: instalarlo ni como dependencia, así que el build FALLA si algo más lo pide.
+Explanation: Sufijo .pref.chroot: live-build lo retira al cerrar la etapa chroot; no viaja
+Explanation: a la ISO ni al sistema instalado.
+Package: calamares
+Pin: release n=bookworm-backports
+Pin-Priority: 990
+
+Package: *
+Pin: release n=bookworm-backports
+Pin-Priority: -1

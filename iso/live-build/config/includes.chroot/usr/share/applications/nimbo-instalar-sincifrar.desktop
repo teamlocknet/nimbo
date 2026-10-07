@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Instalar nimbo sin cifrar (avanzado)
+Name[en]=Install nimbo without encryption (advanced)
+Comment=Instala nimbo SIN cifrar el disco. No recomendado: nimbo-tpm-setup no podrá usarse
+Comment[en]=Install nimbo WITHOUT disk encryption. Not recommended
+Exec=nimbo-instalar --sin-cifrar
+Icon=/etc/calamares/branding/nimbo/nimbo.png
+Terminal=false
+Categories=System;

@@ -50,6 +50,9 @@ anclaje y todas las verificaciones siguen sobre bookworm; D9 queda **resuelta**.
   funciones nuevas de systemd 257 (trixie). El diseño de LUKS+TPM se hace contra 252.
 - **Calamares = la versión que trae bookworm.** La receta del instalador se escribe contra
   esa versión, no contra la de trixie.
+  > **Nota (2026-10-06): enmendado por
+  > [ADR-006](ADR-006-cadena-de-arranque-instalador.md)** — excepción acotada: el
+  > instalador usa Calamares 3.3.8 de `bookworm-backports` (solo ese paquete).
 - **Cambia la narrativa.** "Basado en Debian Stable" deja de ser exacto y pasa a
   **"basado en Debian, rama con soporte LTS (bookworm)"**. Es un reencuadre honesto: se
   elige oldstable por reproducibilidad y estabilidad ya verificadas, y se dice explícito en
