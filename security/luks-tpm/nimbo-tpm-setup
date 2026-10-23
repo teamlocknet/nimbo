@@ -1,0 +1,345 @@
+#!/bin/sh
+# nimbo-tpm-setup — vincula la clave LUKS2 de la raíz al TPM 2.0 local (Paso 4, D17).
+#
+# OPCIONAL y POST-INSTALACIÓN: el sistema ya arranca con la contraseña LUKS que se puso en
+# el instalador; esto añade el desbloqueo automático por TPM. La contraseña NUNCA se borra:
+# si el TPM no puede desbloquear (manipulación de /boot, actualización del kernel, TPM
+# limpiado), el arranque cae a pedir la contraseña.
+#
+# DOS FASES, con un reinicio entre medias (el orden no se cambia):
+#   Fase 1 — preparar, sin tocar LUKS: instala dracut + tpm2-tools desde el pool local,
+#            añade tpm2-device=auto al crypttab YA AHORA (así el initrd de esta fase es el
+#            definitivo y el PCR 9 que se sellará en la fase 2 es el que medirá el arranque
+#            siguiente) y regenera el initrd. Si algo falla, ROLLBACK AUTOMÁTICO a
+#            initramfs-tools y al crypttab original, con log y verificación final.
+#   Reinicio — pide la contraseña como siempre: valida dracut y el teclado ANTES de que el
+#            TPM entre en juego.
+#   Fase 2 — sellar: clave de recuperación + token TPM2 con PCR 7+9 (opcional PIN).
+#
+# Decisiones (2026-10-23): PCR 7+9 en dos fases · PIN opcional (--con-pin) · dracut, no
+# clevis · Secure Boot EXIGIDO salvo --sin-secure-boot (aviso fuerte) · clave de
+# recuperación sí, confirmada entera · resellado manual (--reseal).
+#
+# Uso:
+#   sudo nimbo-tpm-setup [--con-pin] [--sin-secure-boot]   # fase 1 o 2 según el estado
+#   sudo nimbo-tpm-setup --reseal                          # tras actualizar kernel/initrd
+#   nimbo-tpm-setup --estado                               # solo lectura
+#
+# Estado y log: /var/lib/nimbo-tpm/ (estado, nimbo-tpm-setup.log, respaldo/).
+# Códigos de salida: 0 OK · 1 error (con rollback si tocó algo) · 2 uso · 3 no aplica
+# (instalación sin cifrar) · 4 comprobación previa fallida (nada cambiado).
+set -u
+
+DIR=/var/lib/nimbo-tpm
+ESTADO="$DIR/estado"
+LOG="$DIR/nimbo-tpm-setup.log"
+RESP="$DIR/respaldo"
+DRACUT_CONF=/etc/dracut.conf.d/90-nimbo-tpm.conf
+EFIGUID=8be4df61-93ca-11d2-aa0d-00e098032b8c
+PAQ_TPM="dracut tpm2-tools libtss2-esys-3.0.2-0 libtss2-mu0 libtss2-rc0 libtss2-tcti-device0 libtss2-tctildr0"
+PAQ_ITOOLS="initramfs-tools cryptsetup-initramfs"
+# Lo ÚNICO que instalar dracut puede retirar (lo comprueba una simulación antes de tocar nada).
+PERMITIDOS_QUITAR="initramfs-tools initramfs-tools-core cryptsetup-initramfs"
+APT="apt-get -y -q --no-install-recommends -o Dpkg::Options::=--force-confold"
+export DEBIAN_FRONTEND=noninteractive
+
+CON_PIN=0; SIN_SB=0; ACCION=auto
+
+# --- utilidades --------------------------------------------------------------------------
+LOG_ON=0
+log() {
+    printf '%s\n' "$*"
+    [ "$LOG_ON" = 1 ] && printf '%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" >> "$LOG"
+    return 0
+}
+aviso() { log ""; log "!! $*"; }
+salir() { code="$1"; shift; log "ERROR: $*"; exit "$code"; }
+# Ejecuta un comando dejando su salida completa en el log; devuelve su código.
+run() {
+    log "+ $*"
+    if [ "$LOG_ON" = 1 ]; then "$@" >> "$LOG" 2>&1; else "$@"; fi
+}
+efivar() {
+    f="/sys/firmware/efi/efivars/$1-$EFIGUID"
+    if [ -r "$f" ]; then od -An -t u1 -j4 -N1 "$f" | tr -d ' '; else echo "?"; fi
+}
+instalado() { dpkg-query -W -f='${db:Status-Status}' "$1" 2>/dev/null | grep -q '^installed$'; }
+lista_paquetes() { dpkg-query -W -f='${db:Status-Status} ${Package}\n' | awk '$1=="installed"{print $2}' | LC_ALL=C sort; }
+
+uso() { sed -n '2,32p' "$0" | sed 's/^# \{0,1\}//'; exit "${1:-2}"; }
+
+for a in "$@"; do
+    case "$a" in
+        --con-pin)         CON_PIN=1 ;;
+        --sin-secure-boot) SIN_SB=1 ;;
+        --reseal)          ACCION=reseal ;;
+        --estado)          ACCION=estado ;;
+        -h|--ayuda|--help) uso 0 ;;
+        *) echo "Argumento desconocido: $a"; uso 2 ;;
+    esac
+done
+
+# --- detección de la raíz cifrada ----------------------------------------------------------
+# Rellena RAIZ_MAPPER, CT_NOMBRE, CT_LINEA, DEV. Devuelve 3 si / no está sobre LUKS.
+detectar_raiz() {
+    src=$(findmnt -no SOURCE / 2>/dev/null)
+    case "$src" in
+        /dev/mapper/*) RAIZ_MAPPER="$src"; CT_NOMBRE="${src#/dev/mapper/}" ;;
+        *) return 3 ;;
+    esac
+    CT_LINEA=$(awk -v n="$CT_NOMBRE" '$1==n' /etc/crypttab 2>/dev/null | head -1)
+    [ -n "$CT_LINEA" ] || return 1
+    origen=$(printf '%s\n' "$CT_LINEA" | awk '{print $2}')
+    case "$origen" in
+        UUID=*) DEV=$(blkid -U "${origen#UUID=}" 2>/dev/null) ;;
+        /dev/*) DEV="$origen" ;;
+        *) DEV="" ;;
+    esac
+    [ -n "$DEV" ] || return 1
+    return 0
+}
+tiene_token_tpm() { cryptsetup luksDump "$DEV" 2>/dev/null | grep -q 'systemd-tpm2'; }
+slots_usados() { cryptsetup luksDump "$DEV" 2>/dev/null | grep -cE '^  [0-9]+: luks2'; }
+
+leer_estado() { FASE=""; [ -r "$ESTADO" ] && . "$ESTADO"; return 0; }
+
+# --- --estado (solo lectura) ---------------------------------------------------------------
+cmd_estado() {
+    echo "nimbo-tpm-setup — estado"
+    if [ -d /sys/firmware/efi ]; then
+        echo "  Firmware      : UEFI · SecureBoot=$(efivar SecureBoot) · SetupMode=$(efivar SetupMode)"
+    else
+        echo "  Firmware      : BIOS (no aplica)"
+    fi
+    if [ -e /dev/tpmrm0 ]; then
+        echo "  TPM           : presente (versión $(cat /sys/class/tpm/tpm0/tpm_version_major 2>/dev/null || echo ?))"
+    else
+        echo "  TPM           : no detectado"
+    fi
+    if detectar_raiz; then
+        echo "  Raíz          : $RAIZ_MAPPER sobre $DEV"
+        echo "  crypttab      : $CT_LINEA"
+        if [ "$(id -u)" = 0 ]; then
+            echo "  Token TPM2    : $(tiene_token_tpm && echo sí || echo no) · keyslots usados: $(slots_usados)"
+        else
+            echo "  Token TPM2    : (ejecuta como root para leer la cabecera LUKS)"
+        fi
+    else
+        echo "  Raíz          : sin LUKS (instalación sin cifrar)"
+    fi
+    echo "  initramfs     : $(instalado dracut && echo dracut || { instalado initramfs-tools && echo initramfs-tools || echo '?'; })"
+    leer_estado
+    echo "  Fase registrada: ${FASE:-ninguna}"
+}
+
+# --- comprobaciones previas (NADA cambia si fallan) -----------------------------------------
+comprobar_previos() {
+    [ "$(id -u)" = 0 ] || salir 4 "ejecuta como root (sudo)."
+    [ -d /sys/firmware/efi ] || salir 4 "arranque por BIOS: el sellado con TPM requiere UEFI."
+
+    sbv=$(efivar SecureBoot); smv=$(efivar SetupMode)
+    if [ "$sbv" != 1 ] || [ "$smv" != 0 ]; then
+        if [ "$SIN_SB" = 1 ]; then
+            aviso "SECURE BOOT NO ESTÁ ACTIVO (SecureBoot=$sbv, SetupMode=$smv)."
+            aviso "El PCR 7 registrará un arranque SIN verificación de firmas: el sellado NO"
+            aviso "protege contra un cargador de arranque manipulado. Continúas bajo tu"
+            aviso "responsabilidad (--sin-secure-boot)."
+            log ""
+        else
+            salir 4 "Secure Boot no está activo (SecureBoot=$sbv, SetupMode=$smv). Actívalo en el
+       firmware y vuelve a ejecutar; o usa --sin-secure-boot si entiendes lo que pierdes."
+        fi
+    fi
+
+    detectar_raiz; r=$?
+    if [ "$r" = 3 ]; then
+        log "Instalación SIN cifrar: la raíz no está sobre LUKS, no hay nada que vincular al TPM."
+        exit 3
+    fi
+    [ "$r" = 0 ] || salir 4 "no encuentro la entrada de la raíz ($CT_NOMBRE) en /etc/crypttab o su dispositivo."
+    cryptsetup isLuks --type luks2 "$DEV" 2>/dev/null || salir 4 "$DEV no es LUKS2 (systemd-cryptenroll necesita LUKS2)."
+
+    [ -e /dev/tpmrm0 ] || salir 4 "no hay TPM (/dev/tpmrm0 no existe). Actívalo en el firmware."
+    tv=$(cat /sys/class/tpm/tpm0/tpm_version_major 2>/dev/null || echo "?")
+    [ "$tv" = 2 ] || salir 4 "el TPM no es 2.0 (versión: $tv)."
+
+    usados=$(slots_usados)
+    [ "$usados" -le 29 ] || salir 4 "la cabecera LUKS tiene $usados keyslots usados; hacen falta 2 libres."
+}
+
+# Simula la instalación de dracut y tpm2-tools desde el pool SIN tocar nada.
+simular_pool() {
+    sim=$(apt-get -s -o Debug::NoLocking=1 --no-install-recommends install $PAQ_TPM 2>&1) \
+        || { printf '%s\n' "$sim" | tail -5; salir 4 "el pool local no puede instalar dracut/tpm2-tools sin red."; }
+    quitar=$(printf '%s\n' "$sim" | awk '$1=="Remv"{print $2}' | LC_ALL=C sort -u | tr '\n' ' ')
+    for p in $quitar; do
+        case " $PERMITIDOS_QUITAR " in
+            *" $p "*) ;;
+            *) salir 4 "instalar dracut retiraría '$p', que no está en la lista permitida. No sigo." ;;
+        esac
+    done
+    log "Simulación del pool: OK (retirará: ${quitar:-nada})"
+}
+
+# --- rollback de la fase 1 ----------------------------------------------------------------
+# Revierte paquetes, config de dracut, crypttab e initrd a como estaban, deja log de qué y
+# por qué, y VERIFICA que el sistema queda arrancable con initramfs-tools.
+EN_FASE1=0
+rollback() {
+    motivo="$1"
+    EN_FASE1=0
+    trap - INT TERM HUP
+    aviso "ROLLBACK de la fase 1. Motivo: $motivo"
+    log "Revirtiendo a initramfs-tools y al crypttab original…"
+
+    # 1) paquetes: reinstalar lo retirado (eso retira dracut por conflicto) y purgar lo añadido.
+    lista_paquetes > "$RESP/paquetes-rollback-inicio.txt"
+    quitados=$(LC_ALL=C comm -23 "$RESP/paquetes-antes.txt" "$RESP/paquetes-rollback-inicio.txt" | tr '\n' ' ')
+    [ -n "$quitados" ] && { run $APT install $quitados || log "   (fallo reinstalando: $quitados)"; }
+    ahora=$(lista_paquetes)
+    anadidos=$(printf '%s\n' "$ahora" | LC_ALL=C comm -13 "$RESP/paquetes-antes.txt" - | tr '\n' ' ')
+    [ -n "$anadidos" ] && { run apt-get -y -q purge $anadidos || log "   (fallo purgando: $anadidos)"; }
+    log "   paquetes reinstalados: ${quitados:-ninguno} · purgados: ${anadidos:-ninguno}"
+
+    # 2) configuración y crypttab
+    rm -f "$DRACUT_CONF" && log "   retirado $DRACUT_CONF"
+    cp -p "$RESP/crypttab" /etc/crypttab && log "   restaurado /etc/crypttab"
+
+    # 3) initrd con initramfs-tools
+    run update-initramfs -u -k "$KVER" || run update-initramfs -c -k "$KVER" || log "   (fallo regenerando el initrd)"
+
+    # 4) verificación: ¿arrancable con initramfs-tools y el crypttab original?
+    ok=1
+    lista_paquetes > "$RESP/paquetes-rollback-fin.txt"
+    if cmp -s "$RESP/paquetes-antes.txt" "$RESP/paquetes-rollback-fin.txt"; then log "   OK  paquetes idénticos a antes de la fase 1"
+    else log "   FALLO paquetes distintos de antes:"; LC_ALL=C diff "$RESP/paquetes-antes.txt" "$RESP/paquetes-rollback-fin.txt" | sed 's/^/        /' | while read -r l; do log "$l"; done; ok=0; fi
+    if cmp -s "$RESP/crypttab" /etc/crypttab; then log "   OK  /etc/crypttab idéntico al original"; else log "   FALLO /etc/crypttab distinto del original"; ok=0; fi
+    img="/boot/initrd.img-$KVER"
+    cont=$(lsinitramfs "$img" 2>/dev/null)
+    for pat in 'sbin/cryptsetup$' 'scripts/local-top/cryptroot$' 'cryptroot/crypttab$'; do
+        if printf '%s\n' "$cont" | grep -qE "$pat"; then log "   OK  $img contiene $pat"; else log "   FALLO $img sin $pat"; ok=0; fi
+    done
+    if printf '%s\n' "$cont" | grep -qE 'etc/console-setup/(cached_.*\.kmap|tmpkbd\.)|etc/boottime\.kmap'; then log "   OK  $img lleva el teclado de consola"
+    else log "   FALLO $img sin keymap"; ok=0; fi
+
+    if [ "$ok" = 1 ]; then
+        log ""
+        log "ROLLBACK COMPLETO Y VERIFICADO: el sistema arranca como antes (initramfs-tools,"
+        log "crypttab original, contraseña LUKS). No se ha tocado la cabecera LUKS."
+        printf 'FASE=rollback\nFECHA=%s\nMOTIVO=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$motivo" > "$ESTADO"
+    else
+        aviso "ROLLBACK INCOMPLETO. NO REINICIES todavía. Revisa $LOG."
+        aviso "Copias de seguridad en $RESP (crypttab, initrd anterior, listas de paquetes)."
+        printf 'FASE=rollback-incompleto\nFECHA=%s\nMOTIVO=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$motivo" > "$ESTADO"
+    fi
+    exit 1
+}
+fallo_fase1() { rollback "$1"; }
+
+# --- fase 1 -------------------------------------------------------------------------------
+fase1() {
+    log "== Fase 1: preparar el arranque con dracut (la cabecera LUKS NO se toca) =="
+    simular_pool
+    KVER=$(uname -r)
+    [ -e "/boot/initrd.img-$KVER" ] || salir 4 "no existe /boot/initrd.img-$KVER."
+    libre=$(df --output=avail -k /boot | tail -1 | tr -d ' ')
+    [ "$libre" -ge 81920 ] || salir 4 "/boot tiene ${libre} KiB libres; hacen falta al menos 80 MiB."
+
+    # Copias de seguridad ANTES de cambiar nada.
+    mkdir -p "$RESP"
+    cp -p /etc/crypttab "$RESP/crypttab"
+    cp -p "/boot/initrd.img-$KVER" "$RESP/initrd.img-$KVER"
+    lista_paquetes > "$RESP/paquetes-antes.txt"
+    log "Copias de seguridad en $RESP (crypttab, initrd, lista de paquetes)."
+
+    EN_FASE1=1
+    trap 'fallo_fase1 "interrumpido por señal"' INT TERM HUP
+
+    # 1) configuración de dracut ANTES de instalarlo: su postinst ya genera con ella.
+    #    09console-setup (de Debian) lleva al initrd el teclado de /etc/default/keyboard;
+    #    10i18n (upstream) necesita vconsole.conf y keymaps que bookworm no trae: fuera.
+    mkdir -p /etc/dracut.conf.d
+    cat > "$DRACUT_CONF" <<'EOF'
+# nimbo-tpm-setup (Paso 4): initrd con systemd-cryptsetup y soporte TPM2.
+hostonly="yes"
+add_dracutmodules+=" systemd crypt tpm2-tss console-setup "
+omit_dracutmodules+=" i18n "
+EOF
+    log "Escrito $DRACUT_CONF"
+
+    # 2) crypttab: tpm2-device=auto en la línea de la raíz, YA en la fase 1.
+    nueva=$(printf '%s\n' "$CT_LINEA" | awk '{
+        o = ($4 == "" || $4 == "none") ? "tpm2-device=auto" : $4 ",tpm2-device=auto"
+        print $1, $2, ($3 == "" ? "none" : $3), o }')
+    awk -v n="$CT_NOMBRE" -v l="$nueva" '$1==n {print l; next} {print}' "$RESP/crypttab" > /etc/crypttab.nimbo \
+        && cat /etc/crypttab.nimbo > /etc/crypttab && rm -f /etc/crypttab.nimbo \
+        || fallo_fase1 "no se pudo escribir /etc/crypttab"
+    log "crypttab: $nueva"
+
+    # 3) dracut + tpm2-tools desde el pool local (retira initramfs-tools por conflicto).
+    run $APT install $PAQ_TPM || fallo_fase1 "falló la instalación de dracut/tpm2-tools desde el pool"
+    instalado dracut || fallo_fase1 "dracut no quedó instalado"
+
+    # 4) regenerar el initrd con dracut (explícito, aunque el postinst ya lo haya hecho).
+    run dracut --force "/boot/initrd.img-$KVER" "$KVER" || fallo_fase1 "dracut no pudo generar el initrd"
+
+    # 5) verificar el initrd: si falta algo, no se reinicia con él.
+    img="/boot/initrd.img-$KVER"
+    cont=$(lsinitrd "$img" 2>/dev/null) || fallo_fase1 "lsinitrd no puede leer $img"
+    for pat in 'systemd-cryptsetup$' 'libcryptsetup-token-systemd-tpm2\.so' 'libtss2-esys' 'lib/udev/console-setup$' 'etc/crypttab$'; do
+        printf '%s\n' "$cont" | grep -qE "$pat" || fallo_fase1 "el initrd generado no contiene $pat"
+        log "   OK  initrd contiene $pat"
+    done
+    lsinitrd -f etc/crypttab "$img" 2>/dev/null | grep -q 'tpm2-device=auto' \
+        || fallo_fase1 "el crypttab del initrd no lleva tpm2-device=auto"
+    log "   OK  el crypttab del initrd lleva tpm2-device=auto"
+
+    EN_FASE1=0
+    trap - INT TERM HUP
+    sha=$(sha256sum "$img" | cut -d' ' -f1)
+    cat > "$ESTADO" <<EOF
+FASE=1
+FECHA=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+KVER=$KVER
+INITRD_SHA256=$sha
+CON_PIN=$CON_PIN
+SIN_SB=$SIN_SB
+EOF
+    log ""
+    log "FASE 1 COMPLETA. initrd: $img (sha256 ${sha%"${sha#????????????????}"}…)"
+    log ""
+    log "  1. REINICIA. Pedirá la contraseña LUKS como siempre (ahora la pide dracut)."
+    log "     Comprueba que la aceptas con tu teclado: si lleva símbolos, deben funcionar."
+    log "  2. Ya dentro, vuelve a ejecutar:  sudo nimbo-tpm-setup"
+    log "     para sellar la clave en el TPM (fase 2)."
+    log ""
+    log "  NO actualices el kernel ni regeneres el initrd antes de la fase 2."
+}
+
+# --- programa principal -------------------------------------------------------------------
+case "$ACCION" in
+    estado) cmd_estado; exit 0 ;;
+esac
+
+comprobar_previos
+mkdir -p "$DIR" && chmod 0700 "$DIR"
+LOG_ON=1
+log "---- nimbo-tpm-setup $ACCION $* ($(date -u +%Y-%m-%dT%H:%M:%SZ)) ----"
+log "Raíz: $RAIZ_MAPPER sobre $DEV · SecureBoot=$(efivar SecureBoot) · TPM 2.0 presente"
+leer_estado
+
+case "$ACCION" in
+    reseal)
+        salir 1 "--reseal todavía no está implementado (llega con la fase 2)." ;;
+esac
+
+if tiene_token_tpm; then
+    log "La clave ya está sellada en el TPM. Tras actualizar el kernel usa: sudo nimbo-tpm-setup --reseal"
+    exit 0
+fi
+case "${FASE:-}" in
+    ""|rollback) fase1 ;;
+    1) salir 1 "la fase 2 todavía no está implementada en esta versión." ;;
+    rollback-incompleto) salir 1 "hay un rollback incompleto registrado; revisa $LOG antes de seguir." ;;
+    *) salir 1 "estado desconocido en $ESTADO: FASE=$FASE" ;;
+esac
