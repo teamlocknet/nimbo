@@ -75,3 +75,15 @@ python3 -m venv .venv && . .venv/bin/activate
 pip install -e '.[test]'
 pytest -q
 ```
+
+El venv local sirve para iterar rápido, pero **no prueba el producto**: la ISO es offline
+y el CLI corre con las versiones de bookworm (ADR-005: Python 3.11, typer 0.7, click 8.1,
+pytest 7.2). Para probar contra ellas, en el mismo contenedor anclado que la ISO y con
+las dependencias instaladas desde APT:
+
+```
+CONTAINER_ENGINE=docker ./test-in-bookworm.sh    # o podman (por defecto)
+```
+
+Es lo mismo que corre el job `tests-cli-bookworm` del CI. Los tests usan el fixture
+`cli_runner` (`tests/conftest.py`), que separa stderr tanto en click 8.1 como en 8.2+.

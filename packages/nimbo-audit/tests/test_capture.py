@@ -196,19 +196,19 @@ def test_resolver_sin_engagement_falla(tmp_path: Path) -> None:
 # --- CLI: mensajes exactos [OK] / [ERROR] / [AVISO] --------------------------
 
 
-def test_cli_capture_ok(tmp_path: Path) -> None:
+def test_cli_capture_ok(tmp_path: Path, cli_runner: CliRunner) -> None:
     root = _engagement(tmp_path)
     origen = _archivo(tmp_path, "captura.pcap", b"datos")
-    res = CliRunner().invoke(app, ["capture", str(origen), "--dir", str(root)])
+    res = cli_runner.invoke(app, ["capture", str(origen), "--dir", str(root)])
     assert res.exit_code == 0
     assert "[OK] Evidencia registrada:" in res.stdout
     assert "SHA-256:" in res.stdout
     assert (root / "evidencia" / "captura.pcap").is_file()
 
 
-def test_cli_archivo_no_encontrado(tmp_path: Path) -> None:
+def test_cli_archivo_no_encontrado(tmp_path: Path, cli_runner: CliRunner) -> None:
     root = _engagement(tmp_path)
-    res = CliRunner().invoke(
+    res = cli_runner.invoke(
         app, ["capture", str(tmp_path / "no-existe"), "--dir", str(root)]
     )
     assert res.exit_code == 1
@@ -218,10 +218,10 @@ def test_cli_archivo_no_encontrado(tmp_path: Path) -> None:
     )
 
 
-def test_cli_sin_engagement_activo(tmp_path: Path) -> None:
+def test_cli_sin_engagement_activo(tmp_path: Path, cli_runner: CliRunner) -> None:
     vacio = tmp_path / "vacio"
     vacio.mkdir()
     origen = _archivo(tmp_path, "captura.pcap", b"datos")
-    res = CliRunner().invoke(app, ["capture", str(origen), "--dir", str(vacio)])
+    res = cli_runner.invoke(app, ["capture", str(origen), "--dir", str(vacio)])
     assert res.exit_code == 1
     assert "[ERROR]" in res.stderr

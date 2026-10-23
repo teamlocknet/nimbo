@@ -186,17 +186,21 @@ def test_report_sin_datos_no_tiene_datos(tmp_path: Path) -> None:
     assert comando.tiene_datos() is False
 
 
-def test_cli_report_sin_datos_pide_confirmacion_y_declina(tmp_path: Path) -> None:
+def test_cli_report_sin_datos_pide_confirmacion_y_declina(
+    tmp_path: Path, cli_runner: CliRunner
+) -> None:
     root = _engagement(tmp_path)
-    res = CliRunner().invoke(app, ["report", "--dir", str(root)], input="n\n")
+    res = cli_runner.invoke(app, ["report", "--dir", str(root)], input="n\n")
     assert "[AVISO] El engagement no contiene evidencia ni registros de sesión." in res.stdout
     # Declinar: no se genera nada.
     assert not (root / "reportes" / "reporte-acme.md").exists()
 
 
-def test_cli_report_sin_datos_con_yes_genera_parcial(tmp_path: Path) -> None:
+def test_cli_report_sin_datos_con_yes_genera_parcial(
+    tmp_path: Path, cli_runner: CliRunner
+) -> None:
     root = _engagement(tmp_path)
-    res = CliRunner().invoke(app, ["report", "--dir", str(root), "--yes"])
+    res = cli_runner.invoke(app, ["report", "--dir", str(root), "--yes"])
     assert res.exit_code == 0
     assert "[OK] Reporte generado en reportes/reporte-acme.md" in res.stdout
     assert (root / "reportes" / "reporte-acme.md").is_file()
@@ -205,23 +209,23 @@ def test_cli_report_sin_datos_con_yes_genera_parcial(tmp_path: Path) -> None:
 # --- CLI: mensaje de éxito exacto -------------------------------------------
 
 
-def test_cli_report_ok(tmp_path: Path) -> None:
+def test_cli_report_ok(tmp_path: Path, cli_runner: CliRunner) -> None:
     root = _engagement(tmp_path)
     origen = tmp_path / "captura.pcap"
     origen.write_bytes(b"datos")
-    CliRunner().invoke(app, ["capture", str(origen), "--dir", str(root)])
+    cli_runner.invoke(app, ["capture", str(origen), "--dir", str(root)])
 
-    res = CliRunner().invoke(app, ["report", "--dir", str(root)])
+    res = cli_runner.invoke(app, ["report", "--dir", str(root)])
     assert res.exit_code == 0
     assert "[OK] Reporte generado en reportes/reporte-acme.md" in res.stdout
     md = (root / "reportes" / "reporte-acme.md").read_text(encoding="utf-8")
     assert hashlib.sha256(b"datos").hexdigest() in md
 
 
-def test_cli_report_sin_engagement_activo(tmp_path: Path) -> None:
+def test_cli_report_sin_engagement_activo(tmp_path: Path, cli_runner: CliRunner) -> None:
     vacio = tmp_path / "vacio"
     vacio.mkdir()
-    res = CliRunner().invoke(app, ["report", "--dir", str(vacio)])
+    res = cli_runner.invoke(app, ["report", "--dir", str(vacio)])
     assert res.exit_code == 1
     assert "[ERROR]" in res.stderr
 
@@ -272,16 +276,16 @@ def test_pdf_ok_invoca_pandoc(tmp_path: Path) -> None:
 
 
 def test_cli_report_pdf_sin_pandoc_genera_md_y_avisa(
-    tmp_path: Path, monkeypatch
+    tmp_path: Path, monkeypatch, cli_runner: CliRunner
 ) -> None:
     """--pdf nunca debe reventar ni dejar el .md sin generar (nivel a)."""
     monkeypatch.setattr(pdf_mod.shutil, "which", lambda _: None)
     root = _engagement(tmp_path)
     origen = tmp_path / "captura.pcap"
     origen.write_bytes(b"datos")
-    CliRunner().invoke(app, ["capture", str(origen), "--dir", str(root)])
+    cli_runner.invoke(app, ["capture", str(origen), "--dir", str(root)])
 
-    res = CliRunner().invoke(app, ["report", "--dir", str(root), "--pdf"])
+    res = cli_runner.invoke(app, ["report", "--dir", str(root), "--pdf"])
     assert res.exit_code == 0
     assert (root / "reportes" / "reporte-acme.md").is_file()
     assert "[AVISO]" in res.stdout
