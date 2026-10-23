@@ -24,6 +24,8 @@ live-image-*
 *.qcow2
 *.fd
 installed-*.txt
+# Arnés con Secure Boot: caché del OVMF de Debian (host-side, NO va en la ISO).
+.cache-ovmf/
 
 # Casi todo config/ lo genera `lb config` a partir de auto/config (se regenera) y
 # NO se versiona. EXCEPCIÓN (Paso 3A): la lista curada de paquetes del escritorio
