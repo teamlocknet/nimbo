@@ -244,6 +244,13 @@ puede copiar texto. Con `arrancar` el log serie se **acumula** entre arranques y
 `installed<sufijo>-evidencia-<fecha>.txt`. El `nimbo-tpm-setup` que se entrega no escribe en
 la consola serie ni en discos auxiliares.
 
+**Credenciales en la evidencia.** La fase 2 imprime la clave de recuperación del volumen de
+prueba, así que el log serie y la evidencia original la contienen. **Regla del proyecto:
+ninguna credencial entra al repo, ni siquiera de prueba.** Ambos ficheros están en
+`.gitignore`, y `evidencia` genera además `…-evidencia-<fecha>-redactada.txt` con la clave
+sustituida (falla si la redacción no la elimina). Es la única copia que se puede versionar o
+mostrar en la sustentación, y se revisa antes de copiarla a su destino.
+
 **Requisitos del host.** `qemu-system-x86_64` + `qemu-img`, firmware OVMF y KVM:
 
 | Host | Paquetes |

@@ -24,6 +24,12 @@ live-image-*
 *.qcow2
 *.fd
 installed-*.txt
+# Evidencia del Paso 4 (probar-tpm.sh): el original puede llevar la clave de recuperación
+# del volumen de prueba. REGLA: ninguna credencial entra al repo, ni de prueba. Ni el log
+# serie ni la evidencia se versionan; si hace falta mostrar algo, la copia -redactada, y
+# copiándola a mano a su destino tras revisarla.
+installed-*-serial.log
+installed-*-evidencia-*.txt
 # Arnés con Secure Boot: caché del OVMF de Debian (host-side, NO va en la ISO).
 .cache-ovmf/
 # Paso 4: estado persistente del TPM emulado (swtpm) de cada disco de prueba.

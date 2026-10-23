@@ -17,6 +17,11 @@
 # systemd-cryptenroll de la terminal. Lo que SÍ queda en la consola serie es lo que se
 # imprime, incluida la clave de recuperación que genera la fase 2: es una credencial del
 # volumen de PRUEBA, creada por la prueba.
+#
+# REGLA DEL PROYECTO: ninguna credencial entra al repo, ni de prueba. El log serie y la
+# evidencia extraída están en .gitignore; `install-in-qemu.sh … evidencia` genera además
+# una copia -redactada (clave de recuperación sustituida), que es la ÚNICA que se puede
+# versionar o mostrar en la sustentación.
 set -u
 
 [ "$(id -u)" = 0 ] || { echo "Ejecuta como root (sudo)."; exit 2; }

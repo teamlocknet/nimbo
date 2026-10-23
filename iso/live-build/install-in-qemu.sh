@@ -288,9 +288,20 @@ cmd_evidencia() {
          f{print}
          /^NIMBO_TPM_(RUN_END|EVID_END) /{f=0; print ""}' "$limpio" > "$out"
     rm -f "$limpio"
-    cat "$out"
+    # CREDENCIALES: la fase 2 imprime la clave de recuperación del volumen de PRUEBA, así que
+    # el fichero original lleva una credencial. Regla del proyecto: ninguna credencial entra
+    # al repo ni a la evidencia de sustentación. Ambos ficheros están en .gitignore; si hay
+    # que versionar o mostrar algo, se usa SOLO la copia -redactada.
+    # Formato de systemd: 8 bloques de 8 caracteres "modhex" separados por guiones.
+    local red="${out%.txt}-redactada.txt" patron='([cbdefghijklnrtuv]{8}-){7}[cbdefghijklnrtuv]{8}'
+    sed -E "s/$patron/[CLAVE DE RECUPERACIÓN REDACTADA]/g" "$out" > "$red"
+    if grep -qE "$patron" "$red"; then
+        rm -f "$red"; echo "ERROR: la redacción no eliminó la clave de recuperación; no hay copia redactada."; exit 1
+    fi
+    cat "$red"
     echo
-    echo ">> Evidencia: $out"
+    echo ">> Evidencia (original, con credenciales de prueba; NO se versiona): $out"
+    echo ">> Copia redactada (la única que se puede versionar o mostrar):      $red"
 }
 
 cmd_limpiar() {
