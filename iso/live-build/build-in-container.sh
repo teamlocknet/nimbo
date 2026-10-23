@@ -57,6 +57,25 @@ echo ">> Imagen base       : $IMAGE"
 echo ">> Snapshot (anclaje): $NIMBO_SNAPSHOT  (toolchain + producto)"
 echo ">> SOURCE_DATE_EPOCH  : $SOURCE_DATE_EPOCH ($(date -u -d "@$SOURCE_DATE_EPOCH" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo '?'))"
 echo ">> Directorio montado : $HERE -> /build"
+
+# --- Sistema de archivos del directorio de build (ADR-007, hallazgo H-001) -------
+# El chroot vive aquí, así que hereda este sistema de archivos. En btrfs los directorios
+# tienen nlink=1 y eso se filtraba al initrd (cpio newc guarda nlink): la ISO salía
+# distinta de la de CI (ext4). Lo cierra el hook 9990-nimbo-initrd-tmpfs, cuyo
+# auto-chequeo FALLA el build si la filtración reaparece. Aquí solo se AVISA: el build es
+# correcto, pero es un anfitrión distinto del de CI y la prueba es comparar el SHA-256.
+FS_BUILD="$(stat -f -c %T "$HERE" 2>/dev/null || echo desconocido)"
+echo ">> Sistema de archivos: $FS_BUILD"
+if [ "$FS_BUILD" = "btrfs" ]; then
+    echo
+    echo "!! ================================================================================"
+    echo "!! AVISO: el directorio de build está en BTRFS."
+    echo "!!   btrfs da nlink=1 a los directorios; antes eso se filtraba al initrd y la ISO"
+    echo "!!   no coincidía con la de CI (ext4). Mitigado por el hook 9990-nimbo-initrd-tmpfs"
+    echo "!!   (initrd generado sobre tmpfs + auto-chequeo). Ver ADR-007 y H-001."
+    echo "!!   Para afirmar reproducibilidad, COMPARA el SHA-256 de esta ISO con el de CI."
+    echo "!! ================================================================================"
+fi
 echo
 
 # --- Build ---------------------------------------------------------------------
