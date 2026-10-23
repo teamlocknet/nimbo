@@ -8,7 +8,7 @@
 #   ./install-in-qemu.sh arrancar         # arranca el disco YA instalado (pide la clave LUKS)
 #   ./install-in-qemu.sh informe          # extrae del log serie el informe de verificación
 #   ./install-in-qemu.sh limpiar          # borra disco, NVRAM y logs del arnés
-#   ./install-in-qemu.sh evidencia        # extrae la última evidencia de probar-tpm.sh
+#   ./install-in-qemu.sh evidencia        # extrae la evidencia de probar-tpm.sh (todas las pasadas)
 #
 # DOS VARIANTES (ADR-006), cada una con su propio disco y sus logs, para tener las dos
 # instalaciones a la vez. Antepón --sin-cifrar a cualquier orden para la segunda:
@@ -273,18 +273,20 @@ cmd_informe() {
 }
 
 cmd_evidencia() {
-    # Última ejecución de probar-tpm.sh (NIMBO_TPM_RUN_*) y último volcado (NIMBO_TPM_EVID_*)
-    # del log serie acumulado → fichero propio por ejecución.
+    # Ejecuciones de probar-tpm.sh (NIMBO_TPM_RUN_*) y volcados (NIMBO_TPM_EVID_*) del log
+    # serie acumulado → un fichero con el nombre de la última evidencia.
     [ -s "$LOG_INST" ] || { echo "ERROR: no hay log serie del instalado ($LOG_INST)."; exit 1; }
     local limpio n out
     limpio="$(mktemp)"; tr -d '\r' < "$LOG_INST" > "$limpio"
     n="$(grep -a '^NIMBO_TPM_EVID_BEGIN ' "$limpio" | tail -1 | awk '{print $2}')"
     [ -n "$n" ] || { rm -f "$limpio"; echo "ERROR: el log serie no tiene evidencia de probar-tpm.sh."; exit 1; }
     out="$HERE/installed$SUF-evidencia-$n.txt"
-    {
-        awk -v n="$n" '$1=="NIMBO_TPM_RUN_BEGIN" && $2==n {f=1} f{print} $1=="NIMBO_TPM_RUN_END" && f {exit}' "$limpio"
-        awk -v n="$n" '$1=="NIMBO_TPM_EVID_BEGIN" && $2==n {f=1} f{print} $1=="NIMBO_TPM_EVID_END" && f {exit}' "$limpio"
-    } > "$out"
+    # TODOS los bloques del log acumulado, en orden, con las marcas de arranque entre medias
+    # (una validación como V2 tiene evidencia antes y después del reinicio).
+    awk '/^=== arranque /{print; next}
+         /^NIMBO_TPM_(RUN|EVID)_BEGIN /{f=1}
+         f{print}
+         /^NIMBO_TPM_(RUN_END|EVID_END) /{f=0; print ""}' "$limpio" > "$out"
     rm -f "$limpio"
     cat "$out"
     echo
