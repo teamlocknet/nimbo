@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- nimbo — imagen de bienvenida del instalador (800x440). Fuente propia del proyecto
+     (LockNet, GPL-3.0-or-later). Solo geometría, sin texto: el nombre del producto lo
+     pone Calamares (productName en branding.desc).
+     El PNG se genera con generar-branding.sh. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="440" viewBox="0 0 800 440">
+  <rect width="800" height="440" fill="#14202e"/>
+  <circle cx="400" cy="220" r="72" fill="none" stroke="#3daee9" stroke-width="32"/>
+</svg>
