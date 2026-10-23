@@ -36,11 +36,22 @@ se anota con fecha, modelo de máquina y evidencia (foto o salida de comando).
       **es un problema de entregable**: anotar GPU y firmware y no darlo por bueno.
 - [ ] La contraseña se teclea con la **distribución elegida** (probar una con símbolos
       que cambien de sitio entre US y ES, p. ej. `ñ`, `-`, `/`).
+- [ ] **Desbloqueo con la RAM real de la máquina (H-002).** Anotar la RAM total y comprobar
+      que la contraseña desbloquea a la primera. *Contexto:* con los parámetros que elige
+      Calamares (argon2id con 1 GiB de memoria cuando instala en una máquina de 4 GiB), el
+      desbloqueo falla por debajo de ~1,5 GiB con el mensaje engañoso `cryptsetup failed,
+      bad password or options?`. Si la máquina tiene poca RAM, instalar EN ELLA y anotar los
+      parámetros del keyslot: `sudo cryptsetup luksDump /dev/<raíz> | grep -E 'PBKDF|Memory|Time'`.
 - [ ] Arranca hasta el greeter **sin** autologin (D14).
 - [ ] Dentro del instalado: `sudo sh verificar-instalado.sh --secure-boot` → `VEREDICTO: OK`
       (copiar el script desde un USB).
 
 ## 3. TPM 2.0 (`nimbo-tpm-setup`, Paso 4)
+
+- [ ] Tras la fase 1 (dracut), la contraseña con símbolos entra **a la primera** con el
+      teclado físico. *Medido en QEMU 10/10 (riesgo descartado,
+      `security/luks-tpm/evidencia/2026-10-23-teclado-dracut.md`); aquí se confirma con un
+      teclado real.*
 
 *(Pendiente: se rellena con el guion de validación del Paso 4 — sellado PCR 7+9 en dos
 fases, desbloqueo automático, alterar el initrd y comprobar que cae a la contraseña,
