@@ -70,7 +70,7 @@ uso() { sed -n '2,32p' "$0" | sed 's/^# \{0,1\}//'; exit "${1:-2}"; }
 
 for a in "$@"; do
     case "$a" in
-        --con-pin)         CON_PIN=1 ;;
+        --con-pin)         CON_PIN=1; CON_PIN_ARG=1 ;;
         --sin-secure-boot) SIN_SB=1 ;;
         --reseal)          ACCION=reseal ;;
         --estado)          ACCION=estado ;;
@@ -101,7 +101,7 @@ detectar_raiz() {
 tiene_token_tpm() { cryptsetup luksDump "$DEV" 2>/dev/null | grep -q 'systemd-tpm2'; }
 slots_usados() { cryptsetup luksDump "$DEV" 2>/dev/null | grep -cE '^  [0-9]+: luks2'; }
 
-leer_estado() { FASE=""; [ -r "$ESTADO" ] && . "$ESTADO"; return 0; }
+leer_estado() { FASE=""; REC_SLOT=""; INITRD_SHA256=""; [ -r "$ESTADO" ] && . "$ESTADO"; KVER_FASE1="${KVER:-}"; [ -n "${CON_PIN_ARG:-}" ] && CON_PIN=1; return 0; }
 
 # --- --estado (solo lectura) ---------------------------------------------------------------
 cmd_estado() {
@@ -321,6 +321,118 @@ EOF
     log "  NO actualices el kernel ni regeneres el initrd antes de la fase 2."
 }
 
+# --- fase 2: sellar ------------------------------------------------------------------------
+slots_lista() { cryptsetup luksDump "$DEV" 2>/dev/null | awk '/^Keyslots:/{f=1;next} /^Tokens:/{f=0} f && /^  [0-9]+: /{sub(":","",$1); print $1}'; }
+pcrs_actuales() { tpm2_pcrread sha256:7,9 2>/dev/null | awk '/: 0x/{gsub(/ /,""); print}' | tr '\n' ' '; }
+arranque_con_dracut() { journalctl -b -q -o cat -u dracut-cmdline.service 2>/dev/null | grep -q .; }
+
+# Pide la clave de recuperación COMPLETA y comprueba que ABRE el keyslot recién creado.
+confirmar_recuperacion() {
+    slot="$1"; i=1
+    while [ "$i" -le 3 ]; do
+        log ""
+        log "Escribe la clave de recuperación COMPLETA, tal como la anotaste (intento $i de 3):"
+        stty -echo 2>/dev/null; IFS= read -r clave_rec; stty echo 2>/dev/null; echo
+        if printf '%s' "$clave_rec" | cryptsetup open --test-passphrase --key-slot "$slot" --key-file - "$DEV" 2>/dev/null; then
+            clave_rec=""; log "   OK  la clave de recuperación abre el volumen (keyslot $slot)"; return 0
+        fi
+        clave_rec=""; log "   NO coincide."
+        i=$((i + 1))
+    done
+    return 1
+}
+
+fase2() {
+    log "== Fase 2: sellar la clave en el TPM (PCR 7+9) =="
+    KVER=$(uname -r)
+    [ "${KVER}" = "${KVER_FASE1:-$KVER}" ] || salir 1 "el kernel en uso ($KVER) no es el de la fase 1 (${KVER_FASE1}). Vuelve a la fase 1."
+    img="/boot/initrd.img-$KVER"
+    sha=$(sha256sum "$img" | cut -d' ' -f1)
+    [ "$sha" = "$INITRD_SHA256" ] || salir 1 "el initrd cambió desde la fase 1 (el PCR 9 no coincidiría). No sigo."
+    arranque_con_dracut || salir 1 "este arranque no pasó por el initrd de dracut: reinicia antes de la fase 2."
+    log "   OK  arranque actual por el initrd de la fase 1 (sha256 ${sha%"${sha#????????????????}"}…)"
+    log "   PCR en este arranque: $(pcrs_actuales)"
+    pin_flag=""; [ "$CON_PIN" = 1 ] && pin_flag="--tpm2-with-pin=yes"
+
+    # 1) Clave de recuperación (salvo que ya se confirmara en una pasada anterior).
+    if [ -z "${REC_SLOT:-}" ]; then
+        antes=$(slots_lista)
+        log ""
+        log "Se va a generar una CLAVE DE RECUPERACIÓN. Te pedirá tu contraseña actual."
+        log "ANÓTALA EN PAPEL: te la pediré completa a continuación para comprobar que la tienes."
+        systemd-cryptenroll --recovery-key "$DEV" || salir 1 "no se pudo crear la clave de recuperación (nada sellado)."
+        REC_SLOT=$(slots_lista | grep -vxF "$antes" | head -1)
+        [ -n "$REC_SLOT" ] || salir 1 "no encuentro el keyslot de la clave de recuperación."
+        log "Clave de recuperación en el keyslot $REC_SLOT."
+        if ! confirmar_recuperacion "$REC_SLOT"; then
+            aviso "No se confirmó la clave de recuperación: nadie la tiene, así que se ELIMINA."
+            tok=$(cryptsetup luksDump "$DEV" | awk -v s="$REC_SLOT" '/^Tokens:/{f=1} f && /^  [0-9]+: systemd-recovery/{t=$1} f && t!="" && /Keyslot:/ && $2==s {sub(":","",t); print t; exit}')
+            [ -n "$tok" ] && run cryptsetup token remove --token-id "$tok" "$DEV"
+            run cryptsetup -q luksKillSlot "$DEV" "$REC_SLOT"
+            salir 1 "vuelve a ejecutar sudo nimbo-tpm-setup cuando puedas anotarla. NO se ha sellado nada."
+        fi
+        printf 'REC_SLOT=%s\n' "$REC_SLOT" >> "$ESTADO"
+    else
+        log "Clave de recuperación ya confirmada antes (keyslot $REC_SLOT)."
+    fi
+
+    # 2) Token TPM2 sellado a PCR 7+9. La contraseña y la recuperación NO se tocan.
+    log ""
+    log "Sellando en el TPM (PCR 7+9${pin_flag:+, con PIN}). Te pedirá tu contraseña actual."
+    # shellcheck disable=SC2086
+    systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7+9 $pin_flag "$DEV" || salir 1 "no se pudo sellar en el TPM. La contraseña y la clave de recuperación siguen valiendo."
+
+    # 3) Verificación antes de reiniciar.
+    tiene_token_tpm || salir 1 "no aparece el token systemd-tpm2 en la cabecera LUKS."
+    log "   OK  token systemd-tpm2 en la cabecera · keyslots: $(slots_lista | tr '\n' ' ')"
+    cryptsetup luksDump "$DEV" | grep -E 'tpm2-pcrs|tpm2-pin' | sed 's/^/        /' | while read -r l; do log "$l"; done
+    if [ "$CON_PIN" = 1 ]; then
+        log "   (con PIN: la prueba sin reiniciar pediría el PIN; se omite)"
+    elif cryptsetup open --test-passphrase --token-only "$DEV" 2>/dev/null; then
+        log "   OK  el TPM desbloquea el volumen AHORA (prueba --token-only, sin montar nada)"
+    else
+        salir 1 "el token TPM no desbloquea en la prueba --token-only. No reinicies confiando en él."
+    fi
+    {
+        echo "FASE=2"
+        echo "FECHA_SELLADO=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+        echo "PCR_SELLADO='$(pcrs_actuales)'"
+    } >> "$ESTADO"
+    log ""
+    log "FASE 2 COMPLETA. Al reiniciar, el disco se desbloqueará solo con el TPM."
+    log "Si /boot cambia (actualización del kernel o manipulación), pedirá la contraseña:"
+    log "la contraseña y la clave de recuperación siguen valiendo SIEMPRE."
+    log "Tras una actualización legítima, ya dentro:  sudo nimbo-tpm-setup --reseal"
+}
+
+# --- --reseal ------------------------------------------------------------------------------
+cmd_reseal() {
+    log "== Resellado (PCR 7+9) con el estado de ESTE arranque =="
+    tiene_token_tpm || salir 1 "no hay token TPM que resellar: ejecuta primero sudo nimbo-tpm-setup."
+    KVER=$(uname -r)
+    img="/boot/initrd.img-$KVER"
+    # Si /boot cambió DESPUÉS de este arranque, sellar ahora no serviría para el siguiente.
+    arranque=$(( $(date +%s) - $(cut -d. -f1 /proc/uptime) ))
+    mod=$(stat -c %Y "$img")
+    [ "$mod" -lt "$arranque" ] || salir 1 "el initrd se modificó después de este arranque: reinicia (con la contraseña) y vuelve a ejecutar --reseal."
+    nuevo=$(ls /boot/vmlinuz-* 2>/dev/null | sed 's|.*/vmlinuz-||' | sort -V | tail -1)
+    [ "$nuevo" = "$KVER" ] || salir 1 "hay un kernel más nuevo ($nuevo) que el que corre ($KVER): reinicia en él y vuelve a ejecutar --reseal."
+    log "   PCR en este arranque: $(pcrs_actuales)"
+    pin_flag=""; [ "${CON_PIN:-0}" = 1 ] && pin_flag="--tpm2-with-pin=yes"
+    # Enrolar y borrar el token anterior en la misma orden: el viejo solo se borra si el
+    # nuevo se creó bien.
+    # shellcheck disable=SC2086
+    systemd-cryptenroll --wipe-slot=tpm2 --tpm2-device=auto --tpm2-pcrs=7+9 $pin_flag "$DEV" \
+        || salir 1 "no se pudo resellar. El token anterior y la contraseña siguen como estaban."
+    if [ "${CON_PIN:-0}" != 1 ]; then
+        cryptsetup open --test-passphrase --token-only "$DEV" 2>/dev/null \
+            || salir 1 "el token nuevo no desbloquea en la prueba --token-only."
+        log "   OK  el TPM desbloquea el volumen con el estado actual"
+    fi
+    printf 'FECHA_RESELLADO=%s\nPCR_SELLADO=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "'$(pcrs_actuales)'" >> "$ESTADO"
+    log "RESELLADO COMPLETO."
+}
+
 # --- programa principal -------------------------------------------------------------------
 case "$ACCION" in
     estado) cmd_estado; exit 0 ;;
@@ -334,8 +446,7 @@ log "Raíz: $RAIZ_MAPPER sobre $DEV · SecureBoot=$(efivar SecureBoot) · TPM 2.
 leer_estado
 
 case "$ACCION" in
-    reseal)
-        salir 1 "--reseal todavía no está implementado (llega con la fase 2)." ;;
+    reseal) cmd_reseal; exit 0 ;;
 esac
 
 if tiene_token_tpm; then
@@ -344,7 +455,7 @@ if tiene_token_tpm; then
 fi
 case "${FASE:-}" in
     ""|rollback) fase1 ;;
-    1) salir 1 "la fase 2 todavía no está implementada en esta versión." ;;
+    1) fase2 ;;
     rollback-incompleto) salir 1 "hay un rollback incompleto registrado; revisa $LOG antes de seguir." ;;
     *) salir 1 "estado desconocido en $ESTADO: FASE=$FASE" ;;
 esac
