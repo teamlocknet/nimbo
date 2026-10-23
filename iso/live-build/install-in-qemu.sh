@@ -278,15 +278,17 @@ cmd_evidencia() {
     [ -s "$LOG_INST" ] || { echo "ERROR: no hay log serie del instalado ($LOG_INST)."; exit 1; }
     local limpio n out
     limpio="$(mktemp)"; tr -d '\r' < "$LOG_INST" > "$limpio"
-    n="$(grep -a '^NIMBO_TPM_EVID_BEGIN ' "$limpio" | tail -1 | awk '{print $2}')"
+    n="$(grep -ao 'NIMBO_TPM_EVID_BEGIN [0-9TZ]*' "$limpio" | tail -1 | awk '{print $2}')"
     [ -n "$n" ] || { rm -f "$limpio"; echo "ERROR: el log serie no tiene evidencia de probar-tpm.sh."; exit 1; }
     out="$HERE/installed$SUF-evidencia-$n.txt"
     # TODOS los bloques del log acumulado, en orden, con las marcas de arranque entre medias
     # (una validación como V2 tiene evidencia antes y después del reinicio).
+    # Los marcadores pueden no empezar la línea: GRUB deja secuencias de escape sin salto de
+    # línea en la serie. Se busca el marcador en cualquier posición y se recorta lo previo.
     awk '/^=== arranque /{print; next}
-         /^NIMBO_TPM_(RUN|EVID)_BEGIN /{f=1}
+         /NIMBO_TPM_(RUN|EVID)_BEGIN /{sub(/.*NIMBO_TPM_/, "NIMBO_TPM_"); f=1}
          f{print}
-         /^NIMBO_TPM_(RUN_END|EVID_END) /{f=0; print ""}' "$limpio" > "$out"
+         /NIMBO_TPM_(RUN_END|EVID_END)/{f=0; print ""}' "$limpio" > "$out"
     rm -f "$limpio"
     # CREDENCIALES: la fase 2 imprime la clave de recuperación del volumen de PRUEBA, así que
     # el fichero original lleva una credencial. Regla del proyecto: ninguna credencial entra

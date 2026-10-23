@@ -67,8 +67,12 @@ s "== initrd del kernel en uso"
 s_cmd 'img=/boot/initrd.img-$(uname -r); ls -l "$img"; sha256sum "$img"; if command -v lsinitrd >/dev/null; then lsinitrd "$img" | grep -E "systemd-cryptsetup$|token-systemd-tpm2|libtss2-esys|udev/console-setup$|etc/crypttab$|console-setup/|scripts/local-top/cryptroot" ; lsinitrd -f etc/crypttab "$img"; else lsinitramfs "$img" | grep -E "cryptroot|cryptsetup$|console-setup"; fi'
 s "== paquetes de arranque"
 s_cmd "dpkg-query -W -f='\${db:Status-Status} \${Package} \${Version}\n' dracut dracut-core initramfs-tools initramfs-tools-core cryptsetup-initramfs tpm2-tools 2>&1"
-s "== este arranque: cryptsetup / TPM en el journal"
-s_cmd "journalctl -b -o short-monotonic --no-pager 2>/dev/null | grep -iE 'cryptsetup|tpm2|tpm:|crypt|dracut|unlock|console-setup|setupcon' | head -80"
+s "== este arranque: journal del INITRD completo (hasta el cambio de raíz)"
+# Completo y sin filtrar: el orden entre console-setup (teclado) y el prompt de
+# systemd-cryptsetup solo se ve con todas las líneas.
+s_cmd "journalctl -b -o short-monotonic --no-pager 2>/dev/null | sed '/Switching root/q' | head -400"
+s "== este arranque: cryptsetup / TPM después del cambio de raíz"
+s_cmd "journalctl -b -o short-monotonic --no-pager 2>/dev/null | sed '1,/Switching root/d' | grep -iE 'cryptsetup|tpm2|tpm:|crypt|unlock|console-setup|setupcon' | head -60"
 s "NIMBO_TPM_EVID_END $N"
 echo ">> Hecho (rc del script: $rc). Apaga la VM y, en el anfitrión:"
 echo "   ./install-in-qemu.sh --secure-boot --tpm evidencia"
