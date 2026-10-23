@@ -12,6 +12,9 @@
 #   sudo mount -o ro /dev/vdb1 /mnt
 #   sudo sh /mnt/probar-tpm.sh [argumentos de nimbo-tpm-setup]   # ejecuta + evidencia
 #   sudo sh /mnt/probar-tpm.sh --solo-evidencia                    # p. ej. tras reiniciar
+#   sudo sh /mnt/probar-tpm.sh --manipular-initrd    # V5: altera el initrd (guarda el original)
+#   sudo sh /mnt/probar-tpm.sh --restaurar-initrd    # V6: vuelve al original
+#   sudo sh /mnt/probar-tpm.sh --regenerar-initrd    # V6: actualización legítima (dracut -f)
 #
 # Lo que se teclea (contraseñas, PIN) NO pasa por aquí: lo leen nimbo-tpm-setup y
 # systemd-cryptenroll de la terminal. Lo que SÍ queda en la consola serie es lo que se
@@ -34,6 +37,34 @@ s_cmd() { s "\$ $*"; sh -c "$*" 2>&1 | while IFS= read -r l; do s "$l"; done; }
 
 N="$(date -u +%Y%m%dT%H%M%SZ)"
 rc="-"
+# --- Acciones de PRUEBA sobre el initrd (V5/V6). Solo existen aquí, nunca en el producto. ---
+IMG="/boot/initrd.img-$(uname -r)"
+RESP_PRUEBA=/var/lib/nimbo-tpm-prueba
+case "${1:-}" in
+    --manipular-initrd)
+        # V5: simula una manipulación de /boot (evil maid): añade al initrd un archivo cpio
+        # extra (el kernel acepta initrds concatenados, así que arranca igual) → cambia el
+        # contenido que GRUB mide en el PCR 9.
+        mkdir -p "$RESP_PRUEBA"; [ -f "$RESP_PRUEBA/initrd.orig" ] || cp -p "$IMG" "$RESP_PRUEBA/initrd.orig"
+        d=$(mktemp -d); mkdir -p "$d/etc"; echo "manipulado por probar-tpm.sh $N" > "$d/etc/nimbo-manipulado"
+        (cd "$d" && echo etc/nimbo-manipulado | cpio -o -H newc 2>/dev/null) >> "$IMG"; rm -rf "$d"
+        s "NIMBO_TPM_ACCION $N initrd manipulado: $(sha256sum "$IMG" | cut -c1-16) (original guardado)"
+        echo ">> initrd manipulado. Reinicia: el TPM NO debe desbloquear; debe pedir contraseña."
+        set -- --solo-evidencia ;;
+    --restaurar-initrd)
+        [ -f "$RESP_PRUEBA/initrd.orig" ] || { echo "No hay initrd original guardado."; exit 1; }
+        cp -p "$RESP_PRUEBA/initrd.orig" "$IMG"
+        s "NIMBO_TPM_ACCION $N initrd restaurado: $(sha256sum "$IMG" | cut -c1-16)"
+        echo ">> initrd original restaurado. Reinicia: el TPM debe volver a desbloquear solo."
+        set -- --solo-evidencia ;;
+    --regenerar-initrd)
+        # V6: actualización LEGÍTIMA simulada (como tras un update del kernel).
+        dracut --force "$IMG" "$(uname -r)" >/dev/null 2>&1
+        rm -f "$RESP_PRUEBA/initrd.orig"
+        s "NIMBO_TPM_ACCION $N initrd regenerado con dracut: $(sha256sum "$IMG" | cut -c1-16)"
+        echo ">> initrd regenerado. Reinicia: pedirá contraseña; ya dentro, --reseal."
+        set -- --solo-evidencia ;;
+esac
 if [ "${1:-}" != "--solo-evidencia" ]; then
     s "NIMBO_TPM_RUN_BEGIN $N args: $*"
     # `script` (util-linux) da una terminal real: los prompts interactivos (contraseña,
