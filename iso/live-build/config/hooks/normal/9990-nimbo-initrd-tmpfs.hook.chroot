@@ -1,0 +1,67 @@
+#!/bin/sh
+# 9990-nimbo-initrd-tmpfs.hook.chroot — INITRD INDEPENDIENTE DEL SISTEMA DE ARCHIVOS DEL
+# ANFITRIÓN (reproducibilidad entre máquinas, ADR-007, hallazgo H-001).
+#
+# EL PROBLEMA (medido, no supuesto): mkinitramfs arma el initrd en
+# ${TMPDIR:-/var/tmp}/mkinitramfs_XXXXXX y lo empaqueta en cpio "newc", que GUARDA el
+# número de enlaces (nlink) de cada entrada. El chroot vive en el directorio de build del
+# anfitrión (bind mount), así que /var/tmp hereda SU sistema de archivos:
+#   - ext4 / tmpfs : nlink de un directorio = 2 + nº de subdirectorios
+#   - btrfs        : nlink de un directorio = 1, siempre
+# Resultado: la misma receta, compilada en CI (ext4) y en un portátil con btrfs, daba
+# initrds distintos (332 directorios con nlink distinto, contenido idéntico) y por tanto
+# ISOs distintas. Ver docs/hallazgos/H-001-filtracion-nlink-btrfs.md.
+#
+# EL ARREGLO: generar el initrd FINAL con /var/tmp sobre un tmpfs, que cuenta los enlaces
+# igual que ext4 en cualquier anfitrión. Corre después del resto de hooks y antes de
+# chroot_hacks (que es quien regeneraría el initrd), con el MISMO comando que usaría él.
+#
+# SIN RASTRO EN LA IMAGEN (ADR-007):
+#   - el tmpfs se monta ENCIMA de /var/tmp (no se crea ni borra nada en el directorio
+#     padre, así que no cambia ningún mtime) y se desmonta antes de salir;
+#   - el marcador /initrd.img_has_already_been_regenerated es el mecanismo de live-build
+#     para esto: chroot_hacks NO regenera el initrd si existe, y lo BORRA él mismo después.
+#
+# AUTO-CHEQUEO (la guarda real): si algún directorio del initrd resultante tiene nlink=1,
+# el build FALLA. En ext4 o tmpfs un directorio siempre tiene >= 2, así que esto detecta
+# la filtración en cualquier sistema de archivos, no solo en btrfs.
+set -e
+
+TMP=/var/tmp
+echo "P: [hook] initrd sobre tmpfs (ADR-007): montando tmpfs en ${TMP}"
+mount -t tmpfs -o mode=1777 nimbo-initrd-tmp "${TMP}"
+desmontar() { umount "${TMP}" 2>/dev/null || true; }
+trap desmontar EXIT
+
+# El mismo comando que chroot_hacks de live-build 20230502.
+update-initramfs -k all -t -u
+
+umount "${TMP}"
+trap - EXIT
+if grep -q " ${TMP} tmpfs " /proc/mounts 2>/dev/null; then
+    echo "E: [hook] ${TMP} sigue montado: el tmpfs entraría en la imagen" >&2
+    exit 1
+fi
+
+# Auto-chequeo: ningún directorio del initrd puede tener nlink=1.
+n_img=0
+for img in /boot/initrd.img-*; do
+    [ -e "${img}" ] || continue
+    n_img=$((n_img + 1))
+    malos=$(lsinitramfs -l "${img}" | awk '$1 ~ /^d/ && $2 == 1' | wc -l)
+    if [ "${malos}" -ne 0 ]; then
+        echo "E: [hook] ${img}: ${malos} directorios con nlink=1 — el sistema de archivos" >&2
+        echo "E: [hook] del anfitrión se está filtrando en el initrd (ver ADR-007 / H-001)" >&2
+        lsinitramfs -l "${img}" | awk '$1 ~ /^d/ && $2 == 1' | head -5 >&2
+        exit 1
+    fi
+    echo "P: [hook]   ${img}: 0 directorios con nlink=1 (OK)"
+done
+if [ "${n_img}" -eq 0 ]; then
+    echo "E: [hook] no hay /boot/initrd.img-* tras update-initramfs" >&2
+    exit 1
+fi
+
+# chroot_hacks no lo regenerará y borrará este marcador.
+touch /initrd.img_has_already_been_regenerated
+echo "P: [hook] initrd generado sobre tmpfs; chroot_hacks no lo regenerará"
