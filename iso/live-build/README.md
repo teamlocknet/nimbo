@@ -261,6 +261,15 @@ Este paso aplica **higiene** de reproducibilidad, pero **NO persigue bit-idénti
   determinista (no lo cubre `SOURCE_DATE_EPOCH`); `auto/build` lo desactiva tras `lb chroot`
   para que no se escriba en ninguna etapa. Ver
   [ADR-003](../../docs/adr/ADR-003-cache-apt-determinista-squashfs.md).
+- **initrd independiente del sistema de archivos del anfitrión** (hook
+  `config/hooks/normal/9990-nimbo-initrd-tmpfs.hook.chroot`). `mkinitramfs` empaqueta en cpio
+  `newc`, que guarda el `nlink` de cada directorio, y el chroot hereda el sistema de archivos
+  del directorio de build: en btrfs (nlink=1) la ISO salía distinta de la de CI (ext4). El hook
+  genera el initrd final con `/var/tmp` sobre tmpfs y **falla el build** si algún directorio
+  del initrd queda con nlink=1; `build-in-container.sh` avisa si compila sobre btrfs. Probado:
+  ISO bit-idéntica a la de CI compilada en un PC con btrfs. Ver
+  [ADR-007](../../docs/adr/ADR-007-initrd-sobre-tmpfs.md) y
+  [H-001](../../docs/hallazgos/H-001-filtracion-nlink-btrfs.md).
 - **`.disk/archive_trace` normalizado** (hook `config/hooks/normal/9000-archive-trace.hook.binary`).
   live-build rellena ese fichero descargando la traza del mirror (`project/trace/*`), que
   `snapshot.debian.org` devuelve **intermitente** (a veces un timestamp, a veces vacío) →

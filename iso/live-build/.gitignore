@@ -79,4 +79,6 @@ config/hooks/**
 !config/hooks/normal/0190-nimbo-calamares-sincifrar.hook.chroot
 !config/hooks/normal/0200-nimbo-pool-local.hook.chroot
 !config/hooks/normal/0210-nimbo-backports-audit.hook.chroot
+# ADR-007 / H-001: initrd generado sobre tmpfs (independiente del FS del anfitrión).
+!config/hooks/normal/9990-nimbo-initrd-tmpfs.hook.chroot
 local/
