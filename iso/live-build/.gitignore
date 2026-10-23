@@ -34,6 +34,11 @@ installed-*-evidencia-*.txt
 .cache-ovmf/
 # Paso 4: estado persistente del TPM emulado (swtpm) de cada disco de prueba.
 nimbo-install-*-tpmstate/
+# Credenciales GENERADAS para pruebas (keyslot LUKS de prueba, Paso 4 / H-002). Regla del
+# proyecto: ninguna credencial entra al repo, ni de prueba.
+.clave-prueba-*
+# Mediciones automáticas de desbloqueo (medir-desbloqueo.sh): capturas y CSV regenerables.
+medicion-desbloqueo-*/
 
 # Casi todo config/ lo genera `lb config` a partir de auto/config (se regenera) y
 # NO se versiona. EXCEPCIÓN (Paso 3A): la lista curada de paquetes del escritorio

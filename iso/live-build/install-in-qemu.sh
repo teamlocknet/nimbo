@@ -216,6 +216,10 @@ cmd_arrancar() {
     [ -f "$BASE" ] && cp "$BASE" "$tools/"
     # Paso 4: nimbo-tpm-setup viaja por el mismo disco auxiliar (se valida sin tocar la ISO).
     [ -f "$TPM_SCRIPT" ] && cp "$TPM_SCRIPT" "$HERE/probar-tpm.sh" "$tools/"
+    # Clave LUKS GENERADA para pruebas (.gitignore): viaja al guest para añadirla como
+    # keyslot de prueba con `cryptsetup luksAddKey … /mnt/clave-prueba.txt`, de modo que la
+    # persona solo teclea SU contraseña y las mediciones automáticas usan la de prueba.
+    [ -f "$HERE/.clave-prueba-luks" ] && cp "$HERE/.clave-prueba-luks" "$tools/clave-prueba.txt"
 
     echo ">> Disco  : $DISK (sin ISO: arranca lo instalado)"
     echo ">> Secure Boot: $([ "$SB" = 1 ] && echo 'ACTIVO' || echo 'apagado')  ·  OVMF: $OVMF_ORIGEN"
