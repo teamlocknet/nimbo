@@ -7,10 +7,16 @@
 #
 #   sudo mount -o ro /dev/vdb1 /mnt && sudo sh /mnt/verificar-instalado.sh
 #   sudo mount -o ro /dev/vdb1 /mnt && sudo sh /mnt/verificar-instalado.sh --sin-cifrar
+#   sudo mount -o ro /dev/vdb1 /mnt && sudo sh /mnt/verificar-instalado.sh --secure-boot
 #
 # --sin-cifrar: para la instalación hecha con el lanzador "avanzado". Salta SOLO los
 # chequeos de LUKS (y comprueba que, en efecto, no hay cifrado); D14, hermetismo,
 # limpieza del instalador, fuentes APT y paquetes se exigen igual.
+#
+# --secure-boot: la VM arrancó con OVMF Secure Boot + llaves MS (install-in-qemu.sh
+# --secure-boot). EXIGE SecureBoot=1 y SetupMode=0 (firmware en User Mode: Secure Boot
+# aplicándose de verdad, no en modo configuración). Sin la bandera, solo informa.
+# Las dos banderas se combinan en cualquier orden.
 #
 # Cada comprobación imprime OK / FALLO; el resumen final da el veredicto.
 set -u
@@ -24,10 +30,17 @@ ko() { p "  FALLO  $*"; fallos=$((fallos+1)); }
 sec(){ p ""; p "== $* =="; }
 
 [ "$(id -u)" = 0 ] || { echo "Ejecuta como root (sudo)."; exit 2; }
-SIN_CIFRAR=0
-[ "${1:-}" = "--sin-cifrar" ] && SIN_CIFRAR=1
+SIN_CIFRAR=0; SECURE_BOOT=0
+for a in "$@"; do
+    case "$a" in
+        --sin-cifrar)  SIN_CIFRAR=1 ;;
+        --secure-boot) SECURE_BOOT=1 ;;
+        *) echo "Argumento desconocido: $a"; exit 2 ;;
+    esac
+done
 p "NIMBO_VERIF_BEGIN"
 [ "$SIN_CIFRAR" = 1 ] && p "MODO: instalación SIN cifrar (lanzador avanzado)" || p "MODO: instalación CIFRADA (lanzador recomendado)"
+[ "$SECURE_BOOT" = 1 ] && p "MODO: Secure Boot EXIGIDO (OVMF con llaves MS)"
 
 if [ "$SIN_CIFRAR" = 1 ]; then
 sec "1. Sin cifrado (modo declarado): coherencia"
@@ -79,6 +92,23 @@ for img in /boot/initrd.img-*; do
     printf '%s\n' "$cont" | grep -q 'scripts/live' && ko "$img aún contiene scripts de live-boot" || ok "$img sin scripts de live-boot"
 done
 
+fi
+
+sec "2b. Secure Boot"
+# Variables EFI globales (GUID 8be4df61-…): 4 bytes de atributos + 1 byte de valor.
+efivar() { f=/sys/firmware/efi/efivars/$1-8be4df61-93ca-11d2-aa0d-00e098032b8c; [ -r "$f" ] && od -An -t u1 -j4 -N1 "$f" | tr -d ' ' || echo "?"; }
+if [ -d /sys/firmware/efi ]; then
+    sbv=$(efivar SecureBoot); smv=$(efivar SetupMode)
+    p "  SecureBoot=$sbv · SetupMode=$smv · lockdown del kernel: $(cat /sys/kernel/security/lockdown 2>/dev/null || echo '?')"
+    p "  kernel: $(dmesg 2>/dev/null | grep -i -m1 'secureboot:' | sed 's/^\[[^]]*\] //' || true)"
+    cur=$(efibootmgr 2>/dev/null | awk '/^BootCurrent:/{print $2}')
+    p "  entrada de arranque actual: ${cur:-?} $(efibootmgr -v 2>/dev/null | grep "^Boot${cur}" | cut -c1-110)"
+    if [ "$SECURE_BOOT" = 1 ]; then
+        [ "$sbv" = 1 ] && ok "Secure Boot ACTIVO (SecureBoot=1)" || ko "Secure Boot NO activo (SecureBoot=$sbv)"
+        [ "$smv" = 0 ] && ok "firmware en User Mode (SetupMode=0): las firmas se exigen" || ko "firmware en Setup Mode (SetupMode=$smv): Secure Boot no exige firmas"
+    fi
+else
+    [ "$SECURE_BOOT" = 1 ] && ko "arrancado por BIOS: no hay Secure Boot" || p "  INFO   arrancado por BIOS: no aplica"
 fi
 p "  teclado configurado: $(grep -E '^XKB(LAYOUT|VARIANT)=' /etc/default/keyboard 2>/dev/null | tr '\n' ' ')"
 

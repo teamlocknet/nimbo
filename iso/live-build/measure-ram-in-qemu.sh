@@ -41,8 +41,8 @@ REPORT="$HERE/ram-idle.log"
 MARK="NIMBO_RAM_MARK_8812"              # marcador único para acotar la salida del guest
 
 [ -f "$ISO" ] || { echo "ERROR: no existe la ISO: $ISO"; exit 1; }
-command -v socat  >/dev/null || { echo "ERROR: falta socat";  exit 1; }
-command -v qemu-system-x86_64 >/dev/null || { echo "ERROR: falta qemu-system-x86_64"; exit 1; }
+command -v socat  >/dev/null || { echo "ERROR: falta socat (Arch: pacman -S socat · Debian: apt install socat)";  exit 1; }
+command -v qemu-system-x86_64 >/dev/null || { echo "ERROR: falta qemu-system-x86_64 (Arch: pacman -S qemu-desktop · Fedora: dnf install qemu-kvm · Debian: apt install qemu-system-x86)"; exit 1; }
 command -v convert >/dev/null || echo ">> AVISO: falta ImageMagick 'convert'; la captura quedará en .ppm"
 
 echo ">> ISO   : $ISO ($(du -h "$ISO" | cut -f1))"

@@ -228,10 +228,78 @@ tomaron antes de los 90 s de reposo, así que son orientativas.
 
 # Variante sin cifrar (disco y logs propios; el verificador se lanza con --sin-cifrar):
 ./install-in-qemu.sh --sin-cifrar instalar | arrancar | informe
+
+# Variante con Secure Boot ACTIVO (combinable con --sin-cifrar; ficheros con sufijo -sb;
+# el verificador se lanza con --secure-boot y exige SecureBoot=1 y SetupMode=0):
+./install-in-qemu.sh --secure-boot instalar | arrancar | informe
 ```
 
-**Pendiente de verificar:** Secure Boot activo, arranque en BIOS legacy y RAM idle del
-instalado con ≥ 90 s de reposo.
+**Requisitos del host.** `qemu-system-x86_64` + `qemu-img`, firmware OVMF y KVM:
+
+| Host | Paquetes |
+|---|---|
+| Arch / Omarchy | `pacman -S qemu-desktop edk2-ovmf` (+ `swtpm` para el Paso 4, `tcpdump` para hermetismo) |
+| Fedora | `dnf install qemu-kvm edk2-ovmf` |
+| Debian / Ubuntu | `apt install qemu-system-x86 qemu-utils ovmf` |
+
+**Firmware OVMF: host-side, NO es parte del producto.** OVMF solo existe en el anfitrión
+que verifica, para emular un PC UEFI; no entra en la ISO ni es dependencia de nimbo (el
+sistema arranca con el firmware de la máquina real). `lib-qemu.sh` lo resuelve sin rutas
+fijas:
+
+- **Sin Secure Boot:** el OVMF del propio host, por los descriptores estándar de QEMU
+  (`/etc/qemu/firmware`, `/usr/share/qemu/firmware`), con rutas conocidas de Arch, Fedora y
+  Debian como último recurso. Se puede forzar con `OVMF_CODE=` y `OVMF_VARS=`.
+- **Con Secure Boot (`--secure-boot`):** el par `OVMF_CODE_4M.secboot.fd` +
+  `OVMF_VARS_4M.ms.fd` de **Debian bookworm**, sacado del paquete `ovmf` del **mismo
+  snapshot anclado** que la ISO (`snapshot.env`, ADR-004), con SHA-256 fijado del `.deb`
+  (= el del índice `Packages` del snapshot) y de los dos `.fd`. Caché en `.cache-ovmf/`
+  (ignorada por git). Motivo: es el firmware de la distro objetivo y trae las llaves de
+  Microsoft inscritas, que shim necesita para validarse de verdad. Arch no publica unas
+  VARS con llaves (su descriptor `secure-4m` no declara `enrolled-keys`), y con VARS vacías
+  el firmware queda en *Setup Mode*, donde Secure Boot no exige ninguna firma. La máquina
+  arranca con `smm=on` y la flash de variables marcada como segura.
+
+**Tarjeta de vídeo emulada.** Sin Secure Boot el arnés usa `-vga std`; con `--secure-boot`,
+`-vga virtio` (sobreescribible con `NIMBO_QEMU_VGA=`). Motivo medido: el OVMF de Debian
+(2022.11) con la VGA `std` de QEMU deja la consola del kernel **ilegible** hasta que arranca
+X, y el prompt de la contraseña LUKS parece roto aunque funciona. Con el mismo disco:
+
+| Firmware | Secure Boot | Tarjeta | Prompt LUKS |
+|---|---|---|---|
+| OVMF Debian 2022.11 (secboot) | sí | `std` | ilegible |
+| OVMF Debian 2022.11 (secboot) | sí | `virtio` / `bochs-display` / `qxl` | limpio |
+| OVMF Debian 2022.11 (sin secboot) | no | `std` | ilegible |
+| OVMF Arch 202608 | no | `std` | limpio |
+
+Es del **arnés** (combinación de firmware emulado y tarjeta emulada), no del producto: el
+kernel, el initrd y GRUB son los mismos en las cuatro filas y no hay plymouth. Se comprueba
+igualmente en pantalla real: ver [`docs/manuales/verificacion-hardware-real.md`](../../docs/manuales/verificacion-hardware-real.md).
+
+### Evidencia del arnés en Omarchy (2026-10-23)
+
+Anfitrión: Omarchy (Arch), kernel 7.2.5, QEMU 11.1.2, KVM. ISO de referencia de CI
+`17ee64c8…1da0` (bit-idéntica a la compilada en este anfitrión con ADR-007).
+
+- **ISO live con Secure Boot exigido** (OVMF Debian + llaves MS): consola serie con
+  `EFI stub: UEFI Secure Boot is enabled`, `secureboot: Secure boot enabled`,
+  `Kernel is locked down from EFI Secure Boot`, `MOKvar=` (shim cargado) y
+  `Loaded X.509 cert 'Debian Secure Boot CA'`; llega a `nimbo-live login:`.
+- **Instalación cifrada con Secure Boot** (verificada con los ojos por Juan José):
+  `verificar-instalado.sh --secure-boot` → **0 fallos**. `SecureBoot=1`, `SetupMode=0`,
+  arranque por `\EFI\debian\shimx64.efi`, LUKS2 argon2id, `/boot` en claro separado,
+  teclado `XKBLAYOUT="es"` en el initrd, sin restos del instalador, pool local como única
+  fuente APT, dracut + tpm2-tools instalables sin red, RAM idle 352 MiB a los 179 s,
+  417 paquetes (= base − 5 live + arranque/cifrado/teclado).
+- **Hermetismo con pcap sobre la ISO con Calamares** (`verify-hermetismo-in-qemu.sh`,
+  120 s en reposo): 12 paquetes, todos de puesta en marcha local; 0 DNS, 0 NTP,
+  0 HTTP/S, 0 SYN salientes, 0 listeners. `HERMETISMO : OK`.
+
+Con esto se cierran las deudas de 3C.1 "Secure Boot no verificado" (live e instalado, con
+firmas exigidas) y "hermetismo sin re-medir sobre la ISO con Calamares".
+
+**Pendiente de verificar:** arranque en BIOS legacy y Secure Boot / prompt LUKS en hardware
+real (semana del 17-nov).
 
 ## Reproducibilidad — estado y deuda conocida
 

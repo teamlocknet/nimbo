@@ -16,6 +16,13 @@
 # Con --sin-cifrar los ficheros llevan el sufijo -sincifrar y el verificador se lanza con
 # `--sin-cifrar` (salta solo los chequeos de LUKS).
 #
+# SECURE BOOT: antepón --secure-boot (combinable con --sin-cifrar, en cualquier orden):
+#   ./install-in-qemu.sh --secure-boot instalar
+# Arranca con OVMF Secure Boot + llaves de Microsoft (shim se valide de verdad) y SMM. El
+# firmware es el de Debian bookworm, del snapshot anclado (ver lib-qemu.sh): HOST-SIDE,
+# NO entra en la ISO ni es dependencia del producto. Ficheros con sufijo -sb, y el
+# verificador se lanza con `--secure-boot` (exige SecureBoot=1 y SetupMode=0).
+#
 # QUÉ DEJA (todo regenerable, ignorado por git):
 #   nimbo-install.qcow2        disco destino (20 GiB, crece bajo demanda)
 #   nimbo-install-vars.fd      NVRAM de OVMF del guest (guarda la entrada de arranque UEFI)
@@ -29,22 +36,37 @@
 #       sudo mount -o ro /dev/vdb1 /mnt && sudo sh /mnt/verificar-instalado.sh
 # El script escribe también por la consola serie; `informe` lo recoge en el host.
 #
-# Requisitos del host: qemu-system-x86_64, firmware OVMF (edk2-ovmf / ovmf) y KVM.
+# Requisitos del host: qemu-system-x86_64 + qemu-img, firmware OVMF y KVM.
+#   Arch/Omarchy : pacman -S qemu-desktop edk2-ovmf
+#   Fedora       : dnf install qemu-kvm edk2-ovmf
+#   Debian/Ubuntu: apt install qemu-system-x86 qemu-utils ovmf
+# Con --secure-boot además: curl y bsdtar (libarchive) para traer el OVMF de Debian.
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SUF=""; VERIF_ARG=""; LANZADOR="Instalar nimbo (cifrado, recomendado)"
-if [ "${1:-}" = "--sin-cifrar" ]; then
-    shift
-    SUF="-sincifrar"; VERIF_ARG=" --sin-cifrar"; LANZADOR="Instalar nimbo sin cifrar (avanzado)"
-fi
+# shellcheck source=lib-qemu.sh
+. "$HERE/lib-qemu.sh"
+
+SUF=""; VERIF_ARG=""; LANZADOR="Instalar nimbo (cifrado, recomendado)"; SB=0
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --sin-cifrar)
+            SUF="$SUF-sincifrar"; VERIF_ARG="$VERIF_ARG --sin-cifrar"
+            LANZADOR="Instalar nimbo sin cifrar (avanzado)"; shift ;;
+        --secure-boot)
+            SB=1; SUF="$SUF-sb"; VERIF_ARG="$VERIF_ARG --secure-boot"; shift ;;
+        *) break ;;
+    esac
+done
 DISK="$HERE/nimbo-install$SUF.qcow2"
 VARS="$HERE/nimbo-install$SUF-vars.fd"
 LOG_LIVE="$HERE/install$SUF-serial.log"
 LOG_INST="$HERE/installed$SUF-serial.log"
 INFORME="$HERE/installed$SUF-informe.txt"
 PAQUETES="$HERE/installed$SUF-paquetes.txt"
-YO="$0${SUF:+ --sin-cifrar}"
+YO="$0"
+case "$SUF" in *-sincifrar*) YO="$YO --sin-cifrar" ;; esac
+if [ "$SB" = 1 ]; then YO="$YO --secure-boot"; fi
 BASE="$HERE/paquetes-linea-base-3b1.txt"
 
 DISK_GB="${NIMBO_DISK_GB:-20}"
@@ -53,13 +75,34 @@ VM_MB="${NIMBO_VM_MB:-4096}"
 # cifra de RAM idle sea comparable con la de la sesión live.
 VM_MB_INST="${NIMBO_VM_MB_INST:-2048}"
 DISPLAY_OPT="${NIMBO_QEMU_DISPLAY:-gtk}"
+# Tarjeta de vídeo emulada. Con --secure-boot se usa virtio, NO std: el OVMF de Debian
+# (2022.11) con la VGA `std` de QEMU (11.1 en el anfitrión de 2026-10) deja la consola
+# del kernel ilegible (texto aplastado en una franja) hasta que arranca X — el prompt de
+# la contraseña LUKS parece roto aunque funciona. Medido con el MISMO disco: OVMF Debian
+# + std → roto, con y sin Secure Boot; OVMF Debian + virtio/bochs-display/qxl → limpio;
+# OVMF de Arch (202608) + std → limpio. Es del arnés (firmware emulado + tarjeta
+# emulada), no del producto. Sobreescribible con NIMBO_QEMU_VGA.
+VGA_OPT="${NIMBO_QEMU_VGA:-}"
 
-# --- Firmware OVMF (rutas de Fedora y de Debian/Ubuntu) ----------------------------------
-find_first() { for f in "$@"; do [ -r "$f" ] && { printf '%s\n' "$f"; return 0; }; done; return 1; }
-OVMF_CODE="${OVMF_CODE:-$(find_first /usr/share/edk2/ovmf/OVMF_CODE.fd /usr/share/OVMF/OVMF_CODE_4M.fd /usr/share/OVMF/OVMF_CODE.fd || true)}"
-OVMF_VARS_TPL="${OVMF_VARS:-$(find_first /usr/share/edk2/ovmf/OVMF_VARS.fd /usr/share/OVMF/OVMF_VARS_4M.fd /usr/share/OVMF/OVMF_VARS.fd || true)}"
+# --- Firmware OVMF (lib-qemu.sh: resuelto, nunca con ruta fija) ---------------------------
+# Sin Secure Boot: el OVMF del host (descriptores de QEMU). Con Secure Boot: el par de
+# Debian bookworm del snapshot, con SHA-256 fijado. La máquina con Secure Boot necesita
+# SMM y la flash de variables marcada como segura, o el firmware se niega a arrancar.
+OVMF_CODE_ENV="${OVMF_CODE:-}"; OVMF_CODE=""; OVMF_VARS_TPL=""; OVMF_ORIGEN=""
+MACHINE=(-machine q35)
+ovmf_preparar() {
+    if [ "$SB" = 1 ]; then
+        nimbo_ovmf_secboot || exit 1
+        MACHINE=(-machine q35,smm=on -global driver=cfi.pflash01,property=secure,value=on)
+        VGA_OPT="${VGA_OPT:-virtio}"
+    else
+        VGA_OPT="${VGA_OPT:-std}"
+        OVMF_CODE="$OVMF_CODE_ENV"
+        nimbo_ovmf_resolver || { echo "ERROR: no encuentro OVMF (instala edk2-ovmf / ovmf, o exporta OVMF_CODE y OVMF_VARS)"; exit 1; }
+    fi
+}
 
-need() { command -v "$1" >/dev/null || { echo "ERROR: falta '$1' en el host"; exit 1; }; }
+need() { command -v "$1" >/dev/null || { echo "ERROR: falta '$1' en el host (ver Requisitos en la cabecera)"; exit 1; }; }
 
 qemu_base() {
     # $1 = RAM en MiB, $2 = fichero de log serie; el resto, argumentos extra de QEMU.
@@ -69,11 +112,11 @@ qemu_base() {
     : > "$log"
     qemu-system-x86_64 \
         "${kvm[@]}" \
-        -machine q35 -m "$mem" -smp 2 \
+        "${MACHINE[@]}" -m "$mem" -smp 2 \
         -drive if=pflash,format=raw,readonly=on,file="$OVMF_CODE" \
         -drive if=pflash,format=raw,file="$VARS" \
         -drive file="$DISK",if=virtio,format=qcow2 \
-        -vga std -display "$DISPLAY_OPT" \
+        -vga "$VGA_OPT" -display "$DISPLAY_OPT" \
         -serial file:"$log" \
         -nic user,model=virtio-net-pci \
         "$@"
@@ -83,7 +126,7 @@ cmd_instalar() {
     local iso="${1:-$HERE/live-image-amd64.hybrid.iso}"
     need qemu-system-x86_64; need qemu-img
     [ -f "$iso" ] || { echo "ERROR: no existe la ISO: $iso"; exit 1; }
-    [ -n "$OVMF_CODE" ] && [ -n "$OVMF_VARS_TPL" ] || { echo "ERROR: no encuentro OVMF (instala edk2-ovmf / ovmf, o exporta OVMF_CODE y OVMF_VARS)"; exit 1; }
+    ovmf_preparar
 
     if [ -e "$DISK" ]; then
         echo "ERROR: ya existe $DISK (¿una instalación previa?)."
@@ -96,6 +139,8 @@ cmd_instalar() {
     echo ">> ISO    : $iso ($(du -h "$iso" | cut -f1)) sha256=$(sha256sum "$iso" | cut -c1-16)…"
     echo ">> Disco  : $DISK (${DISK_GB} GiB, vacío)"
     echo ">> OVMF   : $OVMF_CODE"
+    echo ">> Origen : $OVMF_ORIGEN"
+    echo ">> Secure Boot: $([ "$SB" = 1 ] && echo 'ACTIVO (llaves MS inscritas, SMM)' || echo 'apagado')  ·  vídeo: -vga $VGA_OPT"
     echo ">> Serie  : $LOG_LIVE"
     echo
     echo "   EN LA VM: escritorio live -> icono '$LANZADOR'"
@@ -113,7 +158,7 @@ cmd_instalar() {
 cmd_arrancar() {
     need qemu-system-x86_64
     [ -f "$DISK" ] && [ -f "$VARS" ] || { echo "ERROR: no hay instalación ($DISK). Ejecuta primero '$YO instalar'."; exit 1; }
-    [ -n "$OVMF_CODE" ] || { echo "ERROR: no encuentro OVMF"; exit 1; }
+    ovmf_preparar
 
     # Disco auxiliar de solo lectura con el verificador (vvfat: un directorio del host
     # servido como FAT). No toca ni la ISO ni el disco instalado.
@@ -123,6 +168,7 @@ cmd_arrancar() {
     [ -f "$BASE" ] && cp "$BASE" "$tools/"
 
     echo ">> Disco  : $DISK (sin ISO: arranca lo instalado)"
+    echo ">> Secure Boot: $([ "$SB" = 1 ] && echo 'ACTIVO' || echo 'apagado')  ·  OVMF: $OVMF_ORIGEN"
     echo ">> Serie  : $LOG_INST"
     echo
     if [ -z "$SUF" ]; then
@@ -177,5 +223,5 @@ case "${1:-}" in
     arrancar) cmd_arrancar ;;
     informe)  cmd_informe ;;
     limpiar)  cmd_limpiar ;;
-    *) sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'; exit 1 ;;
+    *) sed -n '2,26p' "$0" | sed 's/^# \{0,1\}//'; exit 1 ;;
 esac
