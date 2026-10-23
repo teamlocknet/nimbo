@@ -279,6 +279,11 @@ EOF
     # 3) dracut + tpm2-tools desde el pool local (retira initramfs-tools por conflicto).
     run $APT install $PAQ_TPM || fallo_fase1 "falló la instalación de dracut/tpm2-tools desde el pool"
     instalado dracut || fallo_fase1 "dracut no quedó instalado"
+    # cryptsetup-initramfs sobrevive (dracut satisface su dependencia) pero con dracut no
+    # sirve de nada: fuera. El rollback lo reinstala solo (trabaja sobre el diff de paquetes).
+    if instalado cryptsetup-initramfs; then
+        run apt-get -y -q purge cryptsetup-initramfs || fallo_fase1 "no se pudo purgar cryptsetup-initramfs"
+    fi
 
     # 4) regenerar el initrd con dracut (explícito, aunque el postinst ya lo haya hecho).
     run dracut --force "/boot/initrd.img-$KVER" "$KVER" || fallo_fase1 "dracut no pudo generar el initrd"
