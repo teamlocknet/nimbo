@@ -48,3 +48,18 @@ jobs:
             exit 1
           fi
           echo "Estructura completa."
+
+  tests-cli-bookworm:
+    # Tests de nimbo-audit con el Python 3.11 de bookworm y sus dependencias desde APT
+    # (typer 0.7, click 8.1, pytest 7.2), en el mismo contenedor anclado que la ISO.
+    # Job independiente: no toca `estructura`.
+    name: tests-cli-bookworm
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Tests del CLI en bookworm (contenedor anclado)
+        env:
+          CONTAINER_ENGINE: docker
+        run: ./packages/nimbo-audit/test-in-bookworm.sh

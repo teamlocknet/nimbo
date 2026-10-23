@@ -1,5 +1,11 @@
+# MÍNIMOS = VERSIONES DE BOOKWORM (ADR-005). La ISO es offline y el CLI corre con lo que
+# trae Debian bookworm, no con lo último de PyPI. Los pisos de este archivo son los
+# paquetes del snapshot anclado 20260901T000000Z (iso/live-build/snapshot.env):
+#   python3 3.11.2 · python3-setuptools 66.1.1 · python3-typer 0.7.0 · python3-pytest 7.2.1
+# No subirlos sin comprobar que bookworm los trae: el job `tests-cli-bookworm` del CI
+# (packages/nimbo-audit/test-in-bookworm.sh) corre los tests contra esas versiones.
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=66"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -11,11 +17,11 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "GPL-3.0-or-later" }
 dependencies = [
-    "typer>=0.12",
+    "typer>=0.7",   # python3-typer 0.7.0 en bookworm (ADR-005)
 ]
 
 [project.optional-dependencies]
-test = ["pytest>=8"]
+test = ["pytest>=7.2"]   # python3-pytest 7.2.1 en bookworm (ADR-005)
 
 [project.scripts]
 # El comando es 'nimbo-audit'; el namespace del paquete es 'nimbo_audit'

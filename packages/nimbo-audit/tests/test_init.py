@@ -128,22 +128,21 @@ def test_repo_eliminar_rechaza_rutas_fuera_del_base(tmp_path: Path, nombre: str)
 # --- CLI: mensajes exactos [OK] / [ERROR] -----------------------------------
 
 
-def test_cli_ok(tmp_path: Path) -> None:
-    res = CliRunner().invoke(app, ["init", "acme", "--dir", str(tmp_path)])
+def test_cli_ok(tmp_path: Path, cli_runner: CliRunner) -> None:
+    res = cli_runner.invoke(app, ["init", "acme", "--dir", str(tmp_path)])
     assert res.exit_code == 0
     assert "[OK] Engagement 'acme' inicializado en" in res.stdout
     assert (tmp_path / "acme" / "metadata.json").is_file()
 
 
-def test_cli_duplicado(tmp_path: Path) -> None:
-    runner = CliRunner()
-    runner.invoke(app, ["init", "acme", "--dir", str(tmp_path)])
-    res = runner.invoke(app, ["init", "acme", "--dir", str(tmp_path)])
+def test_cli_duplicado(tmp_path: Path, cli_runner: CliRunner) -> None:
+    cli_runner.invoke(app, ["init", "acme", "--dir", str(tmp_path)])
+    res = cli_runner.invoke(app, ["init", "acme", "--dir", str(tmp_path)])
     assert res.exit_code == 1
     assert "[ERROR] Ya existe un engagement con este nombre" in res.stderr
 
 
-def test_cli_nombre_invalido(tmp_path: Path) -> None:
-    res = CliRunner().invoke(app, ["init", "a/b", "--dir", str(tmp_path)])
+def test_cli_nombre_invalido(tmp_path: Path, cli_runner: CliRunner) -> None:
+    res = cli_runner.invoke(app, ["init", "a/b", "--dir", str(tmp_path)])
     assert res.exit_code == 1
     assert "[ERROR] Nombre no válido" in res.stderr
