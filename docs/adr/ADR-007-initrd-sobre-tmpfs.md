@@ -10,7 +10,7 @@ anfitrión** (VM de GitHub, ext4). El 23-oct-2026, al compilar el mismo commit (
 mismo `SOURCE_DATE_EPOCH=1791342616`, misma imagen por digest, mismo snapshot) en una
 máquina física distinta con **btrfs**, la ISO salió distinta:
 
-- CI (ext4, cuatro compilaciones): `17ee64c8624d15416c4996e82585b235e187cc045313176f19cc0b8e049f1da0`
+- CI (familia ext — `stat -f` informa `ext2/ext3`; cuatro compilaciones): `17ee64c8624d15416c4996e82585b235e187cc045313176f19cc0b8e049f1da0`
 - Portátil (btrfs): `41d97860cd568351e0b714de77fc5db7882ecb85fd29a75c76f452bd05333a9d`
 
 El diagnóstico (detalle en [H-001](../hallazgos/H-001-filtracion-nlink-btrfs.md)) aisló una

@@ -46,7 +46,7 @@ P: Begin executing hacks...
 cmp: IDÉNTICAS byte a byte
 ```
 
-## Referencia de CI (mismo commit, ext4)
+## Referencia de CI (mismo commit, familia ext: `stat -f` → `ext2/ext3`)
 
 | Ejecución | SHA-256 |
 |---|---|
@@ -58,3 +58,15 @@ cmp: IDÉNTICAS byte a byte
 | Este PC (btrfs), sin el arreglo | `41d97860…333a9d` ← H-001 |
 
 ISO: 475 004 928 bytes.
+
+## Compuerta del PR del arreglo (#27)
+
+`repro-verify` run `39969425797` (commit nuevo → `SOURCE_DATE_EPOCH=1792765494`):
+
+```
+>> Sistema de archivos: ext2/ext3          (ambas patas)
+P: [hook]   /boot/initrd.img-6.1.0-52-amd64: 0 directorios con nlink=1 (OK)   (ambas patas)
+>> leg A: sha=8acd6d9043c271c21bd088dd9eeb6513fc5a20dd4e773ae2150641d68e362c3d  boot_id=78f2aee4-…
+>> leg B: sha=8acd6d9043c271c21bd088dd9eeb6513fc5a20dd4e773ae2150641d68e362c3d  boot_id=b2a36500-…
+>> COMPUERTA: MATCH — ISO reproducible entre runners independientes.
+```

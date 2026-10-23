@@ -23,13 +23,16 @@ El mismo commit (`a4af6b8`) compilado en dos anfitriones distintos, con todo lo 
 | | CI (GitHub Actions) | Portátil del equipo |
 |---|---|---|
 | Máquina | VM efímera de GitHub, Ubuntu 24.04 | PC físico, Arch Linux (Omarchy), kernel 7.2.5 |
-| Sistema de archivos del build | ext4 | **btrfs** |
+| Sistema de archivos del build | familia ext (ext4)¹ | **btrfs** |
 | Contenedor | `debian:bookworm-slim` por digest `88200866…4171` | el mismo |
 | Paquetes | snapshot.debian.org `20260901T000000Z` | el mismo |
 | `SOURCE_DATE_EPOCH` | 1791342616 | el mismo |
 | **SHA-256 de la ISO** | `17ee64c8…1da0` (4 compilaciones, 7 y 23-oct) | `41d97860…333a9d` |
 
 Mismo código, mismas herramientas, mismos paquetes, misma hora congelada: **ISO distinta**.
+
+¹ Medido en el propio log de CI desde este arreglo: `stat -f` informa `ext2/ext3`, que es el
+número mágico `0xEF53` compartido por ext2, ext3 y ext4 (`stat` no los distingue).
 
 ## 3. Cómo se localizó (de lo grueso a lo fino)
 
@@ -104,6 +107,10 @@ cmp: IDÉNTICAS byte a byte
 | CI, 4 veces (7 y 23-oct) | ext4 | `17ee64c8…1da0` |
 | Portátil, sin arreglo | btrfs | `41d97860…333a9d` |
 | **Portátil, con arreglo** | **btrfs** | **`17ee64c8…1da0`** |
+
+Y en el propio PR del arreglo (#27), la compuerta de CI sigue en verde con el SHA nuevo (el
+commit cambia, así que cambia `SOURCE_DATE_EPOCH`): las dos patas dan
+`8acd6d90…2c3d`, con `boot_id` distintos, y el auto-chequeo del hook pasa en ambas.
 
 La ISO completa (475 004 928 bytes) es idéntica byte a byte. Como el SHA-256 cubre toda la
 imagen, esto prueba también que el arreglo no deja ningún rastro en ella. Detalle del
