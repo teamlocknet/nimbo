@@ -78,6 +78,17 @@ El mapeo vive en `.github/CODEOWNERS`. (Mateo quedó fuera del equipo.)
    el arreglo.
 5. **No decidir seguridad cansado. No modelar sobre resúmenes** — captura el estado real.
 6. **Pregunta, no inventes** datos no especificados (usuarios de GitHub, licencia, etc.).
+7. **Credenciales (regla permanente, 2026-10-23):**
+   - **Nunca pidas contraseñas, passphrases ni claves** al equipo, ni de VMs "de prueba"
+     (los discos de prueba suelen ser copias de instalaciones reales). Si una prueba
+     necesita una credencial, diseña el camino para que la teclee la persona, o genera
+     credenciales propias de la prueba.
+   - **Ninguna credencial entra al repo, ni siquiera de prueba.** Si una evidencia la
+     contiene (p. ej. la clave de recuperación de `systemd-cryptenroll`), se **redacta**
+     antes de versionarla o de mostrarla en la sustentación; el original solo vive en
+     ficheros ignorados por git.
+   - Motivo: es un proyecto de ciberseguridad; ese atajo es justo lo que el producto
+     existe para evitar.
 
 ### Principios no negociables
 1. Reproducibilidad verificable · 2. Hermetismo (cero telemetría) · 3. Costo cero / todo
