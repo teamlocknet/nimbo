@@ -6,7 +6,7 @@
 
 La compuerta `repro-verify` (ADR-004) demostraba reproducibilidad entre dos compilaciones
 en runners de GitHub con `boot_id` distinto, pero siempre sobre el **mismo tipo de
-anfitrión** (VM de GitHub, ext4). El 23-oct-2026, al compilar el mismo commit (`a4af6b8`,
+anfitrión** (VM de GitHub, familia ext: `stat -f` informa `ext2/ext3`). El 23-oct-2026, al compilar el mismo commit (`a4af6b8`,
 mismo `SOURCE_DATE_EPOCH=1791342616`, misma imagen por digest, mismo snapshot) en una
 máquina física distinta con **btrfs**, la ISO salió distinta:
 
