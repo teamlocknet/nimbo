@@ -1,0 +1,69 @@
+#!/bin/sh
+# probar-tpm.sh — envoltorio de PRUEBA para nimbo-tpm-setup (Paso 4). Solo camino de prueba.
+#
+# NO va en la ISO ni forma parte del producto: install-in-qemu.sh lo entrega al guest por
+# el disco auxiliar de solo lectura, junto a nimbo-tpm-setup. Existe porque desde la
+# ventana de QEMU no se puede copiar texto: esto saca la salida y la evidencia por la
+# consola serie (/dev/ttyS0), que el arnés guarda en un fichero del anfitrión, y
+# `install-in-qemu.sh ... evidencia` la extrae. El nimbo-tpm-setup que se entrega no
+# escribe en la consola serie ni en discos auxiliares; quien lo hace es este envoltorio.
+#
+# Dentro del sistema instalado, como root:
+#   sudo mount -o ro /dev/vdb1 /mnt
+#   sudo sh /mnt/probar-tpm.sh [argumentos de nimbo-tpm-setup]   # ejecuta + evidencia
+#   sudo sh /mnt/probar-tpm.sh --solo-evidencia                    # p. ej. tras reiniciar
+#
+# Lo que se teclea (contraseñas, PIN) NO pasa por aquí: lo leen nimbo-tpm-setup y
+# systemd-cryptenroll de la terminal. Lo que SÍ queda en la consola serie es lo que se
+# imprime, incluida la clave de recuperación que genera la fase 2: es una credencial del
+# volumen de PRUEBA, creada por la prueba.
+set -u
+
+[ "$(id -u)" = 0 ] || { echo "Ejecuta como root (sudo)."; exit 2; }
+AQUI="$(cd "$(dirname "$0")" && pwd)"
+SERIE=/dev/null
+[ -w /dev/ttyS0 ] && SERIE=/dev/ttyS0
+s() { printf '%s\r\n' "$*" > "$SERIE" 2>/dev/null || true; }
+# Copia un fichero o la salida de un comando a la serie, línea a línea.
+s_cmd() { s "\$ $*"; sh -c "$*" 2>&1 | while IFS= read -r l; do s "$l"; done; }
+
+N="$(date -u +%Y%m%dT%H%M%SZ)"
+rc="-"
+if [ "${1:-}" != "--solo-evidencia" ]; then
+    s "NIMBO_TPM_RUN_BEGIN $N args: $*"
+    # `script` (util-linux) da una terminal real: los prompts interactivos (contraseña,
+    # confirmación de la clave de recuperación) funcionan igual que sin envoltorio, y la
+    # sesión queda grabada para mandarla a la serie al terminar. -e conserva el código.
+    TS=/tmp/nimbo-tpm-sesion.txt
+    args=""; for a in "$@"; do args="$args '$a'"; done
+    script -q -e -c "sh '$AQUI/nimbo-tpm-setup'$args" "$TS"
+    rc=$?
+    tr -d '\r' < "$TS" | while IFS= read -r l; do s "$l"; done
+    s "NIMBO_TPM_RUN_END rc=$rc"
+fi
+
+echo
+echo ">> Volcando evidencia a la consola serie…"
+s "NIMBO_TPM_EVID_BEGIN $N rc=$rc"
+s "== sistema"
+s_cmd "uname -r; cat /proc/cmdline"
+s_cmd 'f=/sys/firmware/efi/efivars; for v in SecureBoot SetupMode; do printf "%s=" $v; od -An -t u1 -j4 -N1 $f/$v-8be4df61-93ca-11d2-aa0d-00e098032b8c | tr -d " "; done'
+s_cmd "cat /sys/class/tpm/tpm0/tpm_version_major 2>&1; ls -l /dev/tpm* 2>&1"
+s "== nimbo-tpm-setup --estado"
+s_cmd "sh '$AQUI/nimbo-tpm-setup' --estado"
+s "== estado y log del script"
+s_cmd "cat /var/lib/nimbo-tpm/estado 2>&1"
+s_cmd "cat /var/lib/nimbo-tpm/nimbo-tpm-setup.log 2>&1"
+s "== crypttab y dracut"
+s_cmd "cat /etc/crypttab; cat /etc/dracut.conf.d/90-nimbo-tpm.conf 2>&1"
+s "== LUKS (tokens y keyslots)"
+s_cmd 'dev=$(blkid -t TYPE=crypto_LUKS -o device | head -1); echo "$dev"; cryptsetup luksDump "$dev" | grep -E "^(Version|Keyslots|Tokens)|^  [0-9]+: |tpm2-pcrs|tpm2-pin|systemd-tpm2|systemd-recovery|Keyslot:"'
+s "== initrd del kernel en uso"
+s_cmd 'img=/boot/initrd.img-$(uname -r); ls -l "$img"; sha256sum "$img"; if command -v lsinitrd >/dev/null; then lsinitrd "$img" | grep -E "systemd-cryptsetup$|token-systemd-tpm2|libtss2-esys|udev/console-setup$|etc/crypttab$|console-setup/|scripts/local-top/cryptroot" ; lsinitrd -f etc/crypttab "$img"; else lsinitramfs "$img" | grep -E "cryptroot|cryptsetup$|console-setup"; fi'
+s "== paquetes de arranque"
+s_cmd "dpkg-query -W -f='\${db:Status-Status} \${Package} \${Version}\n' dracut dracut-core initramfs-tools initramfs-tools-core cryptsetup-initramfs tpm2-tools 2>&1"
+s "== este arranque: cryptsetup / TPM en el journal"
+s_cmd "journalctl -b -o short-monotonic --no-pager 2>/dev/null | grep -iE 'cryptsetup|tpm2|tpm:|crypt|dracut|unlock|console-setup|setupcon' | head -80"
+s "NIMBO_TPM_EVID_END $N"
+echo ">> Hecho (rc del script: $rc). Apaga la VM y, en el anfitrión:"
+echo "   ./install-in-qemu.sh --secure-boot --tpm evidencia"

@@ -8,6 +8,7 @@
 #   ./install-in-qemu.sh arrancar         # arranca el disco YA instalado (pide la clave LUKS)
 #   ./install-in-qemu.sh informe          # extrae del log serie el informe de verificación
 #   ./install-in-qemu.sh limpiar          # borra disco, NVRAM y logs del arnés
+#   ./install-in-qemu.sh evidencia        # extrae la última evidencia de probar-tpm.sh
 #
 # DOS VARIANTES (ADR-006), cada una con su propio disco y sus logs, para tener las dos
 # instalaciones a la vez. Antepón --sin-cifrar a cualquier orden para la segunda:
@@ -77,6 +78,7 @@ INFORME="$HERE/installed$SUF-informe.txt"
 PAQUETES="$HERE/installed$SUF-paquetes.txt"
 TPMDIR="$HERE/nimbo-install$SUF-tpmstate"
 TPM_SCRIPT="$HERE/../../security/luks-tpm/nimbo-tpm-setup"
+SERIAL_APPEND=0   # arrancar: el log serie se ACUMULA entre arranques (pruebas con reinicios)
 YO="$0"
 case "$SUF" in *-sincifrar*) YO="$YO --sin-cifrar" ;; esac
 if [ "$SB" = 1 ]; then YO="$YO --secure-boot"; fi
@@ -143,7 +145,16 @@ qemu_base() {
     local mem="$1" log="$2"; shift 2
     local kvm=()
     if [ -w /dev/kvm ]; then kvm=(-enable-kvm -cpu host); else echo ">> AVISO: sin KVM, irá muy lento"; fi
-    : > "$log"
+    local serie
+    if [ -n "${NIMBO_QEMU_SERIAL:-}" ]; then
+        serie=(-serial "$NIMBO_QEMU_SERIAL")
+    elif [ "$SERIAL_APPEND" = 1 ]; then
+        printf '\n=== arranque %s (host) ===\n' "$(date -Is)" >> "$log"
+        serie=(-chardev file,id=ser0,path="$log",append=on -serial chardev:ser0)
+    else
+        : > "$log"
+        serie=(-serial file:"$log")
+    fi
     qemu-system-x86_64 \
         "${kvm[@]}" \
         "${MACHINE[@]}" -m "$mem" -smp 2 \
@@ -151,7 +162,7 @@ qemu_base() {
         -drive if=pflash,format=raw,file="$VARS" \
         -drive file="$DISK",if=virtio,format=qcow2 \
         -vga "$VGA_OPT" -display "$DISPLAY_OPT" \
-        -serial "${NIMBO_QEMU_SERIAL:-file:$log}" \
+        "${serie[@]}" \
         ${NIMBO_QEMU_MONITOR:+-monitor unix:"$NIMBO_QEMU_MONITOR",server,nowait} \
         -nic user,model=virtio-net-pci \
         "${TPM_ARGS[@]}" \
@@ -204,7 +215,7 @@ cmd_arrancar() {
     cp "$HERE/verificar-instalado.sh" "$tools/"
     [ -f "$BASE" ] && cp "$BASE" "$tools/"
     # Paso 4: nimbo-tpm-setup viaja por el mismo disco auxiliar (se valida sin tocar la ISO).
-    [ -f "$TPM_SCRIPT" ] && cp "$TPM_SCRIPT" "$tools/"
+    [ -f "$TPM_SCRIPT" ] && cp "$TPM_SCRIPT" "$HERE/probar-tpm.sh" "$tools/"
 
     echo ">> Disco  : $DISK (sin ISO: arranca lo instalado)"
     echo ">> Secure Boot: $([ "$SB" = 1 ] && echo 'ACTIVO' || echo 'apagado')  ·  OVMF: $OVMF_ORIGEN"
@@ -220,7 +231,15 @@ cmd_arrancar() {
     echo "   (para la RAM idle, espera ~90 s tras iniciar sesión antes de lanzarlo)."
     echo "   Al terminar, apaga la VM y ejecuta:  $YO informe"
     echo
+    if [ "$TPM" = 1 ]; then
+        echo "   PASO 4 (TPM): en una terminal del guest, como root:"
+        echo "       sudo mount -o ro /dev/vdb1 /mnt && sudo sh /mnt/probar-tpm.sh"
+        echo "   (tras un reinicio: sudo sh /mnt/probar-tpm.sh --solo-evidencia)"
+        echo "   La salida queda en $LOG_INST; al apagar:  $YO evidencia"
+        echo
+    fi
     tpm_preparar
+    SERIAL_APPEND=1
     qemu_base "$VM_MB_INST" "$LOG_INST" \
         -drive file=fat:ro:"$tools",if=virtio,format=raw,readonly=on
 }
@@ -253,6 +272,25 @@ cmd_informe() {
     echo ">> Lista de paquetes: $PAQUETES"
 }
 
+cmd_evidencia() {
+    # Última ejecución de probar-tpm.sh (NIMBO_TPM_RUN_*) y último volcado (NIMBO_TPM_EVID_*)
+    # del log serie acumulado → fichero propio por ejecución.
+    [ -s "$LOG_INST" ] || { echo "ERROR: no hay log serie del instalado ($LOG_INST)."; exit 1; }
+    local limpio n out
+    limpio="$(mktemp)"; tr -d '\r' < "$LOG_INST" > "$limpio"
+    n="$(grep -a '^NIMBO_TPM_EVID_BEGIN ' "$limpio" | tail -1 | awk '{print $2}')"
+    [ -n "$n" ] || { rm -f "$limpio"; echo "ERROR: el log serie no tiene evidencia de probar-tpm.sh."; exit 1; }
+    out="$HERE/installed$SUF-evidencia-$n.txt"
+    {
+        awk -v n="$n" '$1=="NIMBO_TPM_RUN_BEGIN" && $2==n {f=1} f{print} $1=="NIMBO_TPM_RUN_END" && f {exit}' "$limpio"
+        awk -v n="$n" '$1=="NIMBO_TPM_EVID_BEGIN" && $2==n {f=1} f{print} $1=="NIMBO_TPM_EVID_END" && f {exit}' "$limpio"
+    } > "$out"
+    rm -f "$limpio"
+    cat "$out"
+    echo
+    echo ">> Evidencia: $out"
+}
+
 cmd_limpiar() {
     rm -f "$DISK" "$VARS" "$LOG_LIVE" "$LOG_INST" "$INFORME" "$PAQUETES"
     rm -rf "$TPMDIR"
@@ -263,6 +301,7 @@ case "${1:-}" in
     instalar) shift; cmd_instalar "$@" ;;
     arrancar) cmd_arrancar ;;
     informe)  cmd_informe ;;
+    evidencia) cmd_evidencia ;;
     limpiar)  cmd_limpiar ;;
-    *) sed -n '2,34p' "$0" | sed 's/^# \{0,1\}//'; exit 1 ;;
+    *) sed -n '2,35p' "$0" | sed 's/^# \{0,1\}//'; exit 1 ;;
 esac
