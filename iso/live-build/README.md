@@ -260,8 +260,46 @@ fijas:
   el firmware queda en *Setup Mode*, donde Secure Boot no exige ninguna firma. La máquina
   arranca con `smm=on` y la flash de variables marcada como segura.
 
-**Pendiente de verificar:** arranque en BIOS legacy y RAM idle del instalado con ≥ 90 s de
-reposo. Secure Boot activo: ver la sección de evidencia del arnés en Omarchy (Paso 3C.1-bis).
+**Tarjeta de vídeo emulada.** Sin Secure Boot el arnés usa `-vga std`; con `--secure-boot`,
+`-vga virtio` (sobreescribible con `NIMBO_QEMU_VGA=`). Motivo medido: el OVMF de Debian
+(2022.11) con la VGA `std` de QEMU deja la consola del kernel **ilegible** hasta que arranca
+X, y el prompt de la contraseña LUKS parece roto aunque funciona. Con el mismo disco:
+
+| Firmware | Secure Boot | Tarjeta | Prompt LUKS |
+|---|---|---|---|
+| OVMF Debian 2022.11 (secboot) | sí | `std` | ilegible |
+| OVMF Debian 2022.11 (secboot) | sí | `virtio` / `bochs-display` / `qxl` | limpio |
+| OVMF Debian 2022.11 (sin secboot) | no | `std` | ilegible |
+| OVMF Arch 202608 | no | `std` | limpio |
+
+Es del **arnés** (combinación de firmware emulado y tarjeta emulada), no del producto: el
+kernel, el initrd y GRUB son los mismos en las cuatro filas y no hay plymouth. Se comprueba
+igualmente en pantalla real: ver [`docs/manuales/verificacion-hardware-real.md`](../../docs/manuales/verificacion-hardware-real.md).
+
+### Evidencia del arnés en Omarchy (2026-10-23)
+
+Anfitrión: Omarchy (Arch), kernel 7.2.5, QEMU 11.1.2, KVM. ISO de referencia de CI
+`17ee64c8…1da0` (bit-idéntica a la compilada en este anfitrión con ADR-007).
+
+- **ISO live con Secure Boot exigido** (OVMF Debian + llaves MS): consola serie con
+  `EFI stub: UEFI Secure Boot is enabled`, `secureboot: Secure boot enabled`,
+  `Kernel is locked down from EFI Secure Boot`, `MOKvar=` (shim cargado) y
+  `Loaded X.509 cert 'Debian Secure Boot CA'`; llega a `nimbo-live login:`.
+- **Instalación cifrada con Secure Boot** (verificada con los ojos por Juan José):
+  `verificar-instalado.sh --secure-boot` → **0 fallos**. `SecureBoot=1`, `SetupMode=0`,
+  arranque por `\EFI\debian\shimx64.efi`, LUKS2 argon2id, `/boot` en claro separado,
+  teclado `XKBLAYOUT="es"` en el initrd, sin restos del instalador, pool local como única
+  fuente APT, dracut + tpm2-tools instalables sin red, RAM idle 352 MiB a los 179 s,
+  417 paquetes (= base − 5 live + arranque/cifrado/teclado).
+- **Hermetismo con pcap sobre la ISO con Calamares** (`verify-hermetismo-in-qemu.sh`,
+  120 s en reposo): 12 paquetes, todos de puesta en marcha local; 0 DNS, 0 NTP,
+  0 HTTP/S, 0 SYN salientes, 0 listeners. `HERMETISMO : OK`.
+
+Con esto se cierran las deudas de 3C.1 "Secure Boot no verificado" (live e instalado, con
+firmas exigidas) y "hermetismo sin re-medir sobre la ISO con Calamares".
+
+**Pendiente de verificar:** arranque en BIOS legacy y Secure Boot / prompt LUKS en hardware
+real (semana del 17-nov).
 
 ## Reproducibilidad — estado y deuda conocida
 
