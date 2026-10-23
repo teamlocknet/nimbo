@@ -20,6 +20,12 @@ Sistema operativo de ciberseguridad basado en Debian — proyecto de grado del g
 El chat orquesta y diseña; Claude Code escribe el código real. El equipo humano
 ejecuta las gestiones del mundo físico y **verifica con los ojos** antes de mergear.
 
+## Licencia
+
+El código propio de este repositorio se distribuye bajo **GPL-3.0-or-later**: texto
+completo en [`LICENSE`](LICENSE). La ISO agrega además paquetes de Debian, cada uno con
+su propia licencia (ver `/usr/share/doc/*/copyright` dentro del sistema).
+
 ## Referencias
 
 - Fuente de verdad: [`docs/documento-maestro/`](docs/documento-maestro/)
