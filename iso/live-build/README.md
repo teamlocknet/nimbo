@@ -228,10 +228,40 @@ tomaron antes de los 90 s de reposo, así que son orientativas.
 
 # Variante sin cifrar (disco y logs propios; el verificador se lanza con --sin-cifrar):
 ./install-in-qemu.sh --sin-cifrar instalar | arrancar | informe
+
+# Variante con Secure Boot ACTIVO (combinable con --sin-cifrar; ficheros con sufijo -sb;
+# el verificador se lanza con --secure-boot y exige SecureBoot=1 y SetupMode=0):
+./install-in-qemu.sh --secure-boot instalar | arrancar | informe
 ```
 
-**Pendiente de verificar:** Secure Boot activo, arranque en BIOS legacy y RAM idle del
-instalado con ≥ 90 s de reposo.
+**Requisitos del host.** `qemu-system-x86_64` + `qemu-img`, firmware OVMF y KVM:
+
+| Host | Paquetes |
+|---|---|
+| Arch / Omarchy | `pacman -S qemu-desktop edk2-ovmf` (+ `swtpm` para el Paso 4, `tcpdump` para hermetismo) |
+| Fedora | `dnf install qemu-kvm edk2-ovmf` |
+| Debian / Ubuntu | `apt install qemu-system-x86 qemu-utils ovmf` |
+
+**Firmware OVMF: host-side, NO es parte del producto.** OVMF solo existe en el anfitrión
+que verifica, para emular un PC UEFI; no entra en la ISO ni es dependencia de nimbo (el
+sistema arranca con el firmware de la máquina real). `lib-qemu.sh` lo resuelve sin rutas
+fijas:
+
+- **Sin Secure Boot:** el OVMF del propio host, por los descriptores estándar de QEMU
+  (`/etc/qemu/firmware`, `/usr/share/qemu/firmware`), con rutas conocidas de Arch, Fedora y
+  Debian como último recurso. Se puede forzar con `OVMF_CODE=` y `OVMF_VARS=`.
+- **Con Secure Boot (`--secure-boot`):** el par `OVMF_CODE_4M.secboot.fd` +
+  `OVMF_VARS_4M.ms.fd` de **Debian bookworm**, sacado del paquete `ovmf` del **mismo
+  snapshot anclado** que la ISO (`snapshot.env`, ADR-004), con SHA-256 fijado del `.deb`
+  (= el del índice `Packages` del snapshot) y de los dos `.fd`. Caché en `.cache-ovmf/`
+  (ignorada por git). Motivo: es el firmware de la distro objetivo y trae las llaves de
+  Microsoft inscritas, que shim necesita para validarse de verdad. Arch no publica unas
+  VARS con llaves (su descriptor `secure-4m` no declara `enrolled-keys`), y con VARS vacías
+  el firmware queda en *Setup Mode*, donde Secure Boot no exige ninguna firma. La máquina
+  arranca con `smm=on` y la flash de variables marcada como segura.
+
+**Pendiente de verificar:** arranque en BIOS legacy y RAM idle del instalado con ≥ 90 s de
+reposo. Secure Boot activo: ver la sección de evidencia del arnés en Omarchy (Paso 3C.1-bis).
 
 ## Reproducibilidad — estado y deuda conocida
 

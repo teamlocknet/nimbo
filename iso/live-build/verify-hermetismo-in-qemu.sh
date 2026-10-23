@@ -42,9 +42,9 @@ MARK="NIMBO_HERM_MARK_5521"
 GUEST_IP="10.0.2.15"                    # IP por defecto del guest en SLIRP user-mode
 
 [ -f "$ISO" ] || { echo "ERROR: no existe la ISO: $ISO"; exit 1; }
-command -v socat  >/dev/null || { echo "ERROR: falta socat";  exit 1; }
-command -v qemu-system-x86_64 >/dev/null || { echo "ERROR: falta qemu-system-x86_64"; exit 1; }
-command -v tcpdump >/dev/null || { echo "ERROR: falta tcpdump (análisis del pcap)"; exit 1; }
+command -v socat  >/dev/null || { echo "ERROR: falta socat (Arch: pacman -S socat · Debian: apt install socat)";  exit 1; }
+command -v qemu-system-x86_64 >/dev/null || { echo "ERROR: falta qemu-system-x86_64 (Arch: pacman -S qemu-desktop · Fedora: dnf install qemu-kvm · Debian: apt install qemu-system-x86)"; exit 1; }
+command -v tcpdump >/dev/null || { echo "ERROR: falta tcpdump para analizar el pcap (Arch: pacman -S tcpdump · Debian: apt install tcpdump)"; exit 1; }
 command -v convert >/dev/null || echo ">> AVISO: falta ImageMagick 'convert'; la captura quedará en .ppm"
 
 echo ">> ISO   : $ISO ($(du -h "$ISO" | cut -f1))"
