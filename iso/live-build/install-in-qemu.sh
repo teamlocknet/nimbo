@@ -29,6 +29,9 @@
 # entre arranques, como un chip real: borrarlo equivale a un TPM limpiado. Ficheros con
 # sufijo -tpm. Requiere swtpm en el host.
 #
+# VARIANTE LIBRE: NIMBO_VARIANTE=<nombre> separa disco y logs de otras instalaciones; la RAM
+# se fija con NIMBO_VM_MB (instalar, def. 4096) y NIMBO_VM_MB_INST (arrancar, def. 2048).
+#
 # AUTOMATIZACIÓN (evidencia): NIMBO_QEMU_MONITOR=<ruta.sock> expone el monitor de QEMU
 # (screendump, sendkey) y NIMBO_QEMU_SERIAL=<espec> sustituye la consola serie a fichero
 # (p. ej. unix:<ruta.sock>,server,nowait). Sin ellas, el arnés se comporta como antes.
@@ -70,6 +73,9 @@ while [ $# -gt 0 ]; do
         *) break ;;
     esac
 done
+# NIMBO_VARIANTE=<nombre> añade un sufijo libre (disco, NVRAM, logs y TPM propios), para
+# instalaciones de prueba que no deben pisar otras (p. ej. H-002: VM de 1 GiB).
+[ -n "${NIMBO_VARIANTE:-}" ] && SUF="$SUF-$NIMBO_VARIANTE"
 DISK="$HERE/nimbo-install$SUF.qcow2"
 VARS="$HERE/nimbo-install$SUF-vars.fd"
 LOG_LIVE="$HERE/install$SUF-serial.log"
@@ -83,6 +89,7 @@ YO="$0"
 case "$SUF" in *-sincifrar*) YO="$YO --sin-cifrar" ;; esac
 if [ "$SB" = 1 ]; then YO="$YO --secure-boot"; fi
 if [ "$TPM" = 1 ]; then YO="$YO --tpm"; fi
+if [ -n "${NIMBO_VARIANTE:-}" ]; then YO="NIMBO_VARIANTE=$NIMBO_VARIANTE $YO"; fi
 BASE="$HERE/paquetes-linea-base-3b1.txt"
 
 DISK_GB="${NIMBO_DISK_GB:-20}"
@@ -322,5 +329,5 @@ case "${1:-}" in
     informe)  cmd_informe ;;
     evidencia) cmd_evidencia ;;
     limpiar)  cmd_limpiar ;;
-    *) sed -n '2,35p' "$0" | sed 's/^# \{0,1\}//'; exit 1 ;;
+    *) sed -n '2,38p' "$0" | sed 's/^# \{0,1\}//'; exit 1 ;;
 esac
