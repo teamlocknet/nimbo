@@ -44,3 +44,7 @@ class InterrupcionMemoriaError(NimboAuditError):
     Se traduce a un `[AVISO]` limpio; el archivo NO queda registrado y el estado
     del engagement permanece intacto.
     """
+
+
+class CasoInvalidoError(NimboAuditError):
+    """El caso o su indice no permiten verificar integridad de forma fiable."""

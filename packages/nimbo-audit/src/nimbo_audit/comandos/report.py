@@ -20,7 +20,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable
 
 from nimbo_audit.comandos.base import Comando
 from nimbo_audit.modelos.evidencia import Evidencia
@@ -29,23 +28,19 @@ from nimbo_audit.repositorio.evidencia_repo import RepositorioEvidencia
 from nimbo_audit.servicios.hashing import calcular_sha256
 from nimbo_audit.servicios.reporte import renderizar_reporte
 
-Hasher = Callable[..., str]
+# Reexportados para conservar los imports de los consumidores existentes.
+from nimbo_audit.servicios.verificacion import (
+    AUSENTE,
+    MODIFICADO,
+    OK,
+    EvidenciaVerificada,
+    Hasher,
+    resumir,
+    verificar_evidencia,
+)
 
 REPORTES = "reportes"
 LOGS = "logs"
-
-# Estados de integridad de una evidencia.
-OK = "OK"
-MODIFICADO = "MODIFICADO"
-AUSENTE = "AUSENTE"
-
-
-@dataclass(frozen=True)
-class EvidenciaVerificada:
-    """Un registro de evidencia junto a su estado de integridad recomputado."""
-
-    evidencia: Evidencia
-    estado: str  # OK | MODIFICADO | AUSENTE
 
 
 @dataclass(frozen=True)
@@ -93,12 +88,7 @@ class ComandoReport(Comando):
         return sorted(p.name for p in logs.iterdir() if p.is_file())
 
     def _verificar(self, evidencia: Evidencia) -> EvidenciaVerificada:
-        archivo = self._raiz / evidencia.ruta
-        if not archivo.is_file():
-            return EvidenciaVerificada(evidencia, AUSENTE)
-        actual = self._hasher(archivo)
-        estado = OK if actual == evidencia.sha256 else MODIFICADO
-        return EvidenciaVerificada(evidencia, estado)
+        return verificar_evidencia(self._raiz, evidencia, hasher=self._hasher)
 
     # --- ejecución -----------------------------------------------------------
 
@@ -122,7 +112,4 @@ class ComandoReport(Comando):
 
     @staticmethod
     def _resumen(verificadas: list[EvidenciaVerificada]) -> dict[str, int]:
-        resumen = {OK: 0, MODIFICADO: 0, AUSENTE: 0}
-        for v in verificadas:
-            resumen[v.estado] += 1
-        return resumen
+        return resumir(verificadas)
