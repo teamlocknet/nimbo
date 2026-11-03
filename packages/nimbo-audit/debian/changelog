@@ -1,0 +1,5 @@
+nimbo-audit (0.1.0-1) unstable; urgency=medium
+
+  * Empaquetado inicial para Debian bookworm.
+
+ -- Juan José Duque <jd1020157@gmail.com>  Sun, 01 Nov 2026 21:46:32 -0500

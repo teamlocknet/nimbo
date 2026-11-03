@@ -1,0 +1,27 @@
+Source: nimbo-audit
+Section: utils
+Priority: optional
+Maintainer: Juan José Duque <jd1020157@gmail.com>
+Build-Depends:
+ debhelper-compat (= 13),
+ dh-python,
+ pybuild-plugin-pyproject,
+ python3-all,
+ python3-setuptools,
+ python3-pytest,
+ python3-typer,
+Standards-Version: 4.6.2
+Homepage: https://github.com/teamlocknet/nimbo
+Rules-Requires-Root: no
+
+Package: nimbo-audit
+Architecture: all
+Depends:
+ ${python3:Depends},
+ ${misc:Depends},
+ python3-typer (>= 0.7),
+Suggests: pandoc
+Description: CLI para organizar auditorias y registrar evidencias
+ Crea directorios de auditoria, captura archivos con hashes SHA-256
+ y genera informes Markdown con comprobacion de integridad.
+ La exportacion opcional a PDF requiere pandoc y un motor PDF compatible.

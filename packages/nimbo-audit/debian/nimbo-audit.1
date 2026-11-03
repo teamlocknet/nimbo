@@ -1,0 +1,42 @@
+.TH NIMBO-AUDIT 1 "2026-11-01" "nimbo-audit 0.1.0" "Manual de LockNet"
+.SH NAME
+nimbo-audit \- organiza auditorias y registra evidencias
+.SH SYNOPSIS
+.B nimbo-audit
+.B --help
+.br
+.B nimbo-audit init
+.I cliente
+.RI [ opciones ]
+.br
+.B nimbo-audit capture
+.I archivo
+.RI [ opciones ]
+.br
+.B nimbo-audit report
+.RI [ opciones ]
+.SH DESCRIPTION
+Crea directorios de auditoria, registra archivos de evidencia con
+hashes SHA-256 y genera informes Markdown.
+El informe compara los archivos con los hashes registrados para
+identificar evidencia modificada o ausente.
+.SH COMMANDS
+.TP
+.B init
+Inicializa un directorio de auditoria.
+.TP
+.B capture
+Copia un archivo al directorio de evidencia y registra su hash.
+.TP
+.B report
+Genera un informe del trabajo y comprueba la integridad de la evidencia.
+.SH OPTIONS
+.TP
+.B --help
+Muestra la ayuda. Cada subcomando admite su propia opcion --help.
+.SH NOTES
+La exportacion opcional a PDF requiere pandoc y un motor PDF compatible.
+Los hashes permiten detectar cambios respecto al indice registrado;
+no acreditan por si solos la autenticidad del archivo original.
+.SH AUTHORS
+LockNet.
