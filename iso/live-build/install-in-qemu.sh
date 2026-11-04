@@ -8,6 +8,7 @@
 #   ./install-in-qemu.sh arrancar         # arranca el disco YA instalado (pide la clave LUKS)
 #   ./install-in-qemu.sh informe          # extrae del log serie el informe de verificación
 #   ./install-in-qemu.sh limpiar          # borra disco, NVRAM y logs del arnés
+#   ./install-in-qemu.sh evidencia        # extrae la evidencia de probar-tpm.sh (todas las pasadas)
 #
 # DOS VARIANTES (ADR-006), cada una con su propio disco y sus logs, para tener las dos
 # instalaciones a la vez. Antepón --sin-cifrar a cualquier orden para la segunda:
@@ -22,6 +23,18 @@
 # firmware es el de Debian bookworm, del snapshot anclado (ver lib-qemu.sh): HOST-SIDE,
 # NO entra en la ISO ni es dependencia del producto. Ficheros con sufijo -sb, y el
 # verificador se lanza con `--secure-boot` (exige SecureBoot=1 y SetupMode=0).
+#
+# TPM 2.0 EMULADO: antepón --tpm (combinable con las demás) para conectar un swtpm
+# (Paso 4, nimbo-tpm-setup). Su estado vive en nimbo-install<sufijo>-tpmstate/ y PERSISTE
+# entre arranques, como un chip real: borrarlo equivale a un TPM limpiado. Ficheros con
+# sufijo -tpm. Requiere swtpm en el host.
+#
+# VARIANTE LIBRE: NIMBO_VARIANTE=<nombre> separa disco y logs de otras instalaciones; la RAM
+# se fija con NIMBO_VM_MB (instalar, def. 4096) y NIMBO_VM_MB_INST (arrancar, def. 2048).
+#
+# AUTOMATIZACIÓN (evidencia): NIMBO_QEMU_MONITOR=<ruta.sock> expone el monitor de QEMU
+# (screendump, sendkey) y NIMBO_QEMU_SERIAL=<espec> sustituye la consola serie a fichero
+# (p. ej. unix:<ruta.sock>,server,nowait). Sin ellas, el arnés se comporta como antes.
 #
 # QUÉ DEJA (todo regenerable, ignorado por git):
 #   nimbo-install.qcow2        disco destino (20 GiB, crece bajo demanda)
@@ -47,26 +60,36 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib-qemu.sh
 . "$HERE/lib-qemu.sh"
 
-SUF=""; VERIF_ARG=""; LANZADOR="Instalar nimbo (cifrado, recomendado)"; SB=0
+SUF=""; VERIF_ARG=""; LANZADOR="Instalar nimbo (cifrado, recomendado)"; SB=0; TPM=0; CIFRADO=1
 while [ $# -gt 0 ]; do
     case "$1" in
         --sin-cifrar)
-            SUF="$SUF-sincifrar"; VERIF_ARG="$VERIF_ARG --sin-cifrar"
+            SUF="$SUF-sincifrar"; VERIF_ARG="$VERIF_ARG --sin-cifrar"; CIFRADO=0
             LANZADOR="Instalar nimbo sin cifrar (avanzado)"; shift ;;
         --secure-boot)
             SB=1; SUF="$SUF-sb"; VERIF_ARG="$VERIF_ARG --secure-boot"; shift ;;
+        --tpm)
+            TPM=1; SUF="$SUF-tpm"; shift ;;
         *) break ;;
     esac
 done
+# NIMBO_VARIANTE=<nombre> añade un sufijo libre (disco, NVRAM, logs y TPM propios), para
+# instalaciones de prueba que no deben pisar otras (p. ej. H-002: VM de 1 GiB).
+[ -n "${NIMBO_VARIANTE:-}" ] && SUF="$SUF-$NIMBO_VARIANTE"
 DISK="$HERE/nimbo-install$SUF.qcow2"
 VARS="$HERE/nimbo-install$SUF-vars.fd"
 LOG_LIVE="$HERE/install$SUF-serial.log"
 LOG_INST="$HERE/installed$SUF-serial.log"
 INFORME="$HERE/installed$SUF-informe.txt"
 PAQUETES="$HERE/installed$SUF-paquetes.txt"
+TPMDIR="$HERE/nimbo-install$SUF-tpmstate"
+TPM_SCRIPT="$HERE/../../security/luks-tpm/nimbo-tpm-setup"
+SERIAL_APPEND=0   # arrancar: el log serie se ACUMULA entre arranques (pruebas con reinicios)
 YO="$0"
 case "$SUF" in *-sincifrar*) YO="$YO --sin-cifrar" ;; esac
 if [ "$SB" = 1 ]; then YO="$YO --secure-boot"; fi
+if [ "$TPM" = 1 ]; then YO="$YO --tpm"; fi
+if [ -n "${NIMBO_VARIANTE:-}" ]; then YO="NIMBO_VARIANTE=$NIMBO_VARIANTE $YO"; fi
 BASE="$HERE/paquetes-linea-base-3b1.txt"
 
 DISK_GB="${NIMBO_DISK_GB:-20}"
@@ -104,12 +127,41 @@ ovmf_preparar() {
 
 need() { command -v "$1" >/dev/null || { echo "ERROR: falta '$1' en el host (ver Requisitos en la cabecera)"; exit 1; }; }
 
+# --- TPM 2.0 emulado (swtpm) -------------------------------------------------------------
+# swtpm escucha en un socket UNIX (ruta corta: el límite es 108 bytes) y termina solo cuando
+# QEMU cierra la conexión (--terminate). El estado en $TPMDIR sobrevive a los reinicios.
+TPM_ARGS=()
+tpm_preparar() {
+    [ "$TPM" = 1 ] || return 0
+    need swtpm
+    mkdir -p "$TPMDIR"
+    local sock="${XDG_RUNTIME_DIR:-/tmp}/nimbo-swtpm-$$.sock"
+    rm -f "$sock"
+    swtpm socket --tpm2 --terminate \
+        --tpmstate dir="$TPMDIR" \
+        --ctrl type=unixio,path="$sock" \
+        --log file="$TPMDIR/swtpm.log",level=1 &
+    local i; for i in $(seq 1 50); do [ -S "$sock" ] && break; sleep 0.1; done
+    [ -S "$sock" ] || { echo "ERROR: swtpm no levantó su socket ($sock)"; exit 1; }
+    TPM_ARGS=(-chardev socket,id=chrtpm,path="$sock" -tpmdev emulator,id=tpm0,chardev=chrtpm -device tpm-tis,tpmdev=tpm0)
+    echo ">> TPM    : swtpm (TPM 2.0), estado persistente en $TPMDIR"
+}
+
 qemu_base() {
     # $1 = RAM en MiB, $2 = fichero de log serie; el resto, argumentos extra de QEMU.
     local mem="$1" log="$2"; shift 2
     local kvm=()
     if [ -w /dev/kvm ]; then kvm=(-enable-kvm -cpu host); else echo ">> AVISO: sin KVM, irá muy lento"; fi
-    : > "$log"
+    local serie
+    if [ -n "${NIMBO_QEMU_SERIAL:-}" ]; then
+        serie=(-serial "$NIMBO_QEMU_SERIAL")
+    elif [ "$SERIAL_APPEND" = 1 ]; then
+        printf '\n=== arranque %s (host) ===\n' "$(date -Is)" >> "$log"
+        serie=(-chardev file,id=ser0,path="$log",append=on -serial chardev:ser0)
+    else
+        : > "$log"
+        serie=(-serial file:"$log")
+    fi
     qemu-system-x86_64 \
         "${kvm[@]}" \
         "${MACHINE[@]}" -m "$mem" -smp 2 \
@@ -117,8 +169,10 @@ qemu_base() {
         -drive if=pflash,format=raw,file="$VARS" \
         -drive file="$DISK",if=virtio,format=qcow2 \
         -vga "$VGA_OPT" -display "$DISPLAY_OPT" \
-        -serial file:"$log" \
+        "${serie[@]}" \
+        ${NIMBO_QEMU_MONITOR:+-monitor unix:"$NIMBO_QEMU_MONITOR",server,nowait} \
         -nic user,model=virtio-net-pci \
+        "${TPM_ARGS[@]}" \
         "$@"
 }
 
@@ -145,13 +199,14 @@ cmd_instalar() {
     echo
     echo "   EN LA VM: escritorio live -> icono '$LANZADOR'"
     echo "   (o menú Aplicaciones > Sistema)."
-    if [ -z "$SUF" ]; then
+    if [ "$CIFRADO" = 1 ]; then
         echo "   El cifrado es obligatorio en este lanzador: pon una contraseña LUKS que recuerdes."
     else
         echo "   En este lanzador NO debe aparecer la casilla de cifrado."
     fi
     echo "   Al terminar, apaga la VM y ejecuta:  $YO arrancar"
     echo
+    tpm_preparar
     qemu_base "$VM_MB" "$LOG_LIVE" -cdrom "$iso" -boot menu=on
 }
 
@@ -166,12 +221,18 @@ cmd_arrancar() {
     trap 'rm -rf "$tools"' EXIT
     cp "$HERE/verificar-instalado.sh" "$tools/"
     [ -f "$BASE" ] && cp "$BASE" "$tools/"
+    # Paso 4: nimbo-tpm-setup viaja por el mismo disco auxiliar (se valida sin tocar la ISO).
+    [ -f "$TPM_SCRIPT" ] && cp "$TPM_SCRIPT" "$HERE/probar-tpm.sh" "$tools/"
+    # Clave LUKS GENERADA para pruebas (.gitignore): viaja al guest para añadirla como
+    # keyslot de prueba con `cryptsetup luksAddKey … /mnt/clave-prueba.txt`, de modo que la
+    # persona solo teclea SU contraseña y las mediciones automáticas usan la de prueba.
+    [ -f "$HERE/.clave-prueba-luks" ] && cp "$HERE/.clave-prueba-luks" "$tools/clave-prueba.txt"
 
     echo ">> Disco  : $DISK (sin ISO: arranca lo instalado)"
     echo ">> Secure Boot: $([ "$SB" = 1 ] && echo 'ACTIVO' || echo 'apagado')  ·  OVMF: $OVMF_ORIGEN"
     echo ">> Serie  : $LOG_INST"
     echo
-    if [ -z "$SUF" ]; then
+    if [ "$CIFRADO" = 1 ]; then
         echo "   CON LOS OJOS: debe pedir la CONTRASEÑA LUKS antes de arrancar, y llegar al"
     else
         echo "   CON LOS OJOS: NO debe pedir contraseña de disco, y debe llegar al"
@@ -181,6 +242,15 @@ cmd_arrancar() {
     echo "   (para la RAM idle, espera ~90 s tras iniciar sesión antes de lanzarlo)."
     echo "   Al terminar, apaga la VM y ejecuta:  $YO informe"
     echo
+    if [ "$TPM" = 1 ]; then
+        echo "   PASO 4 (TPM): en una terminal del guest, como root:"
+        echo "       sudo mount -o ro /dev/vdb1 /mnt && sudo sh /mnt/probar-tpm.sh"
+        echo "   (tras un reinicio: sudo sh /mnt/probar-tpm.sh --solo-evidencia)"
+        echo "   La salida queda en $LOG_INST; al apagar:  $YO evidencia"
+        echo
+    fi
+    tpm_preparar
+    SERIAL_APPEND=1
     qemu_base "$VM_MB_INST" "$LOG_INST" \
         -drive file=fat:ro:"$tools",if=virtio,format=raw,readonly=on
 }
@@ -213,8 +283,43 @@ cmd_informe() {
     echo ">> Lista de paquetes: $PAQUETES"
 }
 
+cmd_evidencia() {
+    # Ejecuciones de probar-tpm.sh (NIMBO_TPM_RUN_*) y volcados (NIMBO_TPM_EVID_*) del log
+    # serie acumulado → un fichero con el nombre de la última evidencia.
+    [ -s "$LOG_INST" ] || { echo "ERROR: no hay log serie del instalado ($LOG_INST)."; exit 1; }
+    local limpio n out
+    limpio="$(mktemp)"; tr -d '\r' < "$LOG_INST" > "$limpio"
+    n="$(grep -ao 'NIMBO_TPM_EVID_BEGIN [0-9TZ]*' "$limpio" | tail -1 | awk '{print $2}')"
+    [ -n "$n" ] || { rm -f "$limpio"; echo "ERROR: el log serie no tiene evidencia de probar-tpm.sh."; exit 1; }
+    out="$HERE/installed$SUF-evidencia-$n.txt"
+    # TODOS los bloques del log acumulado, en orden, con las marcas de arranque entre medias
+    # (una validación como V2 tiene evidencia antes y después del reinicio).
+    # Los marcadores pueden no empezar la línea: GRUB deja secuencias de escape sin salto de
+    # línea en la serie. Se busca el marcador en cualquier posición y se recorta lo previo.
+    awk '/^=== arranque /{print; next}
+         /NIMBO_TPM_(RUN|EVID)_BEGIN /{sub(/.*NIMBO_TPM_/, "NIMBO_TPM_"); f=1}
+         f{print}
+         /NIMBO_TPM_(RUN_END|EVID_END)/{f=0; print ""}' "$limpio" > "$out"
+    rm -f "$limpio"
+    # CREDENCIALES: la fase 2 imprime la clave de recuperación del volumen de PRUEBA, así que
+    # el fichero original lleva una credencial. Regla del proyecto: ninguna credencial entra
+    # al repo ni a la evidencia de sustentación. Ambos ficheros están en .gitignore; si hay
+    # que versionar o mostrar algo, se usa SOLO la copia -redactada.
+    # Formato de systemd: 8 bloques de 8 caracteres "modhex" separados por guiones.
+    local red="${out%.txt}-redactada.txt" patron='([cbdefghijklnrtuv]{8}-){7}[cbdefghijklnrtuv]{8}'
+    sed -E "s/$patron/[CLAVE DE RECUPERACIÓN REDACTADA]/g" "$out" > "$red"
+    if grep -qE "$patron" "$red"; then
+        rm -f "$red"; echo "ERROR: la redacción no eliminó la clave de recuperación; no hay copia redactada."; exit 1
+    fi
+    cat "$red"
+    echo
+    echo ">> Evidencia (original, con credenciales de prueba; NO se versiona): $out"
+    echo ">> Copia redactada (la única que se puede versionar o mostrar):      $red"
+}
+
 cmd_limpiar() {
     rm -f "$DISK" "$VARS" "$LOG_LIVE" "$LOG_INST" "$INFORME" "$PAQUETES"
+    rm -rf "$TPMDIR"
     echo ">> Arnés limpio."
 }
 
@@ -222,6 +327,7 @@ case "${1:-}" in
     instalar) shift; cmd_instalar "$@" ;;
     arrancar) cmd_arrancar ;;
     informe)  cmd_informe ;;
+    evidencia) cmd_evidencia ;;
     limpiar)  cmd_limpiar ;;
-    *) sed -n '2,26p' "$0" | sed 's/^# \{0,1\}//'; exit 1 ;;
+    *) sed -n '2,38p' "$0" | sed 's/^# \{0,1\}//'; exit 1 ;;
 esac
