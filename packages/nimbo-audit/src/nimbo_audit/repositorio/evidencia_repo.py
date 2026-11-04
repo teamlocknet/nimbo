@@ -23,8 +23,9 @@ import shutil
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-from nimbo_audit.errores import EvidenciaDuplicadaError
+from nimbo_audit.errores import CasoInvalidoError, EvidenciaDuplicadaError
 from nimbo_audit.modelos.evidencia import Evidencia
+from nimbo_audit.servicios.verificacion import ruta_interna
 
 INDEX = "index.json"
 EVIDENCIA = "evidencia"
@@ -69,6 +70,55 @@ class RepositorioEvidenciaJSON(RepositorioEvidencia):
 
     def listar(self) -> list[Evidencia]:
         return self._cargar()
+
+    def listar_validado(self) -> list[Evidencia]:
+        """Lectura estricta para verify; no altera listar/capture/report."""
+        indice = ruta_interna(self._root, f"{EVIDENCIA}/{INDEX}")
+        try:
+            datos = json.loads(indice.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:
+            raise CasoInvalidoError(
+                "Indice evidencia/index.json ausente, ilegible o JSON invalido."
+            ) from exc
+        if (
+            not isinstance(datos, dict)
+            or type(datos.get("version")) is not int
+            or datos["version"] != VERSION_INDEX
+            or not isinstance(datos.get("evidencias"), list)
+        ):
+            raise CasoInvalidoError("Estructura o version del indice invalida.")
+        evidencias = []
+        nombres: set[str] = set()
+        rutas: set[str] = set()
+        for entrada in datos["evidencias"]:
+            if not isinstance(entrada, dict) or set(entrada) != {
+                "nombre", "ruta", "sha256", "timestamp"
+            }:
+                raise CasoInvalidoError("Entrada de evidencia incompleta o invalida.")
+            if not all(isinstance(v, str) for v in entrada.values()):
+                raise CasoInvalidoError("Los campos de evidencia deben ser texto.")
+            evidencia = Evidencia(**entrada)
+            if (
+                not evidencia.nombre
+                or evidencia.nombre in (".", "..", INDEX)
+                or "/" in evidencia.nombre
+                or "\\" in evidencia.nombre
+                or any(ord(c) < 32 or ord(c) == 127 for c in evidencia.nombre)
+                or evidencia.ruta != f"{EVIDENCIA}/{evidencia.nombre}"
+            ):
+                raise CasoInvalidoError(
+                    f"Ruta o nombre de evidencia invalido: {evidencia.nombre!r}"
+                )
+            destino = ruta_interna(self._root, evidencia.ruta)
+            # No aceptar dos registros que aliasen el mismo archivo por symlinks.
+            if evidencia.nombre in nombres or str(destino) in rutas:
+                raise CasoInvalidoError(
+                    f"Evidencia duplicada en el indice: {evidencia.nombre!r}"
+                )
+            nombres.add(evidencia.nombre)
+            rutas.add(str(destino))
+            evidencias.append(evidencia)
+        return evidencias
 
     def existe(self, nombre: str) -> bool:
         return any(e.nombre == nombre for e in self._cargar())

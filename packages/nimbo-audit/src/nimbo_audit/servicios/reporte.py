@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING, Sequence
 from nimbo_audit.modelos.engagement import Engagement
 
 if TYPE_CHECKING:  # evita import circular en runtime
-    from nimbo_audit.comandos.report import EvidenciaVerificada
+    from nimbo_audit.servicios.verificacion import EvidenciaVerificada
 
 
 def renderizar_reporte(

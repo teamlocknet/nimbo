@@ -1,0 +1,57 @@
+.TH NIMBO-AUDIT 1 "2026-11-01" "nimbo-audit 0.1.0" "Manual de LockNet"
+.SH NAME
+nimbo-audit \- organiza auditorias y registra evidencias
+.SH SYNOPSIS
+.B nimbo-audit
+.B --help
+.br
+.B nimbo-audit init
+.I cliente
+.RI [ opciones ]
+.br
+.B nimbo-audit capture
+.I archivo
+.RI [ opciones ]
+.br
+.B nimbo-audit report
+.RI [ opciones ]
+.br
+.B nimbo-audit verify
+.RI [ RUTA_DEL_CASO ]
+.SH DESCRIPTION
+Crea directorios de auditoria, registra archivos de evidencia con
+hashes SHA-256 y genera informes Markdown.
+El informe compara los archivos con los hashes registrados para
+identificar evidencia modificada o ausente.
+.SH COMMANDS
+.TP
+.B init
+Inicializa un directorio de auditoria.
+.TP
+.B capture
+Copia un archivo al directorio de evidencia y registra su hash.
+.TP
+.B report
+Genera un informe del trabajo y comprueba la integridad de la evidencia.
+.TP
+.B verify
+Comprueba sin modificar el caso la integridad de la evidencia registrada.
+Acepta la ruta del caso; sin ruta busca el caso activo.
+Muestra OK, MODIFICADO o AUSENTE y un resumen.
+Un indice ausente o invalido causa un error.
+.SH EXIT STATUS
+Para verify: 0 si coincide toda la evidencia registrada; 1 si falla la
+integridad o no se puede verificar el caso; 2 para errores de argumentos.
+Un indice valido vacio devuelve 0 y un resumen sin evidencias.
+.SH OPTIONS
+.TP
+.B --help
+Muestra la ayuda. Cada subcomando admite su propia opcion --help.
+.SH NOTES
+La exportacion opcional a PDF requiere pandoc y un motor PDF compatible.
+Los hashes permiten detectar cambios respecto al indice registrado;
+no acreditan por si solos la autenticidad del archivo original.
+Modificar a la vez la evidencia y el indice puede evadir la verificacion.
+La firma del indice queda fuera de alcance. Solo se comprueba lo registrado.
+.SH AUTHORS
+LockNet.
