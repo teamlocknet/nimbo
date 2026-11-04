@@ -1,0 +1,24 @@
+#!/bin/sh
+# nimbo-cryptsetup-honesto — hook de initramfs-tools (H-002, ADR-009, opción 2).
+#
+# Corre DESPUÉS del hook `cryptroot` de Debian (PREREQ), que es quien copia
+# /sbin/cryptsetup al initrd. Lo renombra a /sbin/cryptsetup.real y pone delante el
+# envoltorio de nimbo, que explica los fallos por memoria en vez de culpar a la contraseña.
+# Si el initrd no lleva cryptsetup (sin disco cifrado), no hace nada.
+PREREQ="cryptroot"
+prereqs() { echo "$PREREQ"; }
+case "${1:-}" in
+    prereqs) prereqs; exit 0 ;;
+esac
+
+ENVOLTORIO=/usr/lib/nimbo/initramfs/cryptsetup-envoltorio
+
+[ -x "$DESTDIR/sbin/cryptsetup" ] || exit 0
+# Idempotente: no envolver dos veces.
+[ -e "$DESTDIR/sbin/cryptsetup.real" ] && exit 0
+[ -r "$ENVOLTORIO" ] || { echo "E: nimbo: falta $ENVOLTORIO" >&2; exit 1; }
+
+mv "$DESTDIR/sbin/cryptsetup" "$DESTDIR/sbin/cryptsetup.real"
+cp "$ENVOLTORIO" "$DESTDIR/sbin/cryptsetup"
+chmod 0755 "$DESTDIR/sbin/cryptsetup"
+exit 0

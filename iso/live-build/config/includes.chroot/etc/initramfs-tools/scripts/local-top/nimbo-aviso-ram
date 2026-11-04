@@ -1,0 +1,45 @@
+#!/bin/sh
+# nimbo-aviso-ram — script de arranque del initramfs (H-002, ADR-009, opción 1).
+#
+# Avisa ANTES del prompt de la contraseña si la memoria que exige el cifrado del disco
+# (argon2id, leída de la cabecera LUKS) es mayor que la memoria disponible ahora. Solo
+# avisa: no cambia nada ni impide intentar el desbloqueo.
+#
+# Orden: el `cryptroot` de Debian declara como prerrequisito a todos los demás scripts de
+# local-top ("cryptroot is run last in local-top"), así que este corre siempre antes.
+PREREQ=""
+prereqs() { echo "$PREREQ"; }
+case "${1:-}" in
+    prereqs) prereqs; exit 0 ;;
+esac
+
+. /scripts/functions
+[ -f /lib/cryptsetup/functions ] || exit 0
+. /lib/cryptsetup/functions
+# Sin crypttab en el initrd (p. ej. la sesión live): nada que avisar.
+[ -s "$TABFILE" ] || exit 0
+
+avisar() {
+    [ "$CRYPTTAB_KEY" = none ] || return 0   # solo desbloqueo interactivo
+    wait_for_udev 10
+    crypttab_resolve_source || return 0      # si el disco aún no está, cryptroot lo espera
+    # Mayor memoria (KiB) entre los keyslots: cryptsetup aborta en el primer keyslot que
+    # no cabe, sin probar los demás (medido en H-002), así que manda el más exigente.
+    necesita=0
+    for m in $(/sbin/cryptsetup luksDump -- "$CRYPTTAB_SOURCE" 2>/dev/null \
+               | sed -n 's/^[[:space:]]*Memory:[[:space:]]*\([0-9][0-9]*\)$/\1/p'); do
+        [ "$m" -gt "$necesita" ] && necesita=$m
+    done
+    [ "$necesita" -gt 0 ] || return 0
+    libre=$(sed -n 's/^MemAvailable:[[:space:]]*\([0-9][0-9]*\) kB$/\1/p' /proc/meminfo)
+    [ -n "$libre" ] || return 0
+    [ "$necesita" -gt "$libre" ] || return 0
+    {
+        echo "nimbo: AVISO: desbloquear este disco necesita unos $((necesita / 1024)) MiB de memoria"
+        echo "nimbo: y ahora hay unos $((libre / 1024)) MiB libres. Es probable que falle por falta"
+        echo "nimbo: de memoria aunque la contraseña sea correcta."
+    } >&2
+}
+
+crypttab_foreach_entry avisar
+exit 0

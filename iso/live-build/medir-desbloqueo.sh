@@ -15,11 +15,12 @@
 # La clave nunca se imprime ni se guarda en la evidencia.
 #
 # Uso: ./medir-desbloqueo.sh [--veces N] [--ram MiB] [--retardo S] [--esperar-tpm] [-- args de install-in-qemu]
+#      [--teclear-tras S]   teclea S s después de GRUB, sin reconocer el prompt (H-002)
 #      por defecto: --veces 10 --ram 2048 --retardo 0 -- --secure-boot --tpm
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-VECES=10; RAM=2048; RETARDO=0; ESPERAR_TPM=0
+VECES=10; RAM=2048; RETARDO=0; ESPERAR_TPM=0; TECLEAR_TRAS=""
 ARGS=(--secure-boot --tpm)
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -27,6 +28,9 @@ while [ $# -gt 0 ]; do
         --ram)     RAM="$2"; shift 2 ;;
         --retardo) RETARDO="$2"; shift 2 ;;
         --esperar-tpm) ESPERAR_TPM=1; shift ;;   # V4: NO teclear; OK = greeter sin prompt
+        # Teclear S segundos después de GRUB aunque no se reconozca el prompt (p. ej. con
+        # avisos de varias líneas encima, H-002). El prompt de LUKS espera indefinidamente.
+        --teclear-tras) TECLEAR_TRAS="$2"; shift 2 ;;
         --) shift; ARGS=("$@"); break ;;
         *) sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'; exit 2 ;;
     esac
@@ -88,7 +92,7 @@ for n in $(seq 1 "$VECES"); do
         "$HERE/install-in-qemu.sh" "${ARGS[@]}" arrancar > "$OUT/arranque-$n.log" 2>&1 &
     QPID=$!
     for _ in $(seq 1 100); do [ -S "$M" ] && break; sleep 0.1; done
-    t0=$(ms); grub_visto=0; t_prompt=""; resultado="sin-prompt"; t_res=""
+    t0=$(ms); grub_visto=0; t_grub=0; t_prompt=""; resultado="sin-prompt"; t_res=""
     # 1) Esperar el prompt (máx. 90 s); Intro en el menú de GRUB para no esperar su cuenta.
     while :; do
         el=$(( $(ms) - t0 ))
@@ -100,7 +104,9 @@ for n in $(seq 1 "$VECES"); do
             resultado="desbloqueó-sin-prompt"; t_res=$(seg "$el"); break
         fi
         if gt "$azul" 0.3; then
-            [ "$grub_visto" = 0 ] && { mon "sendkey ret"; grub_visto=1; }
+            [ "$grub_visto" = 0 ] && { mon "sendkey ret"; grub_visto=1; t_grub=$el; }
+        elif [ -n "$TECLEAR_TRAS" ] && [ "$grub_visto" = 1 ] && [ $(( el - t_grub )) -ge $(( TECLEAR_TRAS * 1000 )) ]; then
+            t_prompt=$(seg "$el"); break
         elif [ "$grub_visto" = 1 ] && gt "$franja" 0.002 && gt 0.0002 "$franja2" && gt 0.01 "$azul"; then
             t_prompt=$(seg "$el"); break
         fi

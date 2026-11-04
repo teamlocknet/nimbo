@@ -1,0 +1,27 @@
+#!/bin/sh
+# cryptsetup — envoltorio de nimbo DENTRO del initramfs (H-002, ADR-009, opción 2).
+#
+# El hook /etc/initramfs-tools/hooks/nimbo-cryptsetup-honesto lo instala en el initrd como
+# /sbin/cryptsetup y deja el binario real de Debian como /sbin/cryptsetup.real. No toca el
+# cryptsetup del sistema arrancado: solo el del initrd.
+#
+# Por qué existe: ante CUALQUIER fallo, `cryptroot` (cryptsetup-initramfs de bookworm)
+# imprime "cryptsetup failed, bad password or options?", aunque el código real diga otra
+# cosa. Medido (security/luks-tpm/evidencia/2026-11-04-h002-codigos-salida.md):
+#   2   = contraseña incorrecta          -> no se añade nada
+#   3   = no hay memoria para argon2id   -> se explica aquí
+#   137 = el kernel mató a cryptsetup por falta de memoria (OOM) -> se explica aquí
+# El código se devuelve sin cambios: cryptroot sigue comportándose igual que siempre.
+/sbin/cryptsetup.real "$@"
+rc=$?
+case "$rc" in
+    3)   causa="no hay memoria libre suficiente para el cifrado (argon2id)" ;;
+    137) causa="el sistema detuvo el desbloqueo por falta de memoria" ;;
+    *)   exit "$rc" ;;
+esac
+{
+    echo "nimbo: AVISO: el disco no se pudo abrir: $causa."
+    echo "nimbo: esto NO significa que la contraseña sea incorrecta."
+    echo "nimbo: este equipo necesita más RAM para desbloquear el disco cifrado."
+} >&2
+exit "$rc"

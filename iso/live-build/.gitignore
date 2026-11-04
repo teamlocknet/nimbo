@@ -79,6 +79,10 @@ config/includes.chroot/**
 !config/includes.chroot/usr/bin/nimbo-instalar
 !config/includes.chroot/usr/share/applications/nimbo-instalar.desktop
 !config/includes.chroot/usr/share/applications/nimbo-instalar-sincifrar.desktop
+# H-002 / ADR-009: mensajes honestos al desbloquear el disco en el initramfs (initramfs-tools).
+!config/includes.chroot/etc/initramfs-tools/hooks/nimbo-cryptsetup-honesto
+!config/includes.chroot/etc/initramfs-tools/scripts/local-top/nimbo-aviso-ram
+!config/includes.chroot/usr/lib/nimbo/initramfs/cryptsetup-envoltorio
 #
 # EXCEPCIÓN 3 (Paso 3A / vuelta 1C): hooks propios de live-build (los ejecuta desde
 # config/hooks/normal|live/*.binary). Versionamos EXPLÍCITO el normalizador de
