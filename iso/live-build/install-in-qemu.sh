@@ -223,6 +223,14 @@ cmd_arrancar() {
     [ -f "$BASE" ] && cp "$BASE" "$tools/"
     # Paso 4: nimbo-tpm-setup viaja por el mismo disco auxiliar (se valida sin tocar la ISO).
     [ -f "$TPM_SCRIPT" ] && cp "$TPM_SCRIPT" "$HERE/probar-tpm.sh" "$tools/"
+    # H-002 (ADR-009): los tres ficheros de la receta + su instalador de prueba (probar-h002.sh).
+    local ic="$HERE/config/includes.chroot"
+    if [ -f "$ic/usr/lib/nimbo/initramfs/cryptsetup-envoltorio" ]; then
+        cp "$HERE/probar-h002.sh" "$tools/"
+        cp "$ic/usr/lib/nimbo/initramfs/cryptsetup-envoltorio" "$tools/h002-cryptsetup-envoltorio"
+        cp "$ic/etc/initramfs-tools/hooks/nimbo-cryptsetup-honesto" "$tools/h002-nimbo-cryptsetup-honesto"
+        cp "$ic/etc/initramfs-tools/scripts/local-top/nimbo-aviso-ram" "$tools/h002-nimbo-aviso-ram"
+    fi
     # Clave LUKS GENERADA para pruebas (.gitignore): viaja al guest para añadirla como
     # keyslot de prueba con `cryptsetup luksAddKey … /mnt/clave-prueba.txt`, de modo que la
     # persona solo teclea SU contraseña y las mediciones automáticas usan la de prueba.
