@@ -12,6 +12,7 @@ import typer
 from nimbo_audit.comandos.capture import ComandoCapture, resolver_engagement_activo
 from nimbo_audit.comandos.init import ComandoInit
 from nimbo_audit.comandos.report import ComandoReport
+from nimbo_audit.comandos.verify import ComandoVerify
 from nimbo_audit.errores import (
     ArchivoNoAccesibleError,
     EngagementExistenteError,
@@ -208,6 +209,32 @@ def report(
     typer.echo(
         f"[OK] Reporte generado en reportes/{resultado.nombre}{sufijo}"
     )
+
+
+@app.command(help="Comprueba la integridad de un caso sin modificarlo (RF-AUD-04 / HU-13).")
+def verify(
+    ruta_del_caso: Optional[Path] = typer.Argument(
+        None, help="Ruta del caso; sin ruta se detecta el caso activo."
+    ),
+) -> None:
+    try:
+        raiz = resolver_engagement_activo(Path.cwd(), ruta_del_caso)
+        repo = RepositorioEvidenciaJSON(raiz)
+        resultado = ComandoVerify(raiz, repo.listar_validado).ejecutar()
+    except (NimboAuditError, OSError, RuntimeError, ValueError, MemoryError) as exc:
+        typer.echo(f"[ERROR] No se pudo verificar el caso: {exc}", err=True)
+        raise typer.Exit(code=1)
+
+    for verificada in resultado.evidencias:
+        detalle = f" ({verificada.detalle})" if verificada.detalle else ""
+        typer.echo(f"{verificada.estado}: {verificada.evidencia.nombre}{detalle}")
+    resumen = resultado.resumen
+    typer.echo(
+        f"Resumen: {resumen['OK']} OK, "
+        f"{resumen['MODIFICADO']} MODIFICADO, {resumen['AUSENTE']} AUSENTE"
+    )
+    if not resultado.integro:
+        raise typer.Exit(code=1)
 
 
 def main() -> None:
