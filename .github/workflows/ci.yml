@@ -63,3 +63,15 @@ jobs:
         env:
           CONTAINER_ENGINE: docker
         run: ./packages/nimbo-audit/test-in-bookworm.sh
+
+  tests-build-scripts:
+    # Tests de los scripts que envuelven live-build, sin contenedor ni red (segundos).
+    # Existe porque auto/build terminaba con 0 aunque una etapa de lb fallara (5-nov).
+    name: tests-build-scripts
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Una etapa de live-build que falla hace fallar auto/build
+        run: ./iso/live-build/tests/test-auto-build-falla.sh

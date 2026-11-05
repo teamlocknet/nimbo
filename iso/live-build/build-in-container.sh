@@ -112,6 +112,12 @@ exec "$ENGINE" run --rm "${TTY_OPT[@]}" \
         lb config
         lb build
         echo
+        # Segunda barrera: auto/build ya corta en la etapa que falla, pero si lb build
+        # terminara sin ISO, el script tiene que salir con error, no solo avisar.
+        if ! ls live-image-*.iso >/dev/null 2>&1; then
+            echo "ERROR: lb build terminó sin generar la ISO — revisar binary.buildlog" >&2
+            exit 1
+        fi
         echo ">> Build terminado. ISO:"
-        ls -lh live-image-*.iso 2>/dev/null || echo "   (no se encontró la ISO — revisar binary.buildlog)"
+        ls -lh live-image-*.iso
     '

@@ -35,6 +35,10 @@ sudo ./build-in-container.sh
   propio (si no, `apt` no alcanza los mirrors de Debian).
 - Fija `SOURCE_DATE_EPOCH` al timestamp del commit HEAD (determinista y trazable).
 - Tarda ~10–20 min (debootstrap + squashfs + ISO).
+- **Falla en rojo:** si cualquier etapa de live-build falla, `auto/build` corta ahí con su
+  código real, y el script termina con error si no hay ISO. Lo comprueba
+  `./tests/test-auto-build-falla.sh` (segundos, sin contenedor; job `tests-build-scripts`).
+  Antes del 5-nov el build terminaba con 0 aunque `lb chroot` fallara.
 
 ### Motor de contenedor (paridad dev/CI)
 
