@@ -22,8 +22,24 @@ echo ">> auto/build: SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH TZ=$TZ LC_ALL=$LC_ALL 
 # nativas para intercalar, ENTRE chroot y binary, la generación del sortfile que da a
 # mksquashfs un orden de empaquetado determinista (ver docs/adr/ADR-002). Se hace aquí
 # —no en build-in-container.sh— para preservar el MKSQUASHFS_OPTIONS de ADR-001.
-lb bootstrap noauto "${@}" 2>&1 | tee    binary.buildlog
-lb chroot    noauto "${@}" 2>&1 | tee -a binary.buildlog
+#
+# Cada etapa va a la pantalla y a binary.buildlog con `tee`. /bin/sh no tiene
+# `pipefail`: en `lb … | tee` el código de salida sería el de tee (0) y un fallo de lb
+# pasaría en silencio (pasó el 4 y el 5-nov). `etapa` guarda el código real de lb y
+# corta el build en la primera etapa que falla. Test: tests/test-auto-build-falla.sh.
+etapa() {
+    rc_lb="$(mktemp)"
+    { rc=0; lb "$@" 2>&1 || rc=$?; echo "$rc" > "$rc_lb"; } | tee -a binary.buildlog
+    rc="$(cat "$rc_lb")"; rm -f "$rc_lb"
+    if [ "$rc" -ne 0 ]; then
+        echo "ERROR (auto/build): la etapa 'lb $1' falló (código $rc). Ver binary.buildlog." >&2
+        exit "$rc"
+    fi
+}
+
+: > binary.buildlog
+etapa bootstrap noauto "${@}"
+etapa chroot    noauto "${@}"
 
 # --- Caché binario de APT determinista (ver docs/adr/ADR-003) ------------------
 # APT reserializa /var/cache/apt/{pkgcache,srcpkgcache}.bin en CADA invocación; su
@@ -68,5 +84,5 @@ mkdir -p config/rootfs
 find chroot -xdev -type f -printf '%p 0\n' | LC_ALL=C sort > config/rootfs/squashfs.sort
 echo ">> auto/build: squashfs.sort generado con $(wc -l < config/rootfs/squashfs.sort) entradas"
 
-lb installer noauto "${@}" 2>&1 | tee -a binary.buildlog
-lb binary    noauto "${@}" 2>&1 | tee -a binary.buildlog
+etapa installer noauto "${@}"
+etapa binary    noauto "${@}"
