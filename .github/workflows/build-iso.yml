@@ -11,10 +11,10 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ["iso/live-build/**"]
+    paths: ["iso/live-build/**", "repro/espejo/**", ".github/workflows/build-iso.yml"]
   pull_request:
     branches: [main]
-    paths: ["iso/live-build/**"]
+    paths: ["iso/live-build/**", "repro/espejo/**", ".github/workflows/build-iso.yml"]
 
 # Cancela runs viejos de la misma rama: no encolar builds pesados en pushes seguidos.
 concurrency:
@@ -51,12 +51,45 @@ jobs:
       - name: Instalar xorriso (para validar la ISO)
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends xorriso
 
+      # --- Espejo parcial del snapshot (ADR-016) ---------------------------------------
+      # Los paquetes salen de repro/espejo/espejo.py (mismos bytes del snapshot, firma de
+      # Debian intacta). La caché de Actions guarda lo descargado; como el snapshot es
+      # inmutable, sirve cualquier caché anterior del mismo timestamp.
+      - name: Espejo — timestamp del snapshot
+        id: espejo
+        run: |
+          . iso/live-build/snapshot.env
+          echo "snapshot=$NIMBO_SNAPSHOT" >> "$GITHUB_OUTPUT"
+
+      - name: Espejo — restaurar caché
+        uses: actions/cache/restore@v6
+        with:
+          path: ~/.cache/nimbo-espejo
+          key: espejo-${{ steps.espejo.outputs.snapshot }}-${{ github.run_id }}
+          restore-keys: espejo-${{ steps.espejo.outputs.snapshot }}-
+
+      - name: Espejo — arrancar
+        run: repro/espejo/ci-espejo.sh arrancar
+
       - name: Construir la ISO en contenedor Debian (paridad con local)
         working-directory: iso/live-build
         env:
           CONTAINER_ENGINE: docker
           SOURCE_DATE_EPOCH: ${{ steps.meta.outputs.epoch }}
+          NIMBO_ESPEJO: http://127.0.0.1:8765
         run: ./build-in-container.sh
+
+      - name: Espejo — resumen
+        id: espejo_resumen
+        if: always()
+        run: repro/espejo/ci-espejo.sh resumen
+
+      - name: Espejo — guardar caché (solo si hubo descargas)
+        if: always() && steps.espejo_resumen.outputs.descargas != '0' && steps.espejo_resumen.outputs.descargas != ''
+        uses: actions/cache/save@v6
+        with:
+          path: ~/.cache/nimbo-espejo
+          key: espejo-${{ steps.espejo.outputs.snapshot }}-${{ github.run_id }}-${{ github.run_attempt }}-build-iso
 
       - name: Validar la ISO
         working-directory: iso/live-build

@@ -55,6 +55,10 @@ export NIMBO_SNAPSHOT
 echo ">> Motor             : $ENGINE"
 echo ">> Imagen base       : $IMAGE"
 echo ">> Snapshot (anclaje): $NIMBO_SNAPSHOT  (toolchain + producto)"
+# Espejo parcial propio (ADR-016): si NIMBO_ESPEJO viene del entorno, toolchain y producto
+# se descargan de repro/espejo/espejo.py (mismos bytes del snapshot, firma intacta).
+export NIMBO_ESPEJO="${NIMBO_ESPEJO:-}"
+echo ">> Origen paquetes  : ${NIMBO_ESPEJO:-snapshot.debian.org (directo)}"
 echo ">> SOURCE_DATE_EPOCH  : $SOURCE_DATE_EPOCH ($(date -u -d "@$SOURCE_DATE_EPOCH" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo '?'))"
 echo ">> Directorio montado : $HERE -> /build"
 
@@ -90,6 +94,7 @@ exec "$ENGINE" run --rm "${TTY_OPT[@]}" \
     -w /build \
     -e SOURCE_DATE_EPOCH \
     -e NIMBO_SNAPSHOT \
+    -e NIMBO_ESPEJO \
     -e TZ=UTC \
     -e LC_ALL=C.UTF-8 \
     -e DEBIAN_FRONTEND=noninteractive \
@@ -102,7 +107,7 @@ exec "$ENGINE" run --rm "${TTY_OPT[@]}" \
         # producto. http (no https): bookworm-slim no trae ca-certificates todavia
         # (se instala en este mismo apt-get); la seguridad la da la firma GPG, que apt
         # sigue verificando (NO se toca apt-secure). Solo se necesita debian/main.
-        printf "deb http://snapshot.debian.org/archive/debian/%s/ bookworm main\n" "$NIMBO_SNAPSHOT" > /etc/apt/sources.list
+        printf "deb %s/archive/debian/%s/ bookworm main\n" "${NIMBO_ESPEJO:-http://snapshot.debian.org}" "$NIMBO_SNAPSHOT" > /etc/apt/sources.list
         rm -f /etc/apt/sources.list.d/debian.sources   # quita el default deb822 si existe
         printf "Acquire::Check-Valid-Until \"false\";\nAcquire::Retries \"5\";\n" > /etc/apt/apt.conf.d/99nimbo-snapshot
         echo ">> Toolchain anclada a snapshot $NIMBO_SNAPSHOT (http, GPG intacta)"
