@@ -1,6 +1,6 @@
 # ADR-016 — Espejo parcial propio del snapshot anclado
 
-**Estado:** Propuesto
+**Estado:** Aceptado (8-nov, Juan José; PR #38)
 
 ## Contexto
 
