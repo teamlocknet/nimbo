@@ -79,5 +79,8 @@ jobs:
       - name: Antes de live-build, todo config/ queda en SOURCE_DATE_EPOCH (H-004)
         run: ./iso/live-build/tests/test-auto-build-mtimes.sh
 
+      - name: Calamares admite un equipo de 1 GiB (H-002)
+        run: ./iso/live-build/tests/test-requisitos-calamares.sh
+
       - name: Espejo parcial del snapshot (ADR-016)
         run: python3 -I repro/espejo/test_espejo.py
