@@ -49,7 +49,10 @@ def leer_snapshot_env(ruta=SNAPSHOT_ENV):
 def ruta_permitida(ruta_http, snapshot):
     """Devuelve la ruta relativa (sin '/' inicial) si es del snapshot anclado; si no, None."""
     ruta = urllib.parse.unquote(urllib.parse.urlsplit(ruta_http).path)
-    if not RUTA_VALIDA.match(ruta) or "//" in ruta:
+    # live-build pide "<mirror>/" + "/dists/…" → barras repetidas. snapshot.debian.org las
+    # trata como una sola; aquí igual, para guardar y pedir al origen la ruta canónica.
+    ruta = re.sub(r"/{2,}", "/", ruta)
+    if not RUTA_VALIDA.match(ruta):
         return None
     partes = ruta.split("/")
     if any(p in (".", "..") for p in partes):
