@@ -359,6 +359,14 @@ Este paso aplica **higiene** de reproducibilidad, pero **NO persigue bit-idénti
   ISO bit-idéntica a la de CI compilada en un PC con btrfs. Ver
   [ADR-007](../../docs/adr/ADR-007-initrd-sobre-tmpfs.md) y
   [H-001](../../docs/hallazgos/H-001-filtracion-nlink-btrfs.md).
+- **Fechas de `config/` independientes de la copia de trabajo** (`auto/build`, antes de la
+  primera etapa). `mksquashfs` 4.5.1 solo recorta al epoch las fechas **posteriores** a
+  `SOURCE_DATE_EPOCH`; lo que live-build copia de `config/includes.chroot/` conservaba el
+  mtime del disco y, si era anterior al epoch, llegaba a la ISO. El mismo commit daba un SHA
+  en un clon recién hecho y otro en una copia de trabajo vieja. `auto/build` fija todo
+  `config/` a `SOURCE_DATE_EPOCH` (no cambia la ISO de CI). Test:
+  `tests/test-auto-build-mtimes.sh`. Ver
+  [H-004](../../docs/hallazgos/H-004-mtime-includes-chroot.md).
 - **`.disk/archive_trace` normalizado** (hook `config/hooks/normal/9000-archive-trace.hook.binary`).
   live-build rellena ese fichero descargando la traza del mirror (`project/trace/*`), que
   `snapshot.debian.org` devuelve **intermitente** (a veces un timestamp, a veces vacío) →
