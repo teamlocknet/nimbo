@@ -48,7 +48,8 @@ falla() { echo "  FALLA $*"; fallos=$((fallos + 1)); }
 caso() {
     local nombre="$1" fallar_en="$2" rc_esperado="$3" esperadas="$4"
     local dir="$TMP/$nombre"
-    mkdir -p "$dir/auto"
+    # config/ existe siempre en un build real (lo crea `lb config`); auto/build fija sus fechas.
+    mkdir -p "$dir/auto" "$dir/config"
     cp "$AUTO_BUILD" "$dir/auto/build"
     echo "== $nombre"
 
