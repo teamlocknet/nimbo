@@ -130,6 +130,17 @@ class TestEspejo(unittest.TestCase):
             self.assertEqual(self.get(base, ruta)[0], 404, ruta)
         self.assertEqual(SnapshotFalso.peticiones, [])
 
+    def test_acepta_barras_repetidas_como_el_snapshot(self):
+        # live-build pide "<mirror>/" + "/dists/…" → "…/20260901T000000Z//dists/…". El
+        # snapshot real lo sirve; rechazarlo dejó la ISO sin Contents-amd64.gz y sin los
+        # paquetes de firmware que live-build elige con él (8-nov).
+        base = self.levantar()
+        doble = DEB.replace(f"/{SNAP}/", f"/{SNAP}//")
+        self.assertEqual(self.get(base, doble), (200, b"deb-original"))
+        self.assertEqual(self.get(base, DEB), (200, b"deb-original"))   # misma entrada
+        self.assertEqual(SnapshotFalso.peticiones, [DEB])               # al origen, normalizada
+        self.assertEqual(self.ficheros_guardados(), [DEB.lstrip("/")])
+
     def test_404_del_snapshot_no_se_guarda(self):
         base = self.levantar()
         ruta = f"/archive/debian/{SNAP}/dists/bookworm/main/binary-amd64/Packages.gz"
