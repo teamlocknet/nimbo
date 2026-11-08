@@ -88,6 +88,7 @@ class TestEspejo(unittest.TestCase):
             with urllib.request.urlopen(base + ruta, timeout=10) as r:
                 return r.status, r.read()
         except urllib.error.HTTPError as e:
+            e.close()
             return e.code, b""
 
     def ficheros_guardados(self):
