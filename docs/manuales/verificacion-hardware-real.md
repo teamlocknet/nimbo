@@ -37,11 +37,12 @@ se anota con fecha, modelo de máquina y evidencia (foto o salida de comando).
 - [ ] La contraseña se teclea con la **distribución elegida** (probar una con símbolos
       que cambien de sitio entre US y ES, p. ej. `ñ`, `-`, `/`).
 - [ ] **Desbloqueo con la RAM real de la máquina (H-002).** Anotar la RAM total y comprobar
-      que la contraseña desbloquea a la primera. *Contexto:* con los parámetros que elige
-      Calamares (argon2id con 1 GiB de memoria cuando instala en una máquina de 4 GiB), el
-      desbloqueo falla por debajo de ~1,5 GiB con el mensaje engañoso `cryptsetup failed,
-      bad password or options?`. Si la máquina tiene poca RAM, instalar EN ELLA y anotar los
-      parámetros del keyslot: `sudo cryptsetup luksDump /dev/<raíz> | grep -E 'PBKDF|Memory|Time'`.
+      que la contraseña desbloquea a la primera. *Contexto:* cryptsetup calibra argon2id en la
+      máquina donde se instala (QEMU, 8-nov: 1 GiB → ~438 MiB, 1536 MiB → ~307 MiB, 4 GiB →
+      1 GiB) y el mínimo declarado es **1 GiB instalando en la propia máquina** (ADR-009).
+      Anotar los parámetros del keyslot: `sudo cryptsetup luksDump /dev/<raíz> | grep -E
+      'PBKDF|Memory|Time'`. Si el disco se instaló en otra máquina con más RAM y aquí falla,
+      el aviso de H-002 tiene que explicar que es la memoria, no la contraseña.
 - [ ] Arranca hasta el greeter **sin** autologin (D14).
 - [ ] Dentro del instalado: `sudo sh verificar-instalado.sh --secure-boot` → `VEREDICTO: OK`
       (copiar el script desde un USB).

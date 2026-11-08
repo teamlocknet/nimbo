@@ -1,7 +1,6 @@
 # ADR-009 — Mensajes honestos cuando el desbloqueo del disco falla por memoria (H-002)
 
-**Estado:** Aceptado en cuanto a los mensajes. La RAM mínima declarada (decisión E o A de
-H-002) queda pendiente del resultado de instalar con 1 GiB.
+**Estado:** Aceptado (mensajes: 4-nov; RAM mínima, decisión E: 8-nov).
 
 ## Contexto
 
@@ -51,10 +50,26 @@ No se parchea `cryptroot` (se descarta la opción 3).
   cryptsetup en el initrd del live, también cambia ese initrd (por comprobar en el build).
   Hace falta la compuerta MATCH ×2.
 - No cubre dracut (tras `nimbo-tpm-setup`, ADR-008).
-- **Queda abierto (H-002):** si instalando con 1 GiB el equipo desbloquea, se declara una RAM
-  mínima (E). Si no, se limita la memoria de argon2id en la sesión del instalador (A). La
-  opción pbkdf2 (D) está descartada.
+- ~~Queda abierto (H-002): RAM mínima, E o A.~~ Resuelto el 8-nov, ver abajo.
+
+## Ampliación (8-nov): RAM mínima declarada — decisión E
+
+Medido (`security/luks-tpm/evidencia/2026-11-08-h002-ram-minima.md`): instalando **en la
+propia máquina**, cryptsetup calibra argon2id con la RAM de esa máquina. Con 1536 MiB eligió
+~307 MiB y con 1024 MiB ~438 MiB; en los dos casos el desbloqueo funcionó a la primera y sin
+aviso. Lo único que impedía instalar con 1 GiB era el requisito de Calamares
+(`requiredRam: 1.0`): una máquina de 1 GiB le muestra ~0.79 GiB.
+
+**Decisión (Juan José, 8-nov):** **E** — RAM mínima declarada: **1 GiB nominal**, instalando en
+la propia máquina. `welcome.conf` pasa a `requiredRam: 0.75` (el valor probado). La opción A
+(limitar argon2id en el instalador) no hace falta. D (pbkdf2) sigue descartada.
+
+- Riesgo que queda: mover el disco a un equipo con menos RAM que el instalador. Lo cubren los
+  mensajes de este ADR.
+- Test: `iso/live-build/tests/test-requisitos-calamares.sh` (CI) falla si `requiredRam`
+  vuelve a rechazar un equipo de 1 GiB.
+- Pendiente: confirmarlo en hardware real (guion `docs/manuales/verificacion-hardware-real.md`).
 
 ## Fecha
 
-2026-11-04
+2026-11-04 · ampliado 2026-11-08
