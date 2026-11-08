@@ -18,6 +18,16 @@ export MKSQUASHFS_OPTIONS="-processors 1 ${MKSQUASHFS_OPTIONS:-}"
 
 echo ">> auto/build: SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH TZ=$TZ LC_ALL=$LC_ALL MKSQUASHFS_OPTIONS='$MKSQUASHFS_OPTIONS'"
 
+# --- Fechas de las entradas de config/ (ver docs/hallazgos/H-004) ---------------
+# mksquashfs solo recorta al epoch las fechas POSTERIORES a SOURCE_DATE_EPOCH. Lo que
+# live-build copia de config/ (includes.chroot, sobre todo) conserva el mtime de la
+# copia de trabajo; si es ANTERIOR al epoch llegaba tal cual a la ISO y el SHA dependía
+# de cuándo se escribieron los ficheros en el disco. En CI (checkout nuevo) ya acababan
+# en el epoch por el recorte, así que fijarlas aquí no cambia la ISO de CI.
+# -h: fecha el enlace, no su destino. Test: tests/test-auto-build-mtimes.sh.
+find config -exec touch -h -d "@${SOURCE_DATE_EPOCH}" {} +
+echo ">> auto/build: fechas de config/ fijadas a SOURCE_DATE_EPOCH ($(find config | wc -l) entradas)"
+
 # `lb build` = bootstrap + chroot + installer + binary. Lo partimos en sus etapas
 # nativas para intercalar, ENTRE chroot y binary, la generación del sortfile que da a
 # mksquashfs un orden de empaquetado determinista (ver docs/adr/ADR-002). Se hace aquí
