@@ -76,6 +76,33 @@ vez de `snapshot.debian.org`, la guarda y la sirve.
 - **Fuera de alcance:** publicar el espejo como fuente pública o como release (si la caché de
   Actions resulta insuficiente, se evalúa en otro ADR).
 
+## Prueba de integración (8-nov)
+
+Criterio: `main` (`3825b0e`, epoch `1793814833`) compilado en el PC de Juan José con el
+espejo tiene que dar `48c2e1c5…` (la ISO de CI de `main`, MATCH ×2). Hicieron falta dos
+correcciones, las dos encontradas comparando las ISO fichero a fichero:
+
+| Intento | SHA-256 | Qué faltaba | Causa |
+|---|---|---|---|
+| 1 | `baf4f94e…` | 22 paquetes (firmware y dependencias) | live-build pide `…/<snapshot>//dists/…`; el espejo rechazaba la doble barra y se perdió `Contents-amd64.gz`, con el que live-build elige el firmware (`--firmware-chroot`). Arreglo: normalizar barras como hace el snapshot (test rojo → verde) |
+| 2 | `d89b59d8…` | `ca-certificates`, `openssl` | debootstrap 1.0.128 añade `ca-certificates` al base **solo si el mirror es https** (`scripts/debian-common`). La ISO dependía del esquema del mirror. Arreglo: `--debootstrap-options "--include=ca-certificates"` en `auto/config` |
+| 3 | **`48c2e1c5…`** ✅ | — | espejo (http) + include |
+| control | **`48c2e1c5…`** ✅ | — | snapshot directo (https) + include: **la ISO de CI no cambia** |
+
+Además: con `--solo-cache` (sin acceso al snapshot) el espejo sirvió los 705 ficheros que
+pidió la compilación (sin una descarga) y dio el mismo SHA que en modo normal. Tamaño del
+espejo para este timestamp: ≈ 385 MB.
+
+Las dos causas son del mismo tipo que [H-004](../hallazgos/H-004-mtime-includes-chroot.md):
+una propiedad del **entorno de build** (la ruta pedida, el esquema del mirror) se colaba en
+la ISO sin que nadie lo hubiera decidido. El espejo las destapó; el run semanal (pierna B
+directa del snapshot) vigila que no aparezca otra.
+
+**Observación para 3B.2 (no se toca aquí):** `--firmware-chroot` (activo por defecto)
+instala el firmware que live-build deduce del `Contents`, p. ej. `indi-dsi` (driver de una
+cámara de astronomía) con `libcurl3-gnutls` y `libssh2`. Es superficie que nadie eligió;
+desactivarlo cambia la ISO y puede afectar al hardware real.
+
 ## Fecha
 
 2026-11-08
