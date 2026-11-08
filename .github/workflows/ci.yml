@@ -75,3 +75,6 @@ jobs:
 
       - name: Una etapa de live-build que falla hace fallar auto/build
         run: ./iso/live-build/tests/test-auto-build-falla.sh
+
+      - name: Espejo parcial del snapshot (ADR-016)
+        run: python3 -I repro/espejo/test_espejo.py

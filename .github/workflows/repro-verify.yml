@@ -18,22 +18,30 @@ name: repro-verify
 # NO sube las ISOs (260 MB c/u): la compuerta solo necesita los hashes.
 # NO hace boot-test (los runners no tienen KVM). NO ancla snapshot.debian.org (1C.5).
 
+# Origen de los paquetes (ADR-016): las dos piernas usan el espejo parcial del snapshot.
+# El run SEMANAL (schedule) compila la pierna B directo de snapshot.debian.org: si da MATCH,
+# queda probado que el espejo y el snapshot producen la misma ISO.
 on:
   workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 1"   # lunes 06:00 UTC, sobre main
   push:
     branches: [main]
     paths:
       - "iso/live-build/**"
+      - "repro/espejo/**"
       - ".github/workflows/repro-verify.yml"
   pull_request:
     branches: [main]
     paths:
       - "iso/live-build/**"
+      - "repro/espejo/**"
       - ".github/workflows/repro-verify.yml"
 
 # Grupo propio (no colisiona con build-iso): cancela runs viejos de la misma rama.
+# El semanal va en su propio grupo para no cancelar (ni ser cancelado por) un push a main.
 concurrency:
-  group: repro-verify-${{ github.ref }}
+  group: repro-verify-${{ github.ref }}-${{ github.event_name == 'schedule' && 'semanal' || 'normal' }}
   cancel-in-progress: true
 
 permissions:
@@ -77,6 +85,9 @@ jobs:
       fail-fast: false
       matrix:
         leg: [A, B]
+    env:
+      # espejo | snapshot. Solo la pierna B del run semanal va directo al snapshot.
+      ORIGEN: ${{ (github.event_name == 'schedule' && matrix.leg == 'B') && 'snapshot' || 'espejo' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -90,12 +101,45 @@ jobs:
           sudo docker image prune -af || true
           echo "== Después =="; df -h /
 
+      # --- Espejo parcial del snapshot (ADR-016) ---------------------------------------
+      - name: Espejo — timestamp del snapshot
+        id: espejo
+        run: |
+          . iso/live-build/snapshot.env
+          echo "snapshot=$NIMBO_SNAPSHOT" >> "$GITHUB_OUTPUT"
+          echo ">> origen de los paquetes (leg ${{ matrix.leg }}): $ORIGEN"
+
+      - name: Espejo — restaurar caché
+        if: env.ORIGEN == 'espejo'
+        uses: actions/cache/restore@v6
+        with:
+          path: ~/.cache/nimbo-espejo
+          key: espejo-${{ steps.espejo.outputs.snapshot }}-${{ github.run_id }}
+          restore-keys: espejo-${{ steps.espejo.outputs.snapshot }}-
+
+      - name: Espejo — arrancar
+        if: env.ORIGEN == 'espejo'
+        run: repro/espejo/ci-espejo.sh arrancar
+
       - name: Construir la ISO en contenedor Debian (paridad con local, receta reproducible)
         working-directory: iso/live-build
         env:
           CONTAINER_ENGINE: docker
           SOURCE_DATE_EPOCH: ${{ needs.prep.outputs.epoch }}
+          NIMBO_ESPEJO: ${{ env.ORIGEN == 'espejo' && 'http://127.0.0.1:8765' || '' }}
         run: ./build-in-container.sh
+
+      - name: Espejo — resumen
+        id: espejo_resumen
+        if: always() && env.ORIGEN == 'espejo'
+        run: repro/espejo/ci-espejo.sh resumen
+
+      - name: Espejo — guardar caché (solo si hubo descargas)
+        if: always() && env.ORIGEN == 'espejo' && steps.espejo_resumen.outputs.descargas != '0' && steps.espejo_resumen.outputs.descargas != ''
+        uses: actions/cache/save@v6
+        with:
+          path: ~/.cache/nimbo-espejo
+          key: espejo-${{ steps.espejo.outputs.snapshot }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.leg }}
 
       - name: Calcular SHA-256 + identificar el runner
         id: hash
@@ -129,6 +173,7 @@ jobs:
             echo "machine_id=$machine_id"
             echo "hostname=$host"
             echo "runner_name=${RUNNER_NAME:-?}"
+            echo "origen=$ORIGEN"
           } > "$RUNNER_TEMP/out/leg-${{ matrix.leg }}.txt"
 
           {
@@ -137,6 +182,7 @@ jobs:
             echo "- runner boot_id: \`$boot_id\`  (único por arranque de VM)"
             echo "- machine-id: \`$machine_id\`  ·  hostname: \`$host\`"
             echo "- SHA-256: \`$sha\`"
+            echo "- origen de los paquetes: \`$ORIGEN\`"
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Publicar SHA-256 + runner como artifact (solo texto, no la ISO)
@@ -173,8 +219,8 @@ jobs:
           boot_a="$(get "$A" boot_id)"; boot_b="$(get "$B" boot_id)"
           host_a="$(get "$A" hostname)"; host_b="$(get "$B" hostname)"
 
-          echo ">> leg A: sha=$sha_a  boot_id=$boot_a  host=$host_a"
-          echo ">> leg B: sha=$sha_b  boot_id=$boot_b  host=$host_b"
+          echo ">> leg A: sha=$sha_a  boot_id=$boot_a  host=$host_a  origen=$(get "$A" origen)"
+          echo ">> leg B: sha=$sha_b  boot_id=$boot_b  host=$host_b  origen=$(get "$B" origen)"
 
           # --- Prueba 1: runners distintos (el "tercero" del Acta) ---------------
           # boot_id es el identificador duro (único por arranque de VM). Dos VMs

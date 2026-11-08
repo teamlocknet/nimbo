@@ -19,8 +19,12 @@ set -e
 # es inmutable por timestamp. El valor vive en UN solo sitio (snapshot.env), que también
 # sourcea build-in-container.sh para anclar la toolchain: bump = editar snapshot.env.
 . "$(dirname "$0")/../snapshot.env"
-SNAP_DEBIAN="https://snapshot.debian.org/archive/debian/${NIMBO_SNAPSHOT}/"
-SNAP_SECURITY="https://snapshot.debian.org/archive/debian-security/${NIMBO_SNAPSHOT}/"
+# Espejo parcial propio (ADR-016): con NIMBO_ESPEJO=http://127.0.0.1:<puerto> los mismos
+# ficheros del snapshot (firma de Debian intacta) se sirven desde repro/espejo/espejo.py.
+# Sin la variable, directo de snapshot.debian.org como siempre. La URL no llega a la ISO.
+SNAP_BASE="${NIMBO_ESPEJO:-https://snapshot.debian.org}"
+SNAP_DEBIAN="${SNAP_BASE%/}/archive/debian/${NIMBO_SNAPSHOT}/"
+SNAP_SECURITY="${SNAP_BASE%/}/archive/debian-security/${NIMBO_SNAPSHOT}/"
 
 # --- Excepción ACOTADA de backports: solo `calamares` (Paso 3C.1, ver docs/adr/ADR-006) ---
 # El Calamares de bookworm (3.2.61) solo crea LUKS1 y cifra /boot; el 3.3.8 de
