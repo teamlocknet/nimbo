@@ -172,7 +172,21 @@ p "  uptime: $(cut -d' ' -f1 /proc/uptime) s — para una cifra comparable, medi
 mt=$(awk '/^MemTotal:/{print $2}' /proc/meminfo); ma=$(awk '/^MemAvailable:/{print $2}' /proc/meminfo)
 p "  MemTotal ${mt} kB · MemAvailable ${ma} kB · USED (idle) $(( (mt-ma)/1024 )) MiB"
 
-sec "8. Lista de paquetes del sistema instalado"
+sec "8. CLI de auditoria"
+if [ "$(dpkg-query -W -f='${db:Status-Status}' nimbo-audit 2>/dev/null)" = installed ]; then
+    ok "nimbo-audit instalado: $(dpkg-query -W -f='${Version}' nimbo-audit)"
+else
+    ko "nimbo-audit no instalado"
+fi
+nimbo-audit --help >/dev/null 2>&1 && ok "CLI utilizable" || ko "falla nimbo-audit --help"
+nimbo-audit verify --help >/dev/null 2>&1 && ok "verify disponible" || ko "falla verify --help"
+if test -s /usr/share/man/man1/nimbo-audit.1.gz && gzip -t /usr/share/man/man1/nimbo-audit.1.gz; then
+    ok "manual del CLI instalado e integro"
+else
+    ko "manual del CLI ausente o corrupto"
+fi
+
+sec "9. Lista de paquetes del sistema instalado"
 p "NIMBO_PKGS_BEGIN"
 dpkg-query -W -f='${Package}\t${Version}\n' | LC_ALL=C sort | while read -r l; do p "$l"; done
 p "NIMBO_PKGS_END"

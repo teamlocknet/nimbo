@@ -1,0 +1,10 @@
+#!/bin/sh
+# Conservar el CLI al purgar el instalador: antes de la simulacion del hook 0200.
+set -eu
+[ "$(dpkg-query -W -f='${db:Status-Status}' nimbo-audit)" = installed ]
+apt-mark manual nimbo-audit
+nimbo-audit --help
+nimbo-audit verify --help
+test -s /usr/share/man/man1/nimbo-audit.1.gz
+gzip -t /usr/share/man/man1/nimbo-audit.1.gz
+echo "P: [hook 0180] nimbo-audit instalado, manual y verify disponibles"

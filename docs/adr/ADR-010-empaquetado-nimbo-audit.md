@@ -92,3 +92,14 @@ Alejandro ejecuto build-deb.sh, test-deb.sh y lint-deb.sh sobre los
 artefactos /tmp/nimbo-deb-build.0ezEtV: 50 tests correctos, mismo SHA-256
 registrado arriba, ayuda y manual correctos, lintian sin E: y con el
 unico aviso justificado. Ver packages/nimbo-audit/EMPAQUETADO.md.
+
+
+### Integracion propuesta en PR-B
+
+El paquete se compila dentro del constructor de ISO desde la fuente del mismo
+checkout montada de solo lectura. Se usa config/packages.chroot como repositorio
+temporal, separado del pool persistente de instalacion. El CLI se marca manual
+antes de simular la purga del instalador. La inspeccion del squashfs debe demostrar
+que no quedan fuentes ni indices del repositorio temporal y que el pool no contiene
+nimbo-audit ni paquetes de backports. Estos resultados siguen pendientes de un
+build completo y no se deducen de las comprobaciones de sintaxis.

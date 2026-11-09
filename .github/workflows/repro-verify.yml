@@ -29,12 +29,14 @@ on:
     branches: [main]
     paths:
       - "iso/live-build/**"
+      - "packages/nimbo-audit/**"
       - "repro/espejo/**"
       - ".github/workflows/repro-verify.yml"
   pull_request:
     branches: [main]
     paths:
       - "iso/live-build/**"
+      - "packages/nimbo-audit/**"
       - "repro/espejo/**"
       - ".github/workflows/repro-verify.yml"
 
