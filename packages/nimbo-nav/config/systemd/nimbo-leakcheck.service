@@ -1,0 +1,16 @@
+# nimbo-leakcheck.service — vigilante de fugas del modo Tor (ADR-012, HU-08 CA-3).
+# Lo arranca y lo para `nimbo-tor on|off`. SIN sección [Install]: nunca arranca solo,
+# así que en reposo no existe (RNF-01). Deja el estado en /run/nimbo-nav/leakcheck.json,
+# que lee nimbo-navegar-tor; al parar, systemd borra el directorio y el estado.
+[Unit]
+Description=nimbo: vigilante de fugas del modo Tor
+After=tor@default.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/nimbo-leakcheck --vigilar
+RuntimeDirectory=nimbo-nav
+RuntimeDirectoryMode=0755
+NoNewPrivileges=yes
+ProtectHome=yes
+PrivateTmp=yes

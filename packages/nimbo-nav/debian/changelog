@@ -1,0 +1,5 @@
+nimbo-nav (0.1.0-1) unstable; urgency=medium
+
+  * Paquete inicial: Firefox endurecido, modo Tor y nimbo-leakcheck (ADR-012).
+
+ -- Juan José Duque <jd1020157@gmail.com>  Mon, 09 Nov 2026 12:00:00 -0500

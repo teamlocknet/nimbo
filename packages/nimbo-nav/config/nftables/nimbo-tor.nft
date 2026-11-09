@@ -1,0 +1,33 @@
+#!/usr/sbin/nft -f
+# nimbo-tor.nft — tabla del MODO TOR (ADR-012, decisión D2). La carga `nimbo-tor on` y la
+# borra `nimbo-tor off`; fuera del modo Tor no existe.
+#
+# Falla cerrada: solo puede salir el usuario debian-tor (el proceso tor) y el loopback
+# (navegador -> SOCKS 127.0.0.1:9050). Todo lo demás se CUENTA en "fugas" y se descarta.
+# nimbo-leakcheck lee ese contador: si sube, hay un intento de fuga y avisa al usuario.
+#
+# Excepción explícita, sin contar como fuga (revisión de #44): el tráfico de puesta en
+# marcha de la NIC que ya admite el criterio de hermetismo — DHCPv4 y NDP/MLD de IPv6
+# link-local. ARP no pasa por una tabla inet.
+#
+# Sin "ct state established accept": dejaría salir conexiones abiertas antes del modo Tor.
+
+table inet nimbo_tor
+delete table inet nimbo_tor
+
+table inet nimbo_tor {
+	counter fugas {
+	}
+
+	chain salida {
+		type filter hook output priority filter; policy drop;
+
+		oif "lo" accept
+		meta skuid "debian-tor" accept
+
+		udp sport 68 udp dport 67 accept
+		icmpv6 type { nd-router-solicit, nd-neighbor-solicit, nd-neighbor-advert, mld2-listener-report } ip6 daddr { ff02::/16, fe80::/10 } accept
+
+		log prefix "nimbo-fuga " level warn counter name "fugas" drop
+	}
+}

@@ -1,0 +1,68 @@
+{
+  "policies": {
+    "DisableTelemetry": true,
+    "DisableFirefoxStudies": true,
+    "DisablePocket": true,
+    "DisableFirefoxAccounts": true,
+    "DisableFeedbackCommands": true,
+    "DisableAppUpdate": true,
+    "DontCheckDefaultBrowser": true,
+    "CaptivePortal": false,
+    "NetworkPrediction": false,
+    "ExtensionUpdate": false,
+    "SearchSuggestEnabled": false,
+    "DNSOverHTTPS": {
+      "Enabled": false,
+      "Locked": true
+    },
+    "OverrideFirstRunPage": "",
+    "OverridePostUpdatePage": "",
+    "Homepage": {
+      "StartPage": "none",
+      "Locked": true
+    },
+    "FirefoxHome": {
+      "Search": false,
+      "TopSites": false,
+      "SponsoredTopSites": false,
+      "Highlights": false,
+      "Pocket": false,
+      "SponsoredPocket": false,
+      "Snippets": false,
+      "Locked": true
+    },
+    "FirefoxSuggest": {
+      "WebSuggestions": false,
+      "SponsoredSuggestions": false,
+      "ImproveSuggest": false,
+      "Locked": true
+    },
+    "UserMessaging": {
+      "ExtensionRecommendations": false,
+      "FeatureRecommendations": false,
+      "UrlbarInterventions": false,
+      "SkipOnboarding": true,
+      "MoreFromMozilla": false,
+      "Locked": true
+    },
+    "Preferences": {
+      "browser.safebrowsing.malware.enabled": { "Value": false, "Status": "locked" },
+      "browser.safebrowsing.phishing.enabled": { "Value": false, "Status": "locked" },
+      "browser.safebrowsing.downloads.enabled": { "Value": false, "Status": "locked" },
+      "browser.safebrowsing.downloads.remote.enabled": { "Value": false, "Status": "locked" },
+      "browser.region.update.enabled": { "Value": false, "Status": "locked" },
+      "browser.region.network.url": { "Value": "", "Status": "locked" },
+      "browser.places.speculativeConnect.enabled": { "Value": false, "Status": "locked" },
+      "browser.urlbar.speculativeConnect.enabled": { "Value": false, "Status": "locked" },
+      "browser.newtabpage.activity-stream.feeds.telemetry": { "Value": false, "Status": "locked" },
+      "browser.newtabpage.activity-stream.telemetry": { "Value": false, "Status": "locked" },
+      "browser.ping-centre.telemetry": { "Value": false, "Status": "locked" },
+      "network.connectivity-service.enabled": { "Value": false, "Status": "locked" },
+      "network.dns.disablePrefetch": { "Value": true, "Status": "locked" },
+      "network.prefetch-next": { "Value": false, "Status": "locked" },
+      "network.http.speculative-parallel-limit": { "Value": 0, "Status": "locked" },
+      "dom.push.enabled": { "Value": false, "Status": "locked" },
+      "geo.enabled": { "Value": false, "Status": "locked" }
+    }
+  }
+}

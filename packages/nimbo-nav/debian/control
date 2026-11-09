@@ -1,0 +1,30 @@
+Source: nimbo-nav
+Section: net
+Priority: optional
+Maintainer: Juan José Duque <jd1020157@gmail.com>
+Build-Depends:
+ debhelper-compat (= 13),
+ dh-python,
+ pybuild-plugin-pyproject,
+ python3-all,
+ python3-setuptools,
+ python3-pytest,
+Standards-Version: 4.6.2
+Homepage: https://github.com/teamlocknet/nimbo
+Rules-Requires-Root: no
+
+Package: nimbo-nav
+Architecture: all
+Depends:
+ ${python3:Depends},
+ ${misc:Depends},
+ firefox-esr,
+ tor,
+ nftables,
+ iproute2,
+ libnotify-bin,
+Description: navegacion segura de nimbo: Firefox endurecido y modo Tor
+ Endurece firefox-esr con politicas (sin telemetria ni conexiones en reposo)
+ y anade un modo Tor que se activa a peticion: una tabla nftables que falla
+ cerrada solo deja salir al proceso tor, y nimbo-leakcheck avisa si algo
+ intenta salir fuera del tunel. Tor no arranca solo.
