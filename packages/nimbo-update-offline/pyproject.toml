@@ -1,0 +1,27 @@
+# MÍNIMOS = VERSIONES DE BOOKWORM (ADR-005), igual que nimbo-audit (ADR-010).
+# Sin dependencias de Python fuera de la biblioteca estándar; usa gpgv (lo trae apt).
+[build-system]
+requires = ["setuptools>=66"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nimbo-update-offline"
+version = "0.1.0"
+description = "Actualización sin conexión de nimbo: solo instala paquetes con firma GPG válida (ADR-013)."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "GPL-3.0-or-later" }
+dependencies = []
+
+[project.optional-dependencies]
+test = ["pytest>=7.2"]   # python3-pytest 7.2.1 en bookworm (ADR-005)
+
+[project.scripts]
+nimbo-update-offline = "nimbo_update_offline.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

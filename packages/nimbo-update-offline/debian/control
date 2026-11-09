@@ -1,0 +1,30 @@
+Source: nimbo-update-offline
+Section: admin
+Priority: optional
+Maintainer: Juan José Duque <jd1020157@gmail.com>
+Build-Depends:
+ debhelper-compat (= 13),
+ dh-python,
+ pybuild-plugin-pyproject,
+ python3-all,
+ python3-setuptools,
+ python3-pytest,
+ gpg,
+ gpgv,
+Standards-Version: 4.6.2
+Homepage: https://github.com/teamlocknet/nimbo
+Rules-Requires-Root: no
+
+Package: nimbo-update-offline
+Architecture: all
+Depends:
+ ${python3:Depends},
+ ${misc:Depends},
+ gpgv,
+ apt,
+Suggests: gpg
+Description: actualizacion de nimbo sin conexion, solo con paquetes firmados
+ Instala lotes de paquetes traidos por USB solo si su MANIFIESTO esta firmado
+ con la clave de actualizaciones de nimbo y cada .deb coincide con su SHA-256.
+ Rechaza lotes sin firma, con firma de otra clave, alterados o con paquetes de
+ mas. Instala con apt-get --no-download, sin red.
