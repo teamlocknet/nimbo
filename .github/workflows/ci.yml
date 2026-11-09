@@ -84,3 +84,6 @@ jobs:
 
       - name: Espejo parcial del snapshot (ADR-016)
         run: python3 -I repro/espejo/test_espejo.py
+
+      - name: El arnés borra su carpeta temporal (con la clave de prueba)
+        run: ./iso/live-build/tests/test-arnes-limpia-temporales.sh
