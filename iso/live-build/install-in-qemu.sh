@@ -32,6 +32,9 @@
 # VARIANTE LIBRE: NIMBO_VARIANTE=<nombre> separa disco y logs de otras instalaciones; la RAM
 # se fija con NIMBO_VM_MB (instalar, def. 4096) y NIMBO_VM_MB_INST (arrancar, def. 2048).
 #
+# CAPTURA DE RED: NIMBO_PCAP=<fichero.pcap> guarda todo el tráfico del guest (instalar o
+# arrancar). Analizar con: tcpdump -nn -r <fichero.pcap>
+#
 # AUTOMATIZACIÓN (evidencia): NIMBO_QEMU_MONITOR=<ruta.sock> expone el monitor de QEMU
 # (screendump, sendkey) y NIMBO_QEMU_SERIAL=<espec> sustituye la consola serie a fichero
 # (p. ej. unix:<ruta.sock>,server,nowait). Sin ellas, el arnés se comporta como antes.
@@ -162,6 +165,16 @@ qemu_base() {
         : > "$log"
         serie=(-serial file:"$log")
     fi
+    # Red user-mode (SLIRP). Con NIMBO_PCAP=<fichero> se captura TODO el tráfico del guest
+    # (mismo mecanismo que verify-hermetismo-in-qemu.sh): sirve para demostrar que el
+    # instalador (p. ej. la pantalla de idioma/zona, 3C.2) no sale a la red. Sin la variable,
+    # la red es la de siempre.
+    local RED_ARGS=(-nic user,model=virtio-net-pci)
+    if [ -n "${NIMBO_PCAP:-}" ]; then
+        RED_ARGS=(-netdev user,id=n0 -device virtio-net-pci,netdev=n0
+                  -object filter-dump,id=dump0,netdev=n0,file="$NIMBO_PCAP")
+        echo ">> Captura: $NIMBO_PCAP (todo el tráfico del guest)"
+    fi
     qemu-system-x86_64 \
         "${kvm[@]}" \
         "${MACHINE[@]}" -m "$mem" -smp 2 \
@@ -171,7 +184,7 @@ qemu_base() {
         -vga "$VGA_OPT" -display "$DISPLAY_OPT" \
         "${serie[@]}" \
         ${NIMBO_QEMU_MONITOR:+-monitor unix:"$NIMBO_QEMU_MONITOR",server,nowait} \
-        -nic user,model=virtio-net-pci \
+        "${RED_ARGS[@]}" \
         "${TPM_ARGS[@]}" \
         "$@"
 }
