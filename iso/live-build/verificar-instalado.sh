@@ -140,13 +140,39 @@ if grep -rhs '^[[:space:]]*deb' /etc/apt/sources.list /etc/apt/sources.list.d 2>
 grep -rqs backports /etc/apt && ko "referencia a backports en /etc/apt" || ok "ninguna referencia a backports en /etc/apt"
 if apt-get --simulate --no-install-recommends install dracut tpm2-tools libtss2-esys-3.0.2-0 libtss2-mu0 libtss2-rc0 libtss2-tcti-device0 libtss2-tctildr0 >/dev/null 2>&1; then ok "dracut + tpm2-tools + libtss2 instalables SIN RED desde el pool (simulado)"; else ko "dracut/tpm2-tools NO instalables desde el pool"; fi
 
-sec "6. RAM idle del sistema instalado"
+sec "6. Idioma, zona horaria y swap (3C.2, ADR-017)"
+lang=$(sed -n 's/^LANG=//p' /etc/default/locale 2>/dev/null | tr -d '"' | head -1)
+case "$lang" in
+    ""|C|C.UTF-8|C.utf8|POSIX) ko "idioma del sistema sin elegir: LANG='${lang}' (se esperaba el elegido en el instalador)" ;;
+    *)  norm=$(printf '%s' "$lang" | sed 's/\.UTF-8$/.utf8/')
+        if locale -a 2>/dev/null | grep -qx "$norm"; then ok "LANG=$lang y está generado (locale -a)"; else ko "LANG=$lang pero NO está generado (locale -a)"; fi ;;
+esac
+zona=$(readlink /etc/localtime 2>/dev/null | sed 's#^.*/zoneinfo/##')
+case "$zona" in
+    ""|UTC|Etc/UTC|Etc/Universal|Universal) ko "zona horaria sin elegir: '${zona}' (se esperaba la elegida en el instalador)" ;;
+    *) ok "zona horaria: $zona" ;;
+esac
+swaps=$(swapon --show=NAME --noheadings 2>/dev/null | tr '\n' ' ')
+if [ "$SIN_CIFRAR" = 1 ]; then
+    [ -z "$swaps" ] && ok "sin swap (instalación sin cifrar: una swap en claro filtraría memoria)" || ko "swap activa en una instalación SIN cifrar: $swaps"
+else
+    if swapon --show=NAME --noheadings 2>/dev/null | grep -qx /swapfile; then
+        ok "swap activa: /swapfile ($(du -h /swapfile 2>/dev/null | cut -f1))"
+        src=$(findmnt -no SOURCE -T /swapfile 2>/dev/null)
+        case "$src" in /dev/mapper/*) ok "/swapfile está DENTRO del volumen cifrado ($src)" ;; *) ko "/swapfile NO está sobre el volumen cifrado: '$src'" ;; esac
+        grep -qs '^/swapfile[[:space:]]' /etc/fstab && ok "/swapfile en /etc/fstab" || ko "/swapfile no está en /etc/fstab"
+    else
+        ko "sin /swapfile activo (swaps: '${swaps}')"
+    fi
+fi
+
+sec "7. RAM idle del sistema instalado"
 p "  (used = MemTotal - MemAvailable, la misma fórmula que measure-ram-in-qemu.sh)"
 p "  uptime: $(cut -d' ' -f1 /proc/uptime) s — para una cifra comparable, medir con >= 90 s de reposo"
 mt=$(awk '/^MemTotal:/{print $2}' /proc/meminfo); ma=$(awk '/^MemAvailable:/{print $2}' /proc/meminfo)
 p "  MemTotal ${mt} kB · MemAvailable ${ma} kB · USED (idle) $(( (mt-ma)/1024 )) MiB"
 
-sec "7. Lista de paquetes del sistema instalado"
+sec "8. Lista de paquetes del sistema instalado"
 p "NIMBO_PKGS_BEGIN"
 dpkg-query -W -f='${Package}\t${Version}\n' | LC_ALL=C sort | while read -r l; do p "$l"; done
 p "NIMBO_PKGS_END"
