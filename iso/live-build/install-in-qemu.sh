@@ -231,7 +231,10 @@ cmd_arrancar() {
     # Disco auxiliar de solo lectura con el verificador (vvfat: un directorio del host
     # servido como FAT). No toca ni la ISO ni el disco instalado.
     local tools; tools="$(mktemp -d "${TMPDIR:-/tmp}/nimbo-verif.XXXXXX")"
-    trap 'rm -rf "$tools"' EXIT
+    # La ruta se expande AHORA (printf %q): `tools` es local y ya no existe cuando el trap corre
+    # al salir; con set -u, 'rm -rf "$tools"' fallaba y la carpeta (con la copia de la clave de
+    # prueba) quedaba en /tmp. Test: tests/test-arnes-limpia-temporales.sh.
+    trap "rm -rf -- $(printf '%q' "$tools")" EXIT
     cp "$HERE/verificar-instalado.sh" "$tools/"
     [ -f "$BASE" ] && cp "$BASE" "$tools/"
     # Paso 4: nimbo-tpm-setup viaja por el mismo disco auxiliar (se valida sin tocar la ISO).
