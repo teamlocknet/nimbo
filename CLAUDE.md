@@ -2,7 +2,8 @@
 
 > Lee este archivo **primero** cada vez que entres al proyecto. Te reorienta en 2 minutos.
 > La **fuente de verdad viva** es el maestro vivo, que está **FUERA del repo**:
-> `~/OS_Ciberseguridad/documento_maestro_v2_1.md`. El `documento_maestro_v2_0.md` de
+> `~/Projects/EcosistemaCiberseguridad/OS_Ciberseguridad/documento_maestro_v2_4.md`
+> (lo mantiene Juan José). El `documento_maestro_v2_0.md` de
 > `docs/documento-maestro/` es histórico y está desactualizado: no usarlo como fuente.
 > Este archivo es el índice operativo. Si hay conflicto, gana el maestro vivo.
 
@@ -17,8 +18,10 @@ usa el mismo día: navegación endurecida, red privada del propio equipo y traza
 auditorías con evidencia verificable por hash — **todo offline, reproducible bit a bit y
 sin una sola línea de telemetría**.
 
-- **Deadline: 3 meses duros** (sep → dic 2026), sin holgura. Diciembre es un muro.
-- **Equipo: 2 personas + IA.** Alcance **completo** (todos los módulos).
+- **Entrega: 30-nov-2026** (fecha de sustentación por confirmar, D16), sin holgura.
+- **Equipo: 3 personas + IA** (reparto por módulos, D18). **Alcance por prioridad**
+  (D15 = opción B, 9-nov): primero los requisitos de prioridad Alta; los de prioridad
+  Media, si da el tiempo.
 - **Doble plano de la IA (dilo explícito):** el **producto NO lleva IA** (sin LLM, sin
   Ollama, sin asistentes). El **desarrollo SÍ** la usa (chat orquesta + Claude Code programa).
   Construir *con* IA un sistema que *no contiene* IA no es contradicción.
@@ -39,25 +42,28 @@ Decisión registrada en `docs/adr/ADR-000-codename-y-nombre.md` (Aceptado).
 
 | Cosa | Ruta |
 |---|---|
-| **Este repo (todo el trabajo)** | `/home/juan/Proyectos/nimbo_repo` |
-| Documento maestro vivo (fuente de verdad, **fuera del repo**) | `~/OS_Ciberseguridad/documento_maestro_v2_1.md` |
+| **Este repo (todo el trabajo)** | `~/Projects/nimbo` (clon local; en Windows, dentro de WSL2, no en `/mnt/c`) |
+| Documento maestro vivo (fuente de verdad, **fuera del repo**) | `~/Projects/EcosistemaCiberseguridad/OS_Ciberseguridad/documento_maestro_v2_4.md` |
+| Plan de trabajo por persona (fuera del repo) | `plan_de_trabajo_equipo.md`, junto al maestro |
 | Documento maestro histórico (desactualizado, no usar) | `docs/documento-maestro/documento_maestro_v2_0.md` |
-| Decisiones de arquitectura | `docs/adr/` (empieza en `ADR-000`) |
-| Remoto GitHub | `https://github.com/teamlocknet/nimbo.git` (repo **público**, org LockNet) |
-
-> ⚠️ Ojo: la carpeta `/home/juan/Proyectos/EcosistemaCiberseguridad` fue solo el punto de
-> partida (tiene el `documento_maestro` original). **El repo real es `nimbo_repo`.** No
-> confundir.
+| Decisiones de arquitectura | `docs/adr/` (plantilla: `docs/adr/_plantilla-adr.md`) |
+| Hallazgos | `docs/hallazgos/` (H-001, H-004…) |
+| Remoto GitHub | `https://github.com/teamlocknet/nimbo.git` (repo **público**, cuenta `teamlocknet`) |
 
 ## 4. Equipo, dueños y CODEOWNERS
 
-| Persona | GitHub | Rol | Áreas |
-|---|---|---|---|
-| **Juan José** | `@Duque-Londono` | Líder / DevOps · dueño del CLI de auditoría | `iso/`, `repro/`, `apt-repo/`, `ci/`, `.github/`, `packages/nimbo-audit/` |
-| **Alejandro** | `@Alejandro-murillo` | Seguridad / Core OS | `packages/nimbo-net/`, `security/` |
-| Ambos | — | — | `docs/` |
+Reparto vigente (D18, 28-oct; detalle en el maestro §1 y en el plan de trabajo):
 
-El mapeo vive en `.github/CODEOWNERS`. (Mateo quedó fuera del equipo.)
+| Persona | GitHub | Responsabilidades |
+|---|---|---|
+| **Juan José** | `@Duque-Londono` | Núcleo de la ISO (receta, reproducibilidad, hermetismo, instalador), LUKS + TPM (`nimbo-tpm-setup`), verificación en QEMU y hardware real, revisión y merge de todos los PR, checkpoints, custodia de las claves reales de firma, documento maestro |
+| **Alejandro** | `@Alejandro-Murillo22` | CLI `nimbo-audit` (`.deb`, integración a la ISO, `verify`) · distribución (repo APT y releases firmados) · red privada del equipo (`nimbo-net`) |
+| **Emmanuel** | `@Cardozo-Mosquera` | Navegación segura (navegador endurecido + Tor con detección de fugas) · air-gapped con GPG · hardening fino 3B.2 (sysctl/PAM) · documentación y material del Design Partner |
+| Todos | — | `docs/` |
+
+⚠️ `.github/CODEOWNERS` **todavía refleja el reparto antiguo** (`/security/` → Alejandro,
+`/packages/nimbo-audit/` → Juan José; Emmanuel no aparece). Cambiarlo toca `.github/`
+(núcleo): lo decide Juan José.
 
 ## 5. Modelo de trabajo (roles — línea dura)
 
@@ -103,33 +109,37 @@ nimbo/
 ├── README.md
 ├── .gitignore
 ├── docs/
-│   ├── adr/                 # decisiones de arquitectura (ADR-000…) — dueño: compartido
-│   ├── documento-maestro/   # fuente de verdad viva — dueño: orquestador
-│   └── manuales/            # usuario + ingeniería — dueño: compartido
-├── iso/                     # Core OS — dueño: Juan José
-│   ├── live-build/          #   config/ auto/ hooks/ includes.chroot/
+│   ├── adr/                 # decisiones de arquitectura (ADR-000…017) — compartido
+│   ├── documento-maestro/   # solo el v2.0 histórico (el vivo está fuera del repo)
+│   ├── hallazgos/           # H-001, H-004… (material de sustentación)
+│   └── manuales/            # usuario + ingeniería — compartido
+├── iso/                     # Core OS — Juan José (núcleo: checkpoint)
+│   ├── live-build/          #   config/ auto/ hooks/ includes.chroot/ + arnés QEMU
+│   ├── branding/            #   SVG propio del instalador (CREDITOS.md)
 │   ├── xfce4/               #   personalización + hardening del escritorio
 │   └── calamares/           #   receta del instalador (engancha LUKS/TPM)
 ├── packages/                # módulos Python → .deb
-│   ├── nimbo-audit/         #   CLI de auditoría — dueño: Juan José
-│   └── nimbo-net/           #   red / VPN P2P — dueño: Alejandro
-├── security/                # dueño: Alejandro
-│   ├── luks-tpm/            #   systemd-cryptenroll: receta + flujo passphrase
-│   ├── air-gapped/          #   nimbo-update-offline + verificación GPG
-│   └── hardening/           #   políticas navegador, sysctl, telemetría off
-├── repro/                   # reproducibilidad: SOURCE_DATE_EPOCH, helpers diffoscope — dueño: Juan José
-├── apt-repo/                # config aptly → GitHub Pages — dueño: Juan José
-├── ci/                      # scripts/workflows reutilizables — dueño: Juan José
+│   ├── nimbo-audit/         #   CLI de auditoría — Alejandro (ADR-010)
+│   └── nimbo-net/           #   red privada del equipo — Alejandro
+├── security/
+│   ├── luks-tpm/            #   nimbo-tpm-setup + evidencias — Juan José
+│   ├── air-gapped/          #   nimbo-update-offline + verificación GPG — Emmanuel (dueño de RF-UPD-01 por decidir)
+│   └── hardening/           #   sysctl, PAM (3B.2) — Emmanuel (núcleo: checkpoint)
+├── repro/                   # reproducibilidad: build-twice, diff-isos, espejo/ (ADR-016) — Juan José
+├── apt-repo/                # config aptly → GitHub Pages — Alejandro
+├── ci/                      # scripts reutilizables — Juan José
 └── .github/
     ├── CODEOWNERS
     └── workflows/
-        └── ci.yml           # job `estructura` (verifica que existan las carpetas)
+        ├── ci.yml           # jobs `estructura`, `tests-cli-bookworm`, `tests-build-scripts`
+        ├── build-iso.yml    # compila la ISO en contenedor y la sube como artifact (caduca a los 7 días)
+        └── repro-verify.yml # compuerta MATCH ×2 (dos compilaciones, mismo SHA-256) + run semanal
 ```
 
 **Arquitectura (DAS v2.0, 3 capas):** Capa 1 Debian bookworm (LTS) + systemd (endurecido) · Capa 2
 Xfce4 optimizado (<500 MB idle) · Capa 3 scripts Python 3 desacoplados (si un script falla,
 kernel/red/escritorio siguen). **CLI:** patrones **Command** (una clase por subcomando:
-`init`/`capture`/`report`) + **Repository** (abstrae el FS; permite migrar JSON→SQLite sin
+`init`/`capture`/`report`/`verify`) + **Repository** (abstrae el FS; permite migrar JSON→SQLite sin
 reescribir el reporte). Sin API externa: opera sobre el FS local.
 
 **Engagement que produce `init`:** `/home/user/audits/<engagement>/` con `metadata.json`,
@@ -138,71 +148,69 @@ reescribir el reporte). Sin API externa: opera sobre el FS local.
 ## 7. Stack
 
 Debian bookworm (rama LTS, ADR-005) + **live-build** · Xfce4 · **Python 3 / Typer** · **GitHub Actions** +
-**Pages** · **aptly** · **WireGuard** vía **Tailscale** (o Headscale) · **Calamares** ·
+**Pages** · **aptly** · **WireGuard** (RF-RED-01: `nimbo-net join`; Tailscale/Headscale se
+evalúan en ADR-011, sin decidir) · **Calamares 3.3.8** (única excepción de backports) ·
 **LUKS + systemd-cryptenroll + TPM 2.0** (**swtpm** en pruebas) · **QEMU/KVM** headless ·
 **GPG** · **diffoscope** · **Git**. Todo FOSS, infra **$0**.
 
 ## 8. Convenciones de Git
 
-- **Nunca trabajes directo en `main`.** Rama por tarea; nombres tipo `chore/…`, `feat/…`,
-  `fix/…`. (`main` tendrá protección: PR + review de code owner + status check `estructura`.)
+- **Nunca trabajes directo en `main`.** Rama por tarea, desde `main` actualizado; PRs
+  pequeños y no apilados. Ramas por persona: `jj/…`, `alejandro/…`, `emmanuel/…`
+  (también se usan `chore/…`, `feat/…`, `fix/…`, `docs/…`). Nadie hace *force-push* a
+  ramas ajenas. (La protección de `main` con review obligatoria sigue pendiente.)
 - **Commits pequeños y descriptivos**, uno por bloque lógico. Mensajes en español,
   imperativo, con prefijo (`chore:`, `docs:`, `ci:`, `feat:`, `fix:`).
-- **Un solo PR por tarea/paso**, contra `main`. **No hagas merge tú** — el equipo revisa y
+- **Un solo PR por tarea/paso**, contra `main`. **No hagas merge tú**: Juan José revisa y
   mergea (verificación con los ojos).
 - **Trailer de atribución** al final de cada commit (y `Claude-Session:` con la URL de la
-  sesión en curso):
+  sesión en curso), con el modelo que esté en uso:
   ```
-  Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
+  Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
   ```
 - Descripciones de PR terminan con: `🤖 Generated with [Claude Code](https://claude.com/claude-code)`.
-- `gh` está autenticado como `Duque-Londono` con permiso de escritura en el repo.
+- `gh` está autenticado con la cuenta de quien trabaja (cada integrante tiene permiso de
+  escritura); comprueba con `gh auth status` antes de abrir un PR.
 
 ## 9. Estado actual y plan de fases
 
-**Fase 1 — Vía A (build) de Juan José, en marcha. Maestro en v1.3.**
-- ✅ **Paso 0 (Cimientos)** — estructura + gobernanza + CI `estructura`. En `main` (PR #1).
-- ✅ **Paso 1A (ISO live mínima booteable)** — live-build en `iso/live-build/`, build en
-  contenedor Debian bookworm; ISO ~260 MB verificada en QEMU hasta login. En `main` (PR #2).
-- ✅ **Paso 1B (compilar la ISO en CI)** — workflow `build-iso` que reusa el mismo build en
-  contenedor (paridad dev/CI, `CONTAINER_ENGINE` podman↔docker); valida, imprime SHA-256 y
-  sube la ISO como artifact. Imagen base anclada por digest. En `main` (PR #3).
-- ⏭️ **Siguiente — Paso 1C (reproducibilidad):** `diffoscope` + segunda compilación comparada,
-  usando el SHA-256 de 1B como base. Es uno de los 3 jefes de nivel. Deuda ya anotada en
-  `iso/live-build/README.md` (anclar `snapshot.debian.org`, squashfs, compresión).
-- Vía B (Alejandro): primer `.deb` de `nimbo-net` + inventario de hardening, en paralelo.
+El estado detallado y el calendario viven en el **maestro v2.4** (§0 y §8). Este resumen
+es del 9-nov-2026; si choca con el maestro, gana el maestro.
 
-**Plan de 13 semanas (cada fila se documenta al cerrar, subiendo versión del maestro):**
+- ✅ **Core OS:** ISO live + instalable (Calamares, LUKS2 argon2id, Secure Boot verificado),
+  hermética (0 sospechosos, 0 listeners), <500 MB en reposo; 3C.2 idioma/zona/swap (#40).
+- ✅ **Reproducibilidad:** MATCH ×2 en CI y entre máquinas físicas (H-001, H-004);
+  espejo propio del snapshot (ADR-016).
+- ✅ **LUKS + TPM:** `nimbo-tpm-setup` validado V2–V8 en QEMU (ADR-008); H-002 cerrado en
+  QEMU con RAM mínima de 1 GiB (ADR-009). Falta hardware real (semana del 17-nov).
+- ✅ **CLI `nimbo-audit`:** `init`/`capture`/`report`/`verify`, `.deb` (ADR-010) y dentro de
+  la ISO (#42).
+- ⏭️ **Siguiente (prioridad Alta, D15 = B):** navegación segura RF-NAV-01/02 (Emmanuel,
+  ADR-012), red privada RF-RED-01 (Alejandro, ADR-011), actualización sin conexión
+  RF-UPD-01 y RNF-03 (dueño por decidir). Prioridad Media, si da el tiempo: RF-DIST-01,
+  RNF-06.
 
-| Sem | Foco | Entregable "verde" |
-|---|---|---|
-| 1 | Fundación: repo (esqueleto), ADR-000, Design Partner, live-build que bootee en CI | ISO mínima + esqueleto CLI |
-| 2 | CLI `init` + logging · reproducibilidad ya (`diffoscope`+`SOURCE_DATE_EPOCH`) | `init` + primer diff |
-| 3 | CLI `capture` (SHA-256) + hardening base Xfce4 (<500 MB) | Evidencia + RAM medida |
-| 4 | CLI `report` (MD→PDF) + Calamares | CLI completo + ISO instalable |
-| 5 | Navegador endurecido + Tor + detección de fugas | Módulo de navegación |
-| 6 | VPN P2P (Tailscale) + `nimbo-net join` | CU-04 / RF-07 |
-| 7 | Air-gapped (`nimbo-update-offline` + GPG) | RF-CORE-06 |
-| 8 | LUKS+TPM en QEMU+swtpm + flujo passphrase | RF-CORE-05 en QEMU |
-| 9 | **Reproducibilidad bit-idéntica** entre 2 runners | RNF-SEC-07 |
-| 10 | Repo APT (aptly+Pages) + releases firmados | Distribución + release 1 |
-| 11 | QA + benchmarks + auditoría Design Partner | Hallazgos |
-| 12 | ≥70% hallazgos + validación hardware real (TPM) + release final | ISO v1.0 firmada |
-| 13 | Docs finales + ensayo de sustentación | Sustentación lista |
+**Requisitos vigentes:** el `.docx` "Requisitos de sistema" (15 RF + 7 RNF) y sus historias
+de usuario. El criterio de aceptación lo manda ese documento; en fechas manda el plan de
+trabajo. Los comentarios de `cli.py` aún usan la numeración antigua (RF-01, RF-03…).
 
-**Los 3 "jefes de nivel" (lo más duro, poca palanca de IA):**
-1. **Reproducibilidad bit a bit** (RNF-SEC-07) — sin holgura; criterio realista = "hashes
-   coincidentes entre 2 corridas de CI + no-determinismos documentados".
-2. **Design Partner** — riesgo logístico; cerrar en 2 semanas o plan B.
-3. **LUKS + TPM 2.0** — swtpm cubre QEMU; la política de PCR se rompe con updates de kernel.
+**Números de ADR reservados:** 011 red privada · 012 navegación y Tor · 013 air-gapped ·
+014 hardening 3B.2 · 015 repo APT y custodia de claves.
+
+**Jefes de nivel:** reproducibilidad (🏁) · Design Partner (🔴 sin cerrar) · LUKS + TPM
+(✅ en QEMU; falta hardware real).
 
 ## 10. Decisiones abiertas (no las cierres tú)
 
+Lista completa en el maestro v2.4 §12. Las que más afectan al trabajo diario:
+
 - **D1 — Nombre real del proyecto:** 🔴 abierto (codename `nimbo` cubre el interín).
-- **D2 — Cerrar Design Partner** (o plan B): 🔴 semanas 1–2.
-- **D5 — Renegociar criterio de reproducibilidad:** 🔴 prioritario (sin colchón).
-- **D4 — Actualizar docs SENA a 2 personas:** 🟠 antes de la próxima entrega.
-- (Resueltas: D3 cronograma = 3 meses duros · D6 owner CLI = Juan José · D7 codename = `nimbo`.)
+- **D2 — Design Partner:** 🔴 abierto.
+- **D4 — Confirmar integrantes/autores en los docs SENA:** 🟠 antes de la entrega.
+- **D16 — Fecha de sustentación:** 🔴 sin confirmar (plan a ~30-nov).
+- **Dueño de RF-UPD-01 y RNF-03:** 🔴 sin decidir.
+- (Resueltas: D7 codename = `nimbo` · D9 bookworm · D14 autologin solo live · D15 alcance
+  por prioridad · D17 LUKS por contraseña + TPM opcional · D18 reparto en tres frentes.)
 
 ## 11. Anti-desborde — qué NO hacer sin que te lo pidan
 
