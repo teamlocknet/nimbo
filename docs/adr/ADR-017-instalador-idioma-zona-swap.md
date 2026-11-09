@@ -47,6 +47,19 @@ Decidido por Juan José el 8-nov (las tres recomendaciones):
 - QEMU: hermetismo del live (pcap: 0 sospechosos, 0 listeners) con la pantalla nueva; RAM en
   reposo < 500 MB; instalación con 1024 MiB (que `locale-gen` y la swap no rompan H-002).
 
+## Resultados (8-nov, QEMU + Secure Boot, ISO local `893276f1…` = rama del PR #40)
+
+| Prueba | Resultado |
+|---|---|
+| `test-requisitos-calamares.sh` | rojo 7/7 → verde 10/10; CI del PR en verde con MATCH ×2 |
+| Hermetismo del live en reposo (`verify-hermetismo-in-qemu.sh`) | ✅ 0 sospechosos · 0 listeners |
+| RAM en reposo del live (`measure-ram-in-qemu.sh`) | ✅ 370 MiB (< 500 MB; antes 366 MiB) |
+| **Instalación completa con captura de red** (`NIMBO_PCAP`, 4 GiB) | ✅ 18 paquetes, todos de arranque de red (DHCP, ARP, NDP IPv6): **0 DNS, 0 NTP, 0 web, 0 SYN**. La pantalla de idioma/zona no sale a la red |
+| Pantallas (vistas por Juan José) | nueva pantalla de ubicación con Bogotá / español (Colombia); en el particionado, swap en archivo y "sin swap" |
+| `verificar-instalado.sh --secure-boot` (log serie) | ✅ `VEREDICTO: OK — 0 fallos`: `LANG=es_CO.UTF-8` generado · zona `America/Bogota` · `/swapfile` 513M activo **dentro de `/dev/mapper/luks-…`** y en `fstab` |
+| RAM en reposo del instalado (misma sección, 90 s) | 384 MiB (< 500 MB) |
+| Instalación y arranque con **1024 MiB** | ✅ instala, desbloquea a la primera (Juan José); keyslot argon2id 448 726 KiB, t=8 (igual que en H-002); sin OOM en el log de la instalación |
+
 ## Consecuencias
 
 - El instalado queda en el idioma y la hora del usuario; los timestamps locales de la

@@ -338,6 +338,9 @@ Decisión y motivos: [ADR-017](../../docs/adr/ADR-017-instalador-idioma-zona-swa
 - **Verificación:** `tests/test-requisitos-calamares.sh` (estático, en CI) y la sección 6 de
   `verificar-instalado.sh` (idioma generado, zona distinta de UTC, `/swapfile` sobre el
   volumen cifrado; sin swap con `--sin-cifrar`).
+- **Resultados (8-nov):** instalación con captura de red (`NIMBO_PCAP`) → 0 paquetes
+  sospechosos; `verificar-instalado.sh --secure-boot` → `VEREDICTO: OK`; RAM en reposo 370 MiB
+  (live) y 384 MiB (instalado); con 1024 MiB instala y desbloquea. Detalle en ADR-017.
 
 ## Reproducibilidad — estado y deuda conocida
 
