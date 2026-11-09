@@ -322,6 +322,23 @@ firmas exigidas) y "hermetismo sin re-medir sobre la ISO con Calamares".
 **Pendiente de verificar:** arranque en BIOS legacy y Secure Boot / prompt LUKS en hardware
 real (semana del 17-nov).
 
+## Paso 3C.2 — Idioma, zona horaria y swap del instalado
+
+Decisión y motivos: [ADR-017](../../docs/adr/ADR-017-instalador-idioma-zona-swap.md).
+
+- **Idioma y zona:** pantalla `locale` de Calamares (antes de la del teclado), **sin geoip ni
+  red** (`modules/locale.conf`: `geoip: style: none`). Por defecto `America/Bogota` y el idioma
+  del país (`es_CO.UTF-8`); el usuario puede cambiar los dos. `localecfg` genera en el destino
+  solo el idioma elegido. Necesita el paquete `locales` (en `desktop.list.chroot`).
+- **Swap:** archivo `/swapfile` de 512 MiB **dentro de la raíz cifrada** (`partition.conf`:
+  `userSwapChoices: [ none, file ]`). El lanzador sin cifrar (hook 0190) lo cambia a `none`:
+  un archivo de swap en claro filtraría memoria. Nunca partición de swap.
+- **Particionado manual:** sigue desactivado en v1 (protege ESP + `/boot` en claro + raíz LUKS2,
+  de la que dependen el arranque y `nimbo-tpm-setup`).
+- **Verificación:** `tests/test-requisitos-calamares.sh` (estático, en CI) y la sección 6 de
+  `verificar-instalado.sh` (idioma generado, zona distinta de UTC, `/swapfile` sobre el
+  volumen cifrado; sin swap con `--sin-cifrar`).
+
 ## Reproducibilidad — estado y deuda conocida
 
 Este paso aplica **higiene** de reproducibilidad, pero **NO persigue bit-idéntico todavía**

@@ -48,3 +48,8 @@ sudo
 
 # --- Fuente base (X necesita ≥1 fuente; mínima y determinista) ---
 fonts-dejavu-core
+
+# --- Idioma del sistema (3C.2, ADR-017) ---
+# Calamares lista los idiomas de /usr/share/i18n/SUPPORTED y `localecfg` ejecuta locale-gen
+# en el destino: los dos vienen en 'locales'. Va en el live y se queda en el instalado.
+locales

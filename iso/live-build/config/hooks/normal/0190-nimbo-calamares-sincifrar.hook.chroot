@@ -39,11 +39,18 @@ P_SRC="${SRC}/modules/partition.conf"
 P_DST="${SRC}/modules/partition_sincifrar.conf"
 [ "$(cuenta '^enableLuksAutomatedPartitioning: true$' "${P_SRC}")" = 1 ] || fallo "partition.conf: se esperaba 1 'enableLuksAutomatedPartitioning: true'"
 [ "$(cuenta '^preCheckEncryption: true$' "${P_SRC}")" = 1 ]              || fallo "partition.conf: se esperaba 1 'preCheckEncryption: true'"
+# Sin cifrado, sin swap (3C.2, ADR-017): un /swapfile en claro filtraría memoria al disco.
+[ "$(cuenta '^userSwapChoices: \[ none, file \]$' "${P_SRC}")" = 1 ]     || fallo "partition.conf: se esperaba 1 'userSwapChoices: [ none, file ]'"
+[ "$(cuenta '^initialSwapChoice: file$' "${P_SRC}")" = 1 ]               || fallo "partition.conf: se esperaba 1 'initialSwapChoice: file'"
 sed -e 's/^enableLuksAutomatedPartitioning: true$/enableLuksAutomatedPartitioning: false/' \
     -e 's/^preCheckEncryption: true$/preCheckEncryption: false/' \
+    -e 's/^userSwapChoices: \[ none, file \]$/userSwapChoices: [ none ]/' \
+    -e 's/^initialSwapChoice: file$/initialSwapChoice: none/' \
     "${P_SRC}" > "${P_DST}"
 [ "$(cuenta '^enableLuksAutomatedPartitioning: false$' "${P_DST}")" = 1 ] || fallo "partition_sincifrar.conf: no quedó el cifrado deshabilitado"
 [ "$(cuenta '^preCheckEncryption: false$' "${P_DST}")" = 1 ]              || fallo "partition_sincifrar.conf: no quedó preCheckEncryption: false"
+[ "$(cuenta '^userSwapChoices: \[ none \]$' "${P_DST}")" = 1 ]           || fallo "partition_sincifrar.conf: no quedó userSwapChoices: [ none ]"
+[ "$(cuenta '^initialSwapChoice: none$' "${P_DST}")" = 1 ]               || fallo "partition_sincifrar.conf: no quedó initialSwapChoice: none"
 
 # --- (2) settings.conf alternativo -----------------------------------------------------------
 S_SRC="${SRC}/settings.conf"
