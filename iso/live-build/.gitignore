@@ -53,6 +53,7 @@ config/package-lists/*
 !config/package-lists/desktop.list.chroot
 # Paso 3C.1: lista del instalador (Calamares + lo mínimo que necesita).
 !config/package-lists/installer.list.chroot
+!config/package-lists/audit.list.chroot
 #
 # EXCEPCIÓN 4 (Paso 3C.1, ADR-006): pinning de la excepción de backports. La LISTA de
 # origen (nimbo-backports.list.chroot) la genera auto/config desde snapshot.env y NO se
@@ -95,6 +96,7 @@ config/hooks/**
 !config/hooks/normal/0100-nimbo-hermetismo.hook.chroot
 # Paso 3C.1: pool APT local determinista + auditoría de la excepción de backports.
 # Segunda configuración de Calamares (sin cifrado) DERIVADA de la principal en build-time.
+!config/hooks/normal/0180-nimbo-audit.hook.chroot
 !config/hooks/normal/0190-nimbo-calamares-sincifrar.hook.chroot
 !config/hooks/normal/0200-nimbo-pool-local.hook.chroot
 !config/hooks/normal/0210-nimbo-backports-audit.hook.chroot

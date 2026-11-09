@@ -426,3 +426,34 @@ autologin live-only). Aún **sin hardening fino** (3B.2: sysctl de kernel/red, p
 cuentas/PAM), **sin personalización del escritorio** (temas/paneles), sin Calamares/LUKS/TPM,
 sin paquetes propios ni CLI dentro de la ISO, y sin navegador (llega por la Vía B / paso de
 navegación).
+
+## PR-B: CLI de auditoria en la ISO
+
+El constructor monta `packages/nimbo-audit` de solo lectura y compila su paquete
+Debian dentro del mismo contenedor anclado por digest y snapshot. Las dependencias
+de compilacion permanecen en el contenedor constructor. Solo el `.deb` propio pasa
+a `config/packages.chroot/`, repositorio temporal nativo de live-build.
+
+El hook `0180-nimbo-audit` comprueba ayuda, subcomando verify y manual, y marca
+el CLI como manual antes de que el hook 0200 simule la limpieza del instalador.
+El hook 0200 exige que el pool persistente no contenga nimbo-audit ni versiones
+de backports. La auditoria 0210 conserva su comprobacion original.
+
+Despues de construir la ISO:
+
+```bash
+sudo env CONTAINER_ENGINE=docker ./iso/live-build/verificar-cli-en-iso.sh
+```
+
+El verificador extrae el squashfs real de la ISO y comprueba CLI, dependencias,
+manualidad del paquete, pool y ausencia del repositorio temporal en las fuentes
+y listas de APT. `verificar-instalado.sh` comprueba tambien el CLI y el manual
+en el sistema instalado. Las pruebas en QEMU corresponden al equipo revisor.
+
+Estado de validacion: sintaxis de scripts y diferencias comprobadas. Pendientes:
+construccion completa, inspeccion del squashfs, QEMU y MATCH entre ejecutores.
+Los dos intentos del build base fallaron por HTTP 503 del snapshot antes de
+producir una ISO; no constituyen el rojo de integracion por ausencia del CLI.
+La propagacion de errores de auto/build ya esta corregida en main desde el PR #36.
+Para usar el espejo local, seguir repro/espejo/README.md y pasar NIMBO_ESPEJO
+tanto al constructor como al inspector de ISO.

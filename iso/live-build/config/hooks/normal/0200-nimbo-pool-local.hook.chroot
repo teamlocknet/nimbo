@@ -69,6 +69,16 @@ if ls "${POOL}" | grep -q '~bpo'; then
     exit 1
 fi
 
+# PR-B: auditar los campos reales de cada paquete del pool persistente.
+for DEB in "${POOL}"/*.deb; do
+    [ -f "${DEB}" ] || { echo "E: pool local vacio" >&2; exit 1; }
+    PAQUETE=$(dpkg-deb -f "${DEB}" Package)
+    VERSION=$(dpkg-deb -f "${DEB}" Version)
+    [ "${PAQUETE}" != nimbo-audit ] || { echo "E: nimbo-audit en pool local" >&2; exit 1; }
+    case "${VERSION}" in *~bpo*) echo "E: backports en pool: ${PAQUETE} ${VERSION}" >&2; exit 1 ;; esac
+done
+echo "P: [hook 0200] pool local: 0 nimbo-audit, 0 paquetes de backports (metadatos)"
+
 # --- Índice DETERMINISTA: repo plano, Packages sin comprimir, sin Release --------------------
 # Orden de bytes (LC_ALL=C), campos de control tal cual vienen en cada .deb y solo
 # Filename/Size/SHA256 añadidos. Ninguna fecha.

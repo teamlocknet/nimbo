@@ -18,6 +18,9 @@ set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$HERE"
+AUDIT_SOURCE="$(cd "$HERE/../../packages/nimbo-audit" && pwd)"
+AUDIT_VOL=":ro"
+[ "${CONTAINER_ENGINE:-podman}" != podman ] || AUDIT_VOL=":ro,Z"
 
 # --- Motor de contenedor -------------------------------------------------------
 ENGINE="${CONTAINER_ENGINE:-podman}"
@@ -91,6 +94,7 @@ exec "$ENGINE" run --rm "${TTY_OPT[@]}" \
     --privileged \
     --network=host \
     -v "$HERE":/build"$VOL_OPT" \
+    -v "$AUDIT_SOURCE:/src/nimbo-audit$AUDIT_VOL" \
     -w /build \
     -e SOURCE_DATE_EPOCH \
     -e NIMBO_SNAPSHOT \
@@ -112,9 +116,27 @@ exec "$ENGINE" run --rm "${TTY_OPT[@]}" \
         printf "Acquire::Check-Valid-Until \"false\";\nAcquire::Retries \"5\";\n" > /etc/apt/apt.conf.d/99nimbo-snapshot
         echo ">> Toolchain anclada a snapshot $NIMBO_SNAPSHOT (http, GPG intacta)"
         apt-get update
-        apt-get install -y --no-install-recommends live-build ca-certificates
+        apt-get install -y --no-install-recommends live-build ca-certificates \
+            build-essential fakeroot debhelper dh-python pybuild-plugin-pyproject \
+            python3-all python3-setuptools python3-pytest python3-typer
+        # Compilar la misma fuente montada de solo lectura; sin Docker anidado.
+        mkdir -p /tmp/nimbo-package
+        cp -a /src/nimbo-audit /tmp/nimbo-package/nimbo-audit
+        cd /tmp/nimbo-package/nimbo-audit
+        dpkg-buildpackage -us -uc -b
+        cd /build
         lb clean --purge || true
         lb config
+        # Solo el paquete propio entra en el repositorio temporal nativo de live-build.
+        mkdir -p config/packages.chroot
+        find config/packages.chroot -maxdepth 1 -type f -name "*.deb" -delete
+        set -- /tmp/nimbo-package/*.deb
+        [ "$#" -eq 1 ]
+        [ "$(dpkg-deb -f "$1" Package)" = nimbo-audit ]
+        [ "$(dpkg-deb -f "$1" Architecture)" = all ]
+        dpkg-deb -f "$1" Package Version Architecture Depends
+        sha256sum "$1"
+        cp "$1" config/packages.chroot/
         lb build
         echo
         # Segunda barrera: auto/build ya corta en la etapa que falla, pero si lb build
