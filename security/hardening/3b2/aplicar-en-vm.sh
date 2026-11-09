@@ -24,7 +24,11 @@ indice() { sed -n 's/.*Hardening index : \([0-9]*\).*/\1/p' "$1" | head -1; }
 
 herramientas() {  # las herramientas de auditoría siguen funcionando
   {
-    echo "tcpdump: $(timeout 5 tcpdump -i lo -c 1 -nn 2>&1 >/dev/null & sleep 1; ping -c1 -W1 127.0.0.1 >/dev/null 2>&1; wait; echo capturó-en-lo)"
+    timeout 5 tcpdump -i lo -c 1 -nn >/dev/null 2>&1 &
+    local td=$!
+    sleep 1
+    ping -c1 -W1 127.0.0.1 >/dev/null 2>&1 || true
+    if wait "$td"; then echo "tcpdump en lo: ok"; else echo "tcpdump en lo: FALLA"; fi
     echo "ping sin root: $(su -s /bin/sh nobody -c 'ping -c1 -W1 127.0.0.1 >/dev/null 2>&1 && echo ok || echo FALLA')"
     command -v nimbo-audit >/dev/null && echo "nimbo-audit: $(nimbo-audit --help >/dev/null 2>&1 && echo ok || echo FALLA)"
     command -v firefox-esr >/dev/null && echo "firefox-esr: $(firefox-esr --version 2>/dev/null)"
