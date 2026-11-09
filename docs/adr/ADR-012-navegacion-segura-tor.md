@@ -69,6 +69,11 @@ Restricciones del proyecto (no negociables):
    consultas DNS. Si encuentra algo, **avisa** (notificación en el escritorio y código de salida
    distinto de 0) y lo deja en un registro. Mientras el modo Tor está activo, **nada más sale a
    la red**, incluido el navegador normal. Fuera del modo Tor, la tabla no existe.
+   **Excepción explícita, sin contar como fuga** (observación de Juan José en #44): el tráfico
+   de puesta en marcha de la NIC que ya admite el criterio de hermetismo, es decir, DHCPv4
+   (UDP 68 → 67) y NDP/RS de IPv6 link-local (ICMPv6 hacia `ff02::/16` y `fe80::/10`). Sin
+   esa excepción, la renovación de la concesión daría un falso positivo y, en una sesión más
+   larga que la concesión, la máquina perdería la IP. ARP no pasa por la tabla `inet`.
 4. **Qué es una fuga para nimbo** (con el modo Tor activo): (a) cualquier DNS (53/udp-tcp, DoH
    incluido) hacia fuera de loopback · (b) cualquier paquete saliente no-loopback de un proceso
    que no sea `tor` · (c) STUN/UDP de WebRTC · (d) IPv6 directo · (e) peticiones del navegador
@@ -96,6 +101,7 @@ puede apagar del todo sin romper el navegador.
 | RF-NAV-01 CA-2 | `about:policies` sin errores y un script que compara las preferencias bloqueadas | Todas las de la lista, activas |
 | RF-NAV-02 CA-1/CA-2 | Modo Tor, visitar sitios de prueba, pcap en la interfaz externa. Comparar con las conexiones de `tor` (`ss -tnp`) | 0 DNS y 0 paquetes que no sean de `tor` hacia sus relés |
 | RF-NAV-02 CA-3 | **Prueba negativa:** quitar el proxy del perfil Tor (o lanzar `curl` directo) | `nimbo-leakcheck` detecta la fuga, avisa y sale distinto de 0 |
+| Sin falsos positivos (DHCP) | Modo Tor durante **más que la concesión DHCP** de la VM (concesión corta en la red de prueba). **Rojo:** la tabla sin la excepción → el contador sube y se pierde la IP | Contador de fugas en 0, sin aviso, y la IP se renueva |
 | RNF-02 | `measure-ram-in-qemu.sh` | < 500 MB en reposo (navegador cerrado) |
 | RNF-SEC-07 | Compuerta MATCH ×2 al integrar | Mismo SHA-256 |
 
@@ -106,9 +112,30 @@ ISO, que se mide aparte y sin red.
 
 - **Gana:** RF-NAV-01 y RF-NAV-02 con evidencia medida. La protección falla cerrada: si Tor cae,
   el perfil Tor no navega en vez de salir directo, y el cortafuegos descarta lo que se escape.
-- **Paga:** `firefox-esr` + `tor` + `nftables` hacen crecer la ISO (estimado: decenas de MiB,
-  **a medir**). La RAM en reposo no debería cambiar porque nada arranca solo; se mide igual.
-  Endurecer Firefox es trabajo de medir y ajustar, no de una sola vez.
+- **Paga:** `firefox-esr` + `tor` + `nftables` hacen crecer la ISO. Instalados ocupan unos
+  272 MiB, 5.7 MiB y 0.2 MiB respectivamente (`Installed-Size` del snapshot, antes de la
+  compresión del squashfs); el crecimiento real de la ISO **se mide** al integrar. La RAM en
+  reposo no debería cambiar porque nada arranca solo; se mide igual. Endurecer Firefox es
+  trabajo de medir y ajustar, no de una sola vez.
+- **Navegador congelado en el snapshot** (observación de Juan José en #44). La receta ancla
+  `bookworm` **y** `bookworm-security` al mismo snapshot (`auto/config`,
+  `--mirror-chroot-security`), así que entra la última versión de seguridad a esa fecha y
+  después ninguna más. Con `NIMBO_SNAPSHOT=20260901T000000Z` (consultado en
+  snapshot.debian.org el 9-nov):
+
+  | Paquete | Versión que entra | Archivo | Publicada en Debian |
+  |---|---|---|---|
+  | `firefox-esr` | `140.14.0esr-1~deb12u1` | bookworm-security | 21-ago-2026 (`debian-security`) |
+  | `tor` | `0.4.9.11-0+deb12u1` | bookworm y bookworm-security | — |
+  | `nftables` | `1.0.6-2+deb12u2` | bookworm | — |
+
+  Al 30-nov el navegador llevará unos tres meses sin parches. Afecta a todo el sistema, pero el
+  navegador es lo más expuesto. **Propuesta:** (1) para v1, aceptarlo y declararlo en el
+  manual y en la sustentación, con la versión y la fecha; (2) **subir `NIMBO_SNAPSHOT` antes
+  del release v1.0** para que entre el último `firefox-esr` de `bookworm-security`. Lo segundo
+  cambia el SHA de toda la ISO y es **checkpoint de receta**: lo decide Juan José. No hace
+  falta anclar `debian-security` aparte: ya está anclado. Las actualizaciones posteriores en
+  campo dependen de RF-UPD-01 (`nimbo-update-offline`, dueño por decidir).
 - **Límite honesto:** el perfil Tor de Firefox **no** es Tor Browser: evita fugas de red, no el
   *fingerprinting*. Se dirá así en el manual y en la sustentación.
 - **Checkpoints:** integrar los paquetes a la ISO (cambia el SHA) y la tabla `nftables` (red del
