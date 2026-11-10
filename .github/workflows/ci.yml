@@ -64,6 +64,28 @@ jobs:
           CONTAINER_ENGINE: docker
         run: ./packages/nimbo-audit/test-in-bookworm.sh
 
+  tests-modulos-bookworm:
+    # Tests de los módulos Python de Emmanuel con el Python 3.11 de bookworm y sus
+    # dependencias desde APT, en el mismo contenedor anclado que la ISO (como el CLI).
+    name: tests-modulos-bookworm (${{ matrix.modulo }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - modulo: nimbo-nav
+            apt: ""
+          - modulo: nimbo-update-offline
+            apt: "gnupg"   # los tests generan claves efímeras con gpg y verifican con gpgv
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Tests de ${{ matrix.modulo }} en bookworm (contenedor anclado)
+        env:
+          CONTAINER_ENGINE: docker
+        run: ./ci/test-modulo-en-bookworm.sh packages/${{ matrix.modulo }} ${{ matrix.apt }}
+
   tests-build-scripts:
     # Tests de los scripts que envuelven live-build, sin contenedor ni red (segundos).
     # Existe porque auto/build terminaba con 0 aunque una etapa de lb fallara (5-nov).
