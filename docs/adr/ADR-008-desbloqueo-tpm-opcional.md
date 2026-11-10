@@ -70,8 +70,10 @@ Se valida en QEMU + swtpm (V2–V8) antes del hardware real. La integración de
 - **Paquetes añadidos por la fase 1:** dracut, dracut-core, tpm2-tools y las libtss2.
   `libtss2-fapi1` arrastra **`libcurl4`** (la usa la API FAPI para descargar certificados
   de fabricantes). nimbo no usa FAPI ni la invoca nada, pero es una biblioteca de red más
-  en el sistema. **Pendiente:** volver a medir el hermetismo (0 conexiones, 0 puertos
-  escuchando) en un sistema que ya pasó por `nimbo-tpm-setup`.
+  en el sistema. **Medido el 10-nov** en un sistema que ya pasó por `nimbo-tpm-setup`:
+  0 paquetes sospechosos, 0 puertos escuchando y ningún proceso con `libcurl` cargada
+  (`security/luks-tpm/evidencia/2026-11-10-hermetismo-post-tpm.md`). Falta repetirlo en
+  hardware real.
 - **PCR 9 depende de lo que lea GRUB:** si `grubenv` cambiara en cada arranque, el TPM nunca
   abriría. En QEMU no ocurrió en 9 arranques. Hay que confirmarlo en hardware real.
 - **PCR 7 en hardware real:** una actualización del firmware o de las llaves de Secure Boot
