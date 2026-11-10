@@ -1,0 +1,7 @@
+Name: nimbo: contar intentos fallidos de inicio de sesion (pam_faillock)
+Default: yes
+Priority: 0
+Auth-Type: Primary
+Auth:
+	[default=die]	pam_faillock.so authfail
+	sufficient	pam_faillock.so authsucc
