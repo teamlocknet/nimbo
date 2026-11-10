@@ -2,10 +2,25 @@
 
 Guion para comprobar **con los ojos**, en una máquina física con UEFI y TPM 2.0, lo que
 QEMU no puede probar. Cada punto dice qué mirar y qué cuenta como OK. Lo que se verifique
-se anota con fecha, modelo de máquina y evidencia (foto o salida de comando).
+se anota en la tabla final con fecha, modelo de máquina y evidencia (foto o salida de
+comando).
 
-> Esqueleto inicial (2026-10-23). Se completa con los pasos de `nimbo-tpm-setup` cuando
-> exista (Paso 4).
+Todo lo de este guion ya pasó en QEMU (Secure Boot con el OVMF de Debian y swtpm). Aquí se
+busca lo que solo aparece con firmware, TPM, teclado, pantalla y RAM reales.
+
+## Antes de empezar
+
+- **ISO:** la de `main` después de #54 (firmware explícito, ADR-018). Anotar su SHA-256 y
+  el run de CI del que sale. Comprobarla antes de grabarla: `sha256sum -c`.
+- **USB de herramientas** (aparte de la de la ISO), con:
+  `security/luks-tpm/nimbo-tpm-setup`, `iso/live-build/probar-tpm.sh` e
+  `iso/live-build/verificar-instalado.sh`.
+- **La instalación es de prueba**, en un disco que se puede borrar. Contraseñas propias de
+  la prueba, que solo teclea quien está delante de la máquina.
+- **Credenciales (regla del proyecto):** la fase 2 de `nimbo-tpm-setup` muestra una
+  **clave de recuperación**. **No se fotografía** esa pantalla ni se copia a ningún fichero
+  del repo. Si una evidencia la contiene, se redacta antes de guardarla. Nadie dicta
+  contraseñas a nadie.
 
 ## Máquina
 
@@ -14,7 +29,9 @@ se anota con fecha, modelo de máquina y evidencia (foto o salida de comando).
 | Fabricante / modelo | |
 | Firmware (versión UEFI) | |
 | TPM | (fTPM / dTPM, versión) |
+| CPU / RAM total | |
 | GPU | |
+| Red por cable (chip) | (`lspci -nn \| grep -i ether`) |
 | Teclado físico | (distribución) |
 
 ## 1. Arranque de la ISO live
@@ -23,8 +40,10 @@ se anota con fecha, modelo de máquina y evidencia (foto o salida de comando).
       OK = llega al escritorio Xfce. En una terminal: `mokutil --sb-state` → `SecureBoot enabled`.
 - [ ] Arranca en **BIOS legacy / CSM**, si la máquina lo ofrece. *(Nunca verificado:
       ADR-006 lo deja como opcional.)*
+- [ ] Ojo: el **escritorio live está en inglés**. El lanzador se llama
+      **"Install nimbo (encrypted, …)"**; Calamares sí sale en español.
 
-## 2. Instalación cifrada (lanzador "cifrado, recomendado")
+## 2. Instalación cifrada (lanzador "Install nimbo (encrypted, …)")
 
 - [ ] La instalación termina sin errores.
 - [ ] **El prompt de la contraseña LUKS se ve bien en pantalla.** OK = la línea
@@ -44,19 +63,65 @@ se anota con fecha, modelo de máquina y evidencia (foto o salida de comando).
       'PBKDF|Memory|Time'`. Si el disco se instaló en otra máquina con más RAM y aquí falla,
       el aviso de H-002 tiene que explicar que es la memoria, no la contraseña.
 - [ ] Arranca hasta el greeter **sin** autologin (D14).
-- [ ] Dentro del instalado: `sudo sh verificar-instalado.sh --secure-boot` → `VEREDICTO: OK`
-      (copiar el script desde un USB).
+- [ ] Dentro del instalado, con la USB de herramientas montada:
+      `sudo sh <usb>/verificar-instalado.sh --secure-boot` → `VEREDICTO: OK — 0 fallos`
+      (en QEMU, 10-nov: 0 fallos, RAM 378 MiB).
 
-## 3. TPM 2.0 (`nimbo-tpm-setup`, Paso 4)
+## 3. Hermetismo, RAM y firmware en la máquina real
 
-- [ ] Tras la fase 1 (dracut), la contraseña con símbolos entra **a la primera** con el
-      teclado físico. *Medido en QEMU 10/10 (riesgo descartado,
-      `security/luks-tpm/evidencia/2026-10-23-teclado-dracut.md`); aquí se confirma con un
-      teclado real.*
+Con el **cable de red conectado** (es la prueba que importa: hay red disponible y el
+sistema no debe usarla).
 
-*(Pendiente: se rellena con el guion de validación del Paso 4 — sellado PCR 7+9 en dos
-fases, desbloqueo automático, alterar el initrd y comprobar que cae a la contraseña,
-`--reseal`, clave de recuperación.)*
+- [ ] **Sin red levantada:** `ip -br addr` → la interfaz cableada sin dirección IPv4 (solo,
+      como mucho, una IPv6 `fe80::`). *Contexto:* el sistema no configura ninguna interfaz;
+      en QEMU no pidió ni DHCP (10-nov). La red a demanda (`nimbo-red`) es posterior
+      (ADR-012).
+- [ ] **Sin puertos escuchando:** `ss -tulpn` → tabla vacía.
+- [ ] **RAM en reposo:** sesión iniciada, 90 s sin tocar nada, `free -m` → "usado" < 500 MB.
+- [ ] **Firmware que falta (ADR-018):** `sudo dmesg | grep -iE 'firmware|direct firmware load'`.
+      Anotar cada línea. La ISO solo lleva firmware de `main`: el de `non-free-firmware`
+      (red Realtek `rtl_nic`, Wi-Fi Intel `iwlwifi`, GPU AMD `amdgpu`) **no está**. OK = la
+      pantalla, el teclado, el disco y la red por cable funcionan igual. Si algo de eso
+      falla por firmware, **es un hallazgo de entregable**: anotar el chip y el fichero que
+      pide.
+- [ ] **Wi-Fi:** fuera de v1 (no hay `wpasupplicant`). Solo se anota si la tarjeta aparece
+      (`ip -br link`).
+
+## 4. TPM 2.0 (`nimbo-tpm-setup`, ADR-008)
+
+Validado en QEMU + swtpm: V2–V8 (`security/luks-tpm/evidencia/2026-11-04-V3-V8.md`) y
+hermetismo tras el TPM (`…/2026-11-10-hermetismo-post-tpm.md`). Los comandos usan la USB de
+herramientas; `nimbo-tpm-setup` todavía no va dentro de la ISO.
+
+- [ ] **TPM presente:** `cat /sys/class/tpm/tpm0/tpm_version_major` → `2`.
+- [ ] **Fase 1 (dracut):** `sudo sh <usb>/nimbo-tpm-setup`. OK = termina sin rollback.
+      Reiniciar: pide la contraseña como siempre y la contraseña con símbolos entra **a la
+      primera** con el teclado físico (*QEMU 10/10, `…/2026-10-23-teclado-dracut.md`*).
+- [ ] **Fase 2 (sellado PCR 7+9):** `sudo sh <usb>/nimbo-tpm-setup` otra vez. Pide confirmar
+      la clave de recuperación **entera**: apuntarla en papel, **sin foto**. OK = `FASE 2
+      COMPLETA`.
+- [ ] **Desbloqueo automático, 3 arranques seguidos sin teclear (V4).** OK = llega al
+      greeter sin pedir contraseña las tres veces. Anotar el tiempo hasta el greeter.
+      *Riesgo que solo se ve aquí:* si el firmware o GRUB cambian lo que mide el PCR 9 en
+      cada arranque (p. ej. `grubenv`), el TPM no abrirá nunca. En QEMU no pasó en 9
+      arranques.
+- [ ] **Manipulación de `/boot` (V5):** `sudo sh <usb>/probar-tpm.sh --manipular-initrd` y
+      reiniciar. OK = **pide la contraseña** (el TPM se niega) y la contraseña abre. Luego
+      `sudo sh <usb>/probar-tpm.sh --restaurar-initrd`, reiniciar: vuelve a abrir solo (V6a).
+      *(`probar-tpm.sh` además escribe en la consola serie; en hardware real eso se pierde y
+      da igual: lo que cuenta es lo que se ve en pantalla.)*
+- [ ] **Actualización legítima + resellado (V6b/V7):** `sudo sh <usb>/probar-tpm.sh
+      --regenerar-initrd`, reiniciar → pide contraseña. Dentro:
+      `sudo sh <usb>/nimbo-tpm-setup --reseal` → `RESELLADO COMPLETO`; reiniciar → abre solo.
+- [ ] **Clave de recuperación:** en un arranque que pida contraseña (p. ej. tras V5),
+      teclear la clave de recuperación en vez de la contraseña. OK = abre.
+- [ ] **Evidencia sin credenciales:** `sudo sh <usb>/nimbo-tpm-setup --estado` y
+      `sudo cryptsetup luksDump /dev/<raíz> | grep -E 'Keyslots|Tokens|tpm2'` (no muestran la
+      clave de recuperación). Se pueden fotografiar o copiar.
+- [ ] **Hermetismo tras el TPM:** repetir `ss -tulpn` (vacía) e `ip -br addr` del punto 3.
+- [ ] *Riesgo a anotar:* una actualización del firmware UEFI o de las llaves de Secure Boot
+      cambia el PCR 7 → el arranque pedirá la contraseña y hará falta `--reseal`. No se
+      provoca; se deja escrito para el manual.
 
 ## Resultado
 
