@@ -87,3 +87,6 @@ jobs:
 
       - name: El arnés borra su carpeta temporal (con la clave de prueba)
         run: ./iso/live-build/tests/test-arnes-limpia-temporales.sh
+
+      - name: El arnés fija la resolución de la VM con Secure Boot
+        run: ./iso/live-build/tests/test-arnes-resolucion-fija.sh
