@@ -61,9 +61,9 @@ Reparto vigente (D18, 28-oct; detalle en el maestro §1 y en el plan de trabajo)
 | **Emmanuel** | `@Cardozo-Mosquera` | Navegación segura (navegador endurecido + Tor con detección de fugas) · air-gapped con GPG · hardening fino 3B.2 (sysctl/PAM) · documentación y material del Design Partner |
 | Todos | — | `docs/` |
 
-⚠️ `.github/CODEOWNERS` **todavía refleja el reparto antiguo** (`/security/` → Alejandro,
-`/packages/nimbo-audit/` → Juan José; Emmanuel no aparece). Cambiarlo toca `.github/`
-(núcleo): lo decide Juan José.
+`.github/CODEOWNERS` sigue este reparto (10-nov): cada área tiene a su dueño **y** a Juan
+José, y basta la aprobación de uno. `main` exige una aprobación y nadie puede aprobar su
+propio PR. Cambiar `CODEOWNERS` toca `.github/` (núcleo): lo decide Juan José.
 
 ## 5. Modelo de trabajo (roles — línea dura)
 
