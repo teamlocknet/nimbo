@@ -58,6 +58,13 @@ real necesita un firmware de `main`, se añade a mano a una lista de
 - **No cambia (riesgo aparte para el hardware real):** el firmware que importa en portátiles
   (Realtek `rtl_nic`, Wi-Fi Intel, GPU AMD) está en `non-free-firmware`, que la receta no
   activa. En la prueba del 17-nov hay que mirar `dmesg | grep -i firmware`.
+- **En el sistema instalado salen 4 más (24 en total)**, medido el 10-nov con la ISO de
+  `main` `28760694…` (`verificar-instalado`: 0 fallos). `libldap-2.5-0`, `libsasl2-2`,
+  `libsasl2-modules-db` y `libogg0` siguen en la ISO, pero solo los pedían paquetes que ya no
+  están (`libcurl3-gnutls`, `libtheora0`) y otros que el instalador retira
+  (`nimbo-final.sh` hace `autoremove` de Calamares y del live). Al instalar quedan huérfanas
+  y se van. Por eso `verificar-instalado` las lista en "en la base y NO en el instalado":
+  es esperado, no un fallo.
 - **Cambia el SHA de la ISO:** compuerta MATCH ×2 en el PR. La línea base 3B.1
   (`paquetes-linea-base-3b1.txt`) pierde esas 20 líneas.
 - **Verificación:** `tests/test-sin-firmware-deducido.sh` (receta y línea base, en CI);
