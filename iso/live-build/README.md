@@ -282,7 +282,12 @@ fijas:
   arranca con `smm=on` y la flash de variables marcada como segura.
 
 **Tarjeta de vídeo emulada.** Sin Secure Boot el arnés usa `-vga std`; con `--secure-boot`,
-`-vga virtio` (sobreescribible con `NIMBO_QEMU_VGA=`). Motivo medido: el OVMF de Debian
+`bochs-display` con resolución **fija** de 1280x800 (`NIMBO_QEMU_RES=ANCHOxALTO` la cambia;
+`NIMBO_QEMU_VGA=` manda sobre todo). La ventana GTK se abre con `zoom-to-fit=on`: al
+maximizarla, la imagen se escala y la VM no cambia de resolución. Hasta el 10-nov era
+`-vga virtio`, pero virtio adopta el tamaño de la ventana: en Hyprland la ventana nace en
+mosaico, la VM arrancó a 941x484 y Calamares no cabía (sus botones quedaban fuera de la
+pantalla). Test: `tests/test-arnes-resolucion-fija.sh`. Por qué no `std`, medido: el OVMF de Debian
 (2022.11) con la VGA `std` de QEMU deja la consola del kernel **ilegible** hasta que arranca
 X, y el prompt de la contraseña LUKS parece roto aunque funciona. Con el mismo disco:
 
