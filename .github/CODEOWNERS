@@ -18,6 +18,7 @@
 /.github/                           @Duque-Londono
 /security/                          @Duque-Londono
 /security/luks-tpm/                 @Duque-Londono
+/packages/nimbo-red/                @Duque-Londono
 
 # Alejandro — CLI nimbo-audit, distribución (APT y releases), red privada
 /packages/nimbo-audit/              @Alejandro-Murillo22 @Duque-Londono

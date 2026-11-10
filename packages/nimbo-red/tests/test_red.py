@@ -23,13 +23,13 @@ class Registro:
 def sysfs(tmp_path, *ifaces):
     """Crea un /sys/class/net falso. 'wlan0:wifi' marca una interfaz Wi-Fi."""
     raiz = tmp_path / "net"
-    raiz.mkdir()
+    raiz.mkdir(exist_ok=True)
     for nombre in ifaces:
         nombre, _, tipo = nombre.partition(":")
         d = raiz / nombre
-        d.mkdir()
+        d.mkdir(exist_ok=True)
         if tipo == "wifi":
-            (d / "wireless").mkdir()
+            (d / "wireless").mkdir(exist_ok=True)
     return raiz
 
 

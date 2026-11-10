@@ -1,0 +1,27 @@
+Source: nimbo-red
+Section: net
+Priority: optional
+Maintainer: Juan José Duque <jd1020157@gmail.com>
+Build-Depends:
+ debhelper-compat (= 13),
+ dh-python,
+ pybuild-plugin-pyproject,
+ python3-all,
+ python3-setuptools,
+ python3-pytest,
+Standards-Version: 4.6.2
+Homepage: https://github.com/teamlocknet/nimbo
+Rules-Requires-Root: no
+
+Package: nimbo-red
+Architecture: all
+Depends:
+ ${python3:Depends},
+ ${misc:Depends},
+ iproute2,
+ isc-dhcp-client,
+Description: red por cable de nimbo, solo a demanda
+ nimbo arranca sin red: ninguna interfaz esta configurada. nimbo-red on
+ levanta la interfaz por cable y pide una sola concesion DHCP; nimbo-red off
+ la suelta y baja la interfaz. No deja servicios ni configuracion persistente:
+ al reiniciar, el equipo vuelve a quedar sin red. Solo cable.
