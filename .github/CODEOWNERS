@@ -1,19 +1,31 @@
 # CODEOWNERS — mapea cada área a su dueño (usuarios reales de GitHub).
-# GitHub aplica la última regla que coincide, de arriba abajo.
-# Juan José  -> @Duque-Londono
-# Alejandro  -> @Alejandro-Murillo22
+# GitHub aplica la ÚLTIMA regla que coincide: las rutas generales van primero y las
+# concretas después. Con varios dueños en una línea, basta la aprobación de uno.
+#
+# Reparto D18 (28-oct; maestro §1). Juan José revisa y mergea todos los PR, así que
+# figura en todas las áreas; el primero de cada línea es el dueño del módulo.
+#   Juan José  -> @Duque-Londono
+#   Alejandro  -> @Alejandro-Murillo22
+#   Emmanuel   -> @Cardozo-Mosquera
 
-# docs/ es de ambos
-/docs/                      @Duque-Londono @Alejandro-Murillo22
+# docs/ es de todos
+/docs/                              @Duque-Londono @Alejandro-Murillo22 @Cardozo-Mosquera
 
-# Áreas de Juan José
-/iso/                       @Duque-Londono
-/repro/                     @Duque-Londono
-/apt-repo/                  @Duque-Londono
-/ci/                        @Duque-Londono
-/.github/                   @Duque-Londono
-/packages/nimbo-audit/      @Duque-Londono
+# Núcleo — Juan José (ISO, reproducibilidad, CI, LUKS + TPM)
+/iso/                               @Duque-Londono
+/repro/                             @Duque-Londono
+/ci/                                @Duque-Londono
+/.github/                           @Duque-Londono
+/security/                          @Duque-Londono
+/security/luks-tpm/                 @Duque-Londono
 
-# Áreas de Alejandro
-/packages/nimbo-net/        @Alejandro-Murillo22
-/security/                  @Alejandro-Murillo22
+# Alejandro — CLI nimbo-audit, distribución (APT y releases), red privada
+/packages/nimbo-audit/              @Alejandro-Murillo22 @Duque-Londono
+/packages/nimbo-net/                @Alejandro-Murillo22 @Duque-Londono
+/apt-repo/                          @Alejandro-Murillo22 @Duque-Londono
+
+# Emmanuel — navegación segura, air-gapped con GPG, hardening 3B.2
+/packages/nimbo-nav/                @Cardozo-Mosquera @Duque-Londono
+/packages/nimbo-update-offline/     @Cardozo-Mosquera @Duque-Londono
+/security/air-gapped/               @Cardozo-Mosquera @Duque-Londono
+/security/hardening/                @Cardozo-Mosquera @Duque-Londono
