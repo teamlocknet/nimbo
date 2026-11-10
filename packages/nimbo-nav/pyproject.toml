@@ -1,0 +1,29 @@
+# MÍNIMOS = VERSIONES DE BOOKWORM (ADR-005), igual que nimbo-audit (ADR-010).
+# Sin dependencias de Python fuera de la biblioteca estándar: solo python3 3.11.
+[build-system]
+requires = ["setuptools>=66"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nimbo-nav"
+version = "0.1.0"
+description = "Navegación segura de nimbo: modo Tor que falla cerrado y detección de fugas (ADR-012)."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "GPL-3.0-or-later" }
+dependencies = []
+
+[project.optional-dependencies]
+test = ["pytest>=7.2"]   # python3-pytest 7.2.1 en bookworm (ADR-005)
+
+[project.scripts]
+nimbo-tor = "nimbo_nav.tor_modo:main"
+nimbo-leakcheck = "nimbo_nav.leakcheck:main"
+nimbo-navegar-tor = "nimbo_nav.navegar:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

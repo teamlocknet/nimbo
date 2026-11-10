@@ -1,0 +1,17 @@
+#!/bin/sh
+# nimbo-nav postinst — Tor NO arranca solo (ADR-012, decisión C1; RNF-01).
+# El paquete tor de Debian deja su servicio habilitado. En la primera instalación lo
+# deshabilitamos (y lo paramos si systemd está en marcha); `sudo nimbo-tor on` lo arranca.
+# En actualizaciones no se toca: se respeta lo que haya decidido el administrador.
+set -e
+
+if [ "$1" = "configure" ] && [ -z "$2" ]; then
+    deb-systemd-helper disable tor.service tor@default.service >/dev/null 2>&1 || true
+    if [ -d /run/systemd/system ]; then
+        deb-systemd-invoke stop tor.service tor@default.service >/dev/null 2>&1 || true
+    fi
+fi
+
+#DEBHELPER#
+
+exit 0
