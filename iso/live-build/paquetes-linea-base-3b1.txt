@@ -1,10 +1,9 @@
 # Paquetes del squashfs de la ISO de línea base (Paso 3B.1, antes de Calamares).
 # Fuente: live-image-amd64.packages del build del 2026-09-14 (misma receta que main
 # hasta el PR #23). La usan el Paso 3C y verificar-instalado.sh para comparar.
-# 10-nov (ADR-018): sin los 18 paquetes que solo entraban por --firmware-chroot.
+# 10-nov (ADR-018): sin los 20 paquetes que solo entraban por --firmware-chroot.
 adduser	3.134
 adwaita-icon-theme	43-1
-alsa-topology-conf	1.2.5.1-2
 apt	2.6.1
 apt-utils	2.6.1
 at-spi2-common	2.46.0-5
@@ -42,7 +41,6 @@ e2fsprogs	1.47.0-2+b2
 exo-utils	4.18.0-1
 fdisk	2.38.1-5+deb12u3
 findutils	4.9.0-4
-firmware-linux-free	20200122-1
 fontconfig	2.14.1-4
 fontconfig-config	2.14.1-4
 fonts-dejavu-core	2.37-6

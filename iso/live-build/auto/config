@@ -50,7 +50,7 @@ printf 'deb %s bookworm-backports main\n' "$SNAP_DEBIAN" \
 # del mirror de build: con el espejo (http) salían 2 paquetes menos. Pedido aquí, entra
 # siempre; con https es lo mismo que ya pasaba (misma ISO: 48c2e1c5…, 8-nov).
 # FIRMWARE EXPLÍCITO (ADR-018): por defecto (--firmware-chroot true) live-build deduce del
-# índice Contents (45 MB) qué firmware instalar: metía 18 paquetes (indi-dsi → libcurl3-gnutls,
+# índice Contents (45 MB) qué firmware instalar: metía 20 paquetes (indi-dsi → libcurl3-gnutls,
 # libssh2-1…).
 # Si Contents no llega, la etapa no instala nada SIN error (8-nov). Firmware = lista a mano.
 lb config noauto \

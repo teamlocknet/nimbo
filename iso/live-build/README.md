@@ -90,7 +90,7 @@ de cada paquete. **Tamaño de la ISO con Xfce:** **381 MB** (vs 260 MB de la 1A)
 
 **Firmware explícito (ADR-018).** La receta pasa `--firmware-chroot false` y
 `--firmware-binary false`: live-build ya no deduce firmware del índice `Contents` (antes
-metía 18 paquetes, entre ellos `indi-dsi` con `libcurl3-gnutls` y `libssh2-1`). Si hace
+metía 20 paquetes, entre ellos `indi-dsi` con `libcurl3-gnutls` y `libssh2-1`). Si hace
 falta un firmware, se añade a mano a una lista de `config/package-lists/`. Test:
 `tests/test-sin-firmware-deducido.sh`.
 
