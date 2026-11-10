@@ -100,15 +100,18 @@ VM_MB="${NIMBO_VM_MB:-4096}"
 # RAM del sistema instalado: 2048 MiB, igual que measure-ram-in-qemu.sh, para que la
 # cifra de RAM idle sea comparable con la de la sesión live.
 VM_MB_INST="${NIMBO_VM_MB_INST:-2048}"
-DISPLAY_OPT="${NIMBO_QEMU_DISPLAY:-gtk}"
+# zoom-to-fit: al maximizar la ventana, la imagen se escala; la resolución de la VM no cambia.
+DISPLAY_OPT="${NIMBO_QEMU_DISPLAY:-gtk,zoom-to-fit=on}"
 # Tarjeta de vídeo emulada. Con --secure-boot se usa virtio, NO std: el OVMF de Debian
 # (2022.11) con la VGA `std` de QEMU (11.1 en el anfitrión de 2026-10) deja la consola
 # del kernel ilegible (texto aplastado en una franja) hasta que arranca X — el prompt de
 # la contraseña LUKS parece roto aunque funciona. Medido con el MISMO disco: OVMF Debian
 # + std → roto, con y sin Secure Boot; OVMF Debian + virtio/bochs-display/qxl → limpio;
 # OVMF de Arch (202608) + std → limpio. Es del arnés (firmware emulado + tarjeta
-# emulada), no del producto. Sobreescribible con NIMBO_QEMU_VGA.
-VGA_OPT="${NIMBO_QEMU_VGA:-}"
+# emulada), no del producto. 10-nov: virtio → bochs-display con resolución fija
+# (NIMBO_QEMU_RES, def. 1280x800), porque virtio sigue el tamaño de la ventana GTK.
+# La elección vive en nimbo_video_args (lib-qemu.sh). Sobreescribible con NIMBO_QEMU_VGA.
+VIDEO_ARGS=()
 
 # --- Firmware OVMF (lib-qemu.sh: resuelto, nunca con ruta fija) ---------------------------
 # Sin Secure Boot: el OVMF del host (descriptores de QEMU). Con Secure Boot: el par de
@@ -120,12 +123,12 @@ ovmf_preparar() {
     if [ "$SB" = 1 ]; then
         nimbo_ovmf_secboot || exit 1
         MACHINE=(-machine q35,smm=on -global driver=cfi.pflash01,property=secure,value=on)
-        VGA_OPT="${VGA_OPT:-virtio}"
     else
-        VGA_OPT="${VGA_OPT:-std}"
         OVMF_CODE="$OVMF_CODE_ENV"
         nimbo_ovmf_resolver || { echo "ERROR: no encuentro OVMF (instala edk2-ovmf / ovmf, o exporta OVMF_CODE y OVMF_VARS)"; exit 1; }
     fi
+    local video; video="$(nimbo_video_args "$SB")" || { echo "$video"; exit 1; }
+    mapfile -t VIDEO_ARGS <<< "$video"
 }
 
 need() { command -v "$1" >/dev/null || { echo "ERROR: falta '$1' en el host (ver Requisitos en la cabecera)"; exit 1; }; }
@@ -181,7 +184,7 @@ qemu_base() {
         -drive if=pflash,format=raw,readonly=on,file="$OVMF_CODE" \
         -drive if=pflash,format=raw,file="$VARS" \
         -drive file="$DISK",if=virtio,format=qcow2 \
-        -vga "$VGA_OPT" -display "$DISPLAY_OPT" \
+        "${VIDEO_ARGS[@]}" -display "$DISPLAY_OPT" \
         "${serie[@]}" \
         ${NIMBO_QEMU_MONITOR:+-monitor unix:"$NIMBO_QEMU_MONITOR",server,nowait} \
         "${RED_ARGS[@]}" \
@@ -207,7 +210,7 @@ cmd_instalar() {
     echo ">> Disco  : $DISK (${DISK_GB} GiB, vacío)"
     echo ">> OVMF   : $OVMF_CODE"
     echo ">> Origen : $OVMF_ORIGEN"
-    echo ">> Secure Boot: $([ "$SB" = 1 ] && echo 'ACTIVO (llaves MS inscritas, SMM)' || echo 'apagado')  ·  vídeo: -vga $VGA_OPT"
+    echo ">> Secure Boot: $([ "$SB" = 1 ] && echo 'ACTIVO (llaves MS inscritas, SMM)' || echo 'apagado')  ·  vídeo: ${VIDEO_ARGS[*]}"
     echo ">> Serie  : $LOG_LIVE"
     echo
     echo "   EN LA VM: escritorio live -> icono '$LANZADOR'"

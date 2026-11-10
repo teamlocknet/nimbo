@@ -148,3 +148,18 @@ nimbo_ovmf_secboot() {
     fi
     OVMF_CODE="$code"; OVMF_VARS_TPL="$vars"; OVMF_ORIGEN="Debian bookworm ovmf (snapshot $NIMBO_SNAPSHOT, SHA-256 verificado)"
 }
+
+# nimbo_video_args <sb>   Argumentos de vídeo de QEMU, uno por línea (mapfile -t).
+#   Con Secure Boot (sb=1): `bochs-display` con resolución FIJA (NIMBO_QEMU_RES, def.
+#   1280x800). No se usa virtio porque adopta el tamaño de la ventana GTK: en un gestor en
+#   mosaico (Hyprland) la VM arrancó a 941x484 y Calamares no cabía (10-nov). `std` tampoco:
+#   con el OVMF de Debian deja ilegible la consola del kernel (ver install-in-qemu.sh).
+#   Sin Secure Boot (sb=0): `-vga std`, como siempre. NIMBO_QEMU_VGA=<modelo> manda sobre todo.
+nimbo_video_args() {
+    if [ -n "${NIMBO_QEMU_VGA:-}" ]; then printf '%s\n' -vga "$NIMBO_QEMU_VGA"; return 0; fi
+    if [ "${1:-0}" != 1 ]; then printf '%s\n' -vga std; return 0; fi
+    local res="${NIMBO_QEMU_RES:-1280x800}"
+    [[ "$res" =~ ^([0-9]{3,4})x([0-9]{3,4})$ ]] \
+        || { echo "ERROR: NIMBO_QEMU_RES='$res' no es ANCHOxALTO (p. ej. 1280x800)"; return 1; }
+    printf '%s\n' -vga none -device "bochs-display,xres=${BASH_REMATCH[1]},yres=${BASH_REMATCH[2]}"
+}
