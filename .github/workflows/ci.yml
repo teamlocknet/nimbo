@@ -112,3 +112,6 @@ jobs:
 
       - name: El arnés fija la resolución de la VM con Secure Boot
         run: ./iso/live-build/tests/test-arnes-resolucion-fija.sh
+
+      - name: La ISO no instala firmware deducido de Contents (ADR-018)
+        run: ./iso/live-build/tests/test-sin-firmware-deducido.sh

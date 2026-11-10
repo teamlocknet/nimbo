@@ -49,6 +49,10 @@ printf 'deb %s bookworm-backports main\n' "$SNAP_DEBIAN" \
 # https:// (scripts/debian-common), y con él entra openssl. Así la ISO dependía del esquema
 # del mirror de build: con el espejo (http) salían 2 paquetes menos. Pedido aquí, entra
 # siempre; con https es lo mismo que ya pasaba (misma ISO: 48c2e1c5…, 8-nov).
+# FIRMWARE EXPLÍCITO (ADR-018): por defecto (--firmware-chroot true) live-build deduce del
+# índice Contents (45 MB) qué firmware instalar: metía 20 paquetes (indi-dsi → libcurl3-gnutls,
+# libssh2-1…).
+# Si Contents no llega, la etapa no instala nada SIN error (8-nov). Firmware = lista a mano.
 lb config noauto \
     --distribution bookworm \
     --archive-areas "main" \
@@ -62,6 +66,8 @@ lb config noauto \
     --debootstrap-options "--include=ca-certificates" \
     --binary-images iso-hybrid \
     --debian-installer none \
+    --firmware-chroot false \
+    --firmware-binary false \
     --memtest none \
     --apt-indices false \
     --apt-recommends false \
