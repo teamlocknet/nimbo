@@ -88,6 +88,12 @@ El escritorio entra por una **lista de paquetes curada** (no un metapaquete): ve
 `config/package-lists/desktop.list.chroot` y `iso/xfce4/README.md` para el qué y el porqué
 de cada paquete. **Tamaño de la ISO con Xfce:** **381 MB** (vs 260 MB de la 1A).
 
+**Firmware explícito (ADR-018).** La receta pasa `--firmware-chroot false` y
+`--firmware-binary false`: live-build ya no deduce firmware del índice `Contents` (antes
+metía 18 paquetes, entre ellos `indi-dsi` con `libcurl3-gnutls` y `libssh2-1`). Si hace
+falta un firmware, se añade a mano a una lista de `config/package-lists/`. Test:
+`tests/test-sin-firmware-deducido.sh`.
+
 **Login / autologin de la sesión live.** live-config crea el usuario `nimbo` (contraseña por
 defecto `live`) **solo si `user-setup` está instalado**; como es "Recomienda" de live-config
 y la receta usa `--apt-recommends false`, hay que declararlo explícito (junto con `sudo`) en
