@@ -27,7 +27,10 @@ desde la USB.
 
 ## 2. Instalar (30–45 min)
 
-1. En el escritorio, abre **"Instalar nimbo (cifrado, recomendado)"**.
+1. En el escritorio, abre el icono de instalación cifrada. El escritorio live está en inglés,
+   así que se llama **"Install nimbo (encrypted, recommended)"** (en español: "Instalar nimbo
+   (cifrado, recomendado)"). **No** uses "Install nimbo without encryption (advanced)".
+   El instalador (Calamares) sí sale en español.
 2. Elige idioma y zona horaria (por defecto: español de Colombia y Bogotá).
 3. Crea tu usuario y tu contraseña. El instalador **sugiere** contraseñas fuertes pero no las
    obliga. Elige la **contraseña del disco** y guárdala bien: **sin ella no se recupera nada**.
@@ -57,18 +60,27 @@ caso (`~/audits/cliente-prueba/evidencia/`), cambia una letra y guarda. Ejecuta 
 > Este paso aplica cuando la ISO ya incluya la navegación segura. Si no tienes Firefox en
 > el menú, anótalo y salta al paso 5.
 
-1. Abre **Firefox** desde el menú: es el navegador normal, endurecido y sin telemetría.
-2. Activa el modo Tor en una terminal: `sudo nimbo-tor on`.
-3. Abre **"Navegar por Tor (nimbo)"** desde el menú y visita `https://check.torproject.org`.
-   La página debe decir que estás usando Tor.
-4. Ejecuta `sudo nimbo-leakcheck`. Debe decir **"OK — 0 fugas"**.
-5. Apaga el modo Tor: `sudo nimbo-tor off`.
+nimbo arranca **sin red**. Para este paso necesitas el equipo conectado **por cable** (o la
+máquina virtual con red). El Wi-Fi no está soportado en esta versión.
+
+1. Levanta la red en una terminal: `sudo nimbo-red on`. Debe decir qué interfaz levantó.
+2. Abre **Firefox** desde el menú: es el navegador normal, endurecido y sin telemetría.
+3. Activa el modo Tor: `nimbo-tor on`. El sistema te pide tu contraseña.
+4. Abre **"Navegar por Tor"** desde el menú y visita `https://check.torproject.org`. La página
+   debe decir que estás usando Tor. Este modo evita fugas de red, pero no protege frente a la
+   huella del navegador.
+5. Ejecuta `sudo nimbo-leakcheck`. Debe decir **"OK — 0 fugas"**.
+6. Apaga el modo Tor (`nimbo-tor off`) y después la red (`sudo nimbo-red off`).
 
 ## 5. Comprobar el endurecimiento (10 min)
 
 > Aplica cuando la ISO incluya el endurecimiento 3B.2.
 
 `sudo /usr/lib/nimbo/verify-hardening`. Debe terminar con **"VEREDICTO: OK — 0 fallos"**.
+
+Si te equivocas 5 veces seguidas con la contraseña, la cuenta se bloquea 10 minutos y el
+sistema **te dice que está bloqueada**. No la olvidaste: espera o pide a quien tenga `sudo`
+que ejecute `sudo faillock --user <tu-usuario> --reset`.
 
 ## Al terminar
 
