@@ -20,7 +20,9 @@ apt-get install -y -qq --no-install-recommends \
 trabajo=$(mktemp -d)
 cp -a "$PKG" "$trabajo/nimbo-nav"
 ( cd "$trabajo/nimbo-nav" && dpkg-buildpackage -us -uc -b )
-apt-get install -y "$trabajo"/nimbo-nav_*_all.deb
+# --reinstall: con la misma versión (0.1.0-1), apt no reemplaza el paquete instalado y las
+# pruebas correrían con el código viejo (visto en la VM el 10-nov).
+apt-get install -y --reinstall "$trabajo"/nimbo-nav_*_all.deb
 
 echo
 echo "== Comprobaciones de la instalación"
