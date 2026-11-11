@@ -77,11 +77,12 @@ herramientas > "$SALIDA/herramientas-despues.txt"
   grep -v '^#' "$SALIDA/common-auth.nuevo" | sed '/^$/d'
   echo '```'
   echo
-  echo "FALTA A MANO (no se automatiza a propósito), en otra consola (Ctrl+Alt+F3) y con una"
-  echo "sesión de root abierta en la primera:"
-  echo "  1. 3 contraseñas mal -> 1 bien (entra) -> 2 mal: NO debe bloquear (el acierto pone a cero)."
-  echo "  2. 5 mal seguidas: debe BLOQUEAR y decir que la cuenta está bloqueada."
-  echo "  3. 'sudo faillock --user <tú>' muestra los fallos; '--reset' desbloquea."
-  echo "Anotar el resultado de cada paso aquí."
+  echo "FALTA A MANO (no se automatiza a propósito), en esta misma terminal:"
+  echo "  1. 'su - <tú>' con una clave mala, 3 veces -> un acierto -> 2 veces mala: NO debe bloquear."
+  echo "  2. 5 veces mala seguidas: el 6.º intento debe decir que la cuenta está bloqueada."
+  echo "  Lee el contador SIN sudo: /usr/sbin/faillock --user <tú>. Un sudo como el mismo"
+  echo "  usuario es un acierto y PONE EL CONTADOR A CERO (visto en la VM el 11-nov)."
+  echo "  3. Desbloquear: sudo faillock --user <tú> --reset."
+  echo "Anotar el resultado de cada paso aquí (ejemplo: evidencia/2026-11-11-vm-3b2.md)."
 } | tee "$SALIDA/informe.md"
 exit "$RC"

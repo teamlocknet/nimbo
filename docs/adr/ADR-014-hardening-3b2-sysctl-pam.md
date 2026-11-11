@@ -65,9 +65,9 @@ actualizaciones automáticas (sin cambiarlas), cada sysctl de la lista y PAM.
 | Qué | Prueba | Pasa si |
 |---|---|---|
 | El verificador detecta cada ajuste roto | `pruebas/test-verify-hardening.sh` (raíz falsa, sin root). Rojo: 9/9 MAL sin verificador; después, 5 MAL con los casos de #47 | 13/13 casos OK |
-| Medición antes/después | `aplicar-en-vm.sh` en una VM bookworm: `lynis` y `verify-hardening` antes y después | El índice de lynis sube; `VEREDICTO: OK — 0 fallos` después |
+| Medición antes/después | `aplicar-en-vm.sh` en una VM bookworm: `lynis` y `verify-hardening` antes y después | ✅ 11-nov: lynis 64 → 70; solo quedan los 3 fallos de actualizaciones, que en la ISO cierra 3B.1 (`0 fallos` se comprobará en la ISO) |
 | No rompe herramientas | La misma ejecución: `tcpdump` en `lo`, `ping` sin root, `nimbo-audit --help`, `firefox-esr` | Todas funcionan |
-| No deja sin acceso | A mano en la VM (con snapshot y una sesión de root abierta): iniciar sesión; **3 fallos → acierto → 2 fallos** (no debe bloquear); 5 fallos seguidos → bloqueo con el mensaje visible; `faillock --reset` | Entra, no bloquea tras el acierto, bloquea a los 5 y se desbloquea |
+| No deja sin acceso | En la VM: **3 fallos → acierto → 2 fallos** (no debe bloquear); 5 fallos seguidos → bloqueo con el mensaje visible; `faillock --reset` | ✅ 11-nov: 3 → 0 → 2, bloqueo a los 5 con mensaje, desbloqueo. Evidencia: `security/hardening/3b2/evidencia/2026-11-11-vm-3b2.md` |
 | RF-CORE-04 CA-1/CA-2 | `verify-hardening.sh` en la ISO live y en el sistema instalado (QEMU, Juan José) | 0 fallos en ambos |
 | No empeora el resto | MATCH ×2 · hermetismo 0/0 · RAM < 500 MB | Sin cambios |
 
