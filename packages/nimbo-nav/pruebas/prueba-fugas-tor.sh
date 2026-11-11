@@ -117,7 +117,7 @@ OK=1
   echo
   echo "## Paquetes fuera del túnel (primeros 50)"
   echo '```'
-  tcpdump -nn -r "$PCAP" "$FUERA" 2>/dev/null | head -50
+  tcpdump -nn -r "$PCAP" "$FUERA" 2>/dev/null | head -50 || true  # con pipefail, head corta tcpdump (SIGPIPE): no debe abortar el informe
   echo '```'
   echo
   echo "## nimbo-leakcheck en la prueba negativa"

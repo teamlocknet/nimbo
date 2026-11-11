@@ -53,7 +53,7 @@ DNS=$(contar "$PCAP" "udp port 53 or tcp port 53")
   echo
   echo "## Sospechosos (primeros 50)"
   echo '```'
-  tcpdump -nn -r "$PCAP" "$SOSPECHOSO" 2>/dev/null | head -50
+  tcpdump -nn -r "$PCAP" "$SOSPECHOSO" 2>/dev/null | head -50 || true  # con pipefail, head corta tcpdump (SIGPIPE): no debe abortar el informe
   echo '```'
   echo
   echo "## Nombres consultados por DNS"
