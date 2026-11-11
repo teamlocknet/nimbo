@@ -76,8 +76,15 @@ def verificar(directorio: Path, anillo: Path = ANILLO) -> Veredicto:
         return _rechazo("firma inválida: el MANIFIESTO no está firmado por la clave de "
                         "actualizaciones de nimbo, o fue modificado después de firmarse")
 
+    try:
+        texto = manifiesto.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        return _rechazo("manifiesto mal formado: no es UTF-8")
+    except OSError as e:
+        return _rechazo(f"no se pudo leer el MANIFIESTO: {e}")
+
     esperados: dict[str, str] = {}
-    for n, linea in enumerate(manifiesto.read_text(encoding="utf-8").splitlines(), 1):
+    for n, linea in enumerate(texto.splitlines(), 1):
         if not linea.strip():
             continue
         m = LINEA.match(linea)
@@ -92,6 +99,9 @@ def verificar(directorio: Path, anillo: Path = ANILLO) -> Veredicto:
     if not esperados:
         return _rechazo("manifiesto vacío: no hay paquetes que instalar")
 
+    no_ficheros = sorted(p.name for p in directorio.glob("*.deb") if not p.is_file())
+    if no_ficheros:
+        return _rechazo(f"{no_ficheros[0]} no es un fichero (¿un directorio con nombre .deb?)")
     presentes = {p.name for p in directorio.glob("*.deb")}
     extra = sorted(presentes - set(esperados))
     if extra:
@@ -101,7 +111,11 @@ def verificar(directorio: Path, anillo: Path = ANILLO) -> Veredicto:
         return _rechazo(f"falta el paquete {faltan[0]}, que figura en el MANIFIESTO")
 
     for nombre, suma in sorted(esperados.items()):
-        if _sha256(directorio / nombre) != suma:
+        try:
+            real = _sha256(directorio / nombre)
+        except OSError as e:
+            return _rechazo(f"no se pudo leer {nombre}: {e}")
+        if real != suma:
             return _rechazo(f"paquete alterado: el SHA-256 de {nombre} no coincide con el firmado")
 
     return Veredicto(True, f"{len(esperados)} paquetes con firma válida",

@@ -96,3 +96,27 @@ def test_lote_manipulado_se_rechaza(lote, claves, manipular):
     assert not v.aceptado
     assert esperado in v.motivo, v.motivo
     assert v.paquetes == []
+
+
+# --- Revisión de #49: errores que antes salían como traceback --------------------------
+
+def manifiesto_no_utf8_firmado(d, claves):
+    (d / "MANIFIESTO.asc").unlink()
+    m = d / "MANIFIESTO"
+    m.write_bytes(m.read_bytes() + b"\xff\xfe basura no utf-8\n")
+    claves["buena"].firmar(m)
+    return "no es UTF-8"
+
+
+def directorio_que_se_llama_deb(d, claves):
+    (d / "trampa.deb").mkdir()
+    return "no es un fichero"
+
+
+@pytest.mark.parametrize("manipular", [manifiesto_no_utf8_firmado, directorio_que_se_llama_deb],
+                         ids=lambda f: f.__name__)
+def test_errores_raros_se_rechazan_con_motivo(lote, claves, manipular):
+    esperado = manipular(lote, claves)
+    v = verificar(lote, claves["anillo"])  # no debe lanzar excepción
+    assert not v.aceptado
+    assert esperado in v.motivo, v.motivo

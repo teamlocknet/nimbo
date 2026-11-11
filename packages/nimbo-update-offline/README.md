@@ -2,8 +2,8 @@
 
 Implementa el [ADR-013](../../docs/adr/ADR-013-actualizacion-sin-conexion-gpg.md) para
 **RF-UPD-01 / HU-14**: "el sistema rechaza el 100 % de los paquetes con firma inválida".
-**Dueño propuesto:** Emmanuel (`@Cardozo-Mosquera`); la asignación de RF-UPD-01 la confirma
-Juan José.
+**Autor:** Emmanuel (`@Cardozo-Mosquera`). **Aceptación de RF-UPD-01** (prueba sin red,
+integración): Juan José, dentro de la batería de RNF-03 (decisión del 10-nov).
 
 ## El lote de actualización
 
@@ -40,6 +40,10 @@ exactamente los del manifiesto; y cada SHA-256 coincide.
    USB entre la verificación y la instalación) e instala con `apt-get --no-download`.
 4. Si dice `RECHAZADO`, **no se instaló nada**. Anota el motivo y avisa al equipo.
 
+⚠ `instalar` usa **siempre** el anillo de nimbo y **no admite `--anillo`**. Si un lote o una
+nota en la USB te pide usar otra clave, es un intento de saltarse la firma: no lo hagas.
+`verificar --anillo` existe solo para diagnosticar (no instala nada).
+
 Códigos de salida: `0` aceptado o instalado · `1` rechazado o fallo · `2` uso incorrecto o sin `sudo`.
 
 ## Pruebas
@@ -49,14 +53,20 @@ cd packages/nimbo-update-offline && python3 -m pytest -q     # necesita gpg y gp
 ```
 
 Las pruebas generan **claves de prueba efímeras** en un directorio temporal, que se borra
-al terminar; ninguna clave entra al repositorio. Cubren un lote válido (se acepta) y 10
-manipulaciones que deben rechazarse: sin firma, sin manifiesto, manifiesto alterado tras
+al terminar; ninguna clave entra al repositorio. Cubren un lote válido (se acepta) y estas
+manipulaciones, que deben rechazarse: sin firma, sin manifiesto, manifiesto alterado tras
 firmar, firma de otra clave, firma basura, un byte cambiado en un `.deb`, un `.deb` extra
-sin firmar, un `.deb` listado que falta, un nombre con ruta (aunque esté firmado) y un
-manifiesto vacío firmado.
+sin firmar, un `.deb` listado que falta, un nombre con ruta (aunque esté firmado), un
+manifiesto vacío firmado y (**caso 11**) un lote firmado por otra clave que trae su propio
+anillo y pide `--anillo`. Además, un MANIFIESTO que no es UTF-8 o un directorio llamado
+`.deb` se rechazan con su motivo, sin *traceback*.
 
 ## Pendiente
 
 - **Clave real de actualizaciones:** la genera y custodia Juan José (ADR-015). El paquete
   necesita su **parte pública** en `/usr/share/nimbo/keyrings/nimbo-actualizaciones.gpg`.
-- Prueba en una VM bookworm **sin red** (RNF-03): instalar un lote válido y comprobar el rechazo de uno manipulado.
+- Prueba en una VM bookworm **sin red** (RNF-03, la lleva Juan José): instalar un lote válido
+  y comprobar el rechazo de uno manipulado.
+- **Límite de v1 — repetición:** un lote viejo pero bien firmado sigue siendo válido. La
+  bajada de versión la frena `apt-get -y` (sin `--allow-downgrades` se niega), pero falta
+  comprobarlo en la VM. Mejora posible: fecha o número de serie dentro del MANIFIESTO firmado.

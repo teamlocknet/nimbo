@@ -1,6 +1,7 @@
 # ADR-013 — Actualización sin conexión con paquetes firmados (`nimbo-update-offline`)
 
-**Estado:** Propuesto (9-nov, Emmanuel) · **Pendiente:** Juan José confirma el dueño de RF-UPD-01
+**Estado:** Propuesto (9-nov, Emmanuel; revisado en #49) · **Autor:** Emmanuel ·
+**Aceptación de RF-UPD-01:** Juan José, dentro de RNF-03 (decisión del 10-nov)
 
 ## Contexto
 
@@ -32,7 +33,12 @@
   tiene exactamente esos `.deb` y cada SHA-256 coincide. Ante cualquier duda, rechaza.
 - `sudo nimbo-update-offline instalar <lote>`: copia el lote a un directorio propio,
   **verifica la copia** (evita cambiar la USB entre verificar e instalar) e instala con
-  `apt-get install --no-download`. Si se rechaza, no instala nada.
+  `apt-get install --no-download`. Si se rechaza, no instala nada. **Usa siempre el anillo de
+  nimbo y no admite `--anillo`** (revisión de #49): si lo admitiera, un lote firmado por
+  cualquiera podría traer su clave y pedir que se usara. `--anillo` queda solo en `verificar`,
+  que no instala.
+- Cualquier dato raro (MANIFIESTO que no es UTF-8, un directorio con nombre `.deb`, un fichero
+  ilegible) se **rechaza con su motivo**, nunca con un *traceback*.
 - **Claves:** la de actualizaciones la genera y custodia Juan José (ADR-015). El paquete
   lleva solo su **parte pública**. El desarrollo y las pruebas usan claves efímeras.
 
@@ -41,8 +47,8 @@
 | Criterio | Prueba | Resultado |
 |---|---|---|
 | CA-1 (lógica) | Lote válido firmado con la clave de prueba → `ACEPTADO`; `instalar` llama a `apt-get --no-download` con las copias | ✅ (pytest, 9-nov) |
-| CA-2 / CA-3 | **N = 10** lotes manipulados (sin firma, sin manifiesto, manifiesto alterado, otra clave, firma basura, byte cambiado, `.deb` extra, `.deb` ausente, ruta firmada, manifiesto vacío firmado) | ✅ 10/10 rechazados, cada uno con su motivo (100 %) |
-| Rojo → verde | Pruebas escritas antes que el código | Rojo: 2 errores de colección → verde: 16 passed |
+| CA-2 / CA-3 | **N = 10** lotes manipulados (sin firma, sin manifiesto, manifiesto alterado, otra clave, firma basura, byte cambiado, `.deb` extra, `.deb` ausente, ruta firmada, manifiesto vacío firmado) | ✅ 10/10 rechazados, cada uno con su motivo (100 %); + **caso 11** (lote de otra clave con su propio anillo y `--anillo`: `instalar` no admite la opción y lo rechaza) y los 2 casos de datos raros |
+| Rojo → verde | Pruebas escritas antes que el código | Rojo: 2 errores de colección → verde: 16 passed. Revisión de #49: 6 failed → 20 passed |
 | CA-1 real, sin red (RNF-03) | VM bookworm **sin red**: instalar un lote válido por USB y comprobar un rechazo | *Pendiente* |
 
 ## Consecuencias
@@ -52,8 +58,12 @@
 - **Paga:** un formato de lote propio. Las dependencias de un `.deb` nuevo deben venir en el
   mismo lote o estar ya instaladas (`--no-download` no busca nada fuera).
 - **Depende de:** la clave real (ADR-015, Juan José) y la integración a la ISO (checkpoint).
+- **Límite de v1 — repetición y bajada de versión:** un lote viejo pero bien firmado sigue
+  siendo válido para siempre. `apt-get -y` sin `--allow-downgrades` se niega a bajar de
+  versión (a comprobar en la VM, como caso de la batería). Si da el tiempo: fecha o número
+  de serie dentro del MANIFIESTO firmado.
 - La "evidencia firmada" del E7 original no respalda ningún requisito (cotejo G1): queda fuera.
 
 ## Fecha
 
-2026-11-09
+2026-11-09 · revisado 2026-11-10 (#49)
