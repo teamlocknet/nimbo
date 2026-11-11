@@ -2,6 +2,8 @@
 
   nimbo-update-offline verificar <lote>        comprueba firma y sumas (no instala)
   sudo nimbo-update-offline instalar <lote>    copia, verifica la copia e instala sin red
+                                               (SIEMPRE con el anillo de nimbo: no admite
+                                               otro; revisión de #49)
   nimbo-update-offline preparar <lote> --clave <id>
                                                (equipo con la clave) escribe MANIFIESTO y
                                                lo firma con gpg
@@ -82,14 +84,20 @@ def cmd_preparar(lote: Path, clave: str) -> int:
 
 
 def main(argv: list[str] | None = None, es_root: Callable[[], bool] = _root,
-         ejecutar: Callable[[list[str]], None] = _ejecutar) -> int:
+         ejecutar: Callable[[list[str]], None] = _ejecutar,
+         anillo_instalar: Path = ANILLO) -> int:
+    # anillo_instalar solo lo cambian las pruebas (parámetro de Python). Desde la línea de
+    # órdenes, instalar no admite --anillo: un lote podría traer su propia clave y pedir
+    # que se use, y saltarse RF-UPD-01.
     p = argparse.ArgumentParser(prog="nimbo-update-offline", description=__doc__.splitlines()[0])
     sub = p.add_subparsers(dest="accion", required=True)
-    for nombre in ("verificar", "instalar"):
-        s = sub.add_parser(nombre)
-        s.add_argument("lote", type=Path)
-        s.add_argument("--anillo", type=Path, default=ANILLO,
-                       help="anillo de confianza (por defecto, el de nimbo)")
+    s = sub.add_parser("verificar")
+    s.add_argument("lote", type=Path)
+    s.add_argument("--anillo", type=Path, default=ANILLO,
+                   help="anillo de confianza para COMPROBAR (por defecto, el de nimbo); "
+                        "no instala nada")
+    s = sub.add_parser("instalar")
+    s.add_argument("lote", type=Path)
     s = sub.add_parser("preparar")
     s.add_argument("lote", type=Path)
     s.add_argument("--clave", required=True, help="identificador de la clave GPG de firma")
@@ -101,7 +109,7 @@ def main(argv: list[str] | None = None, es_root: Callable[[], bool] = _root,
         if not es_root():
             print(f"nimbo-update-offline: necesita privilegios. Usa: sudo nimbo-update-offline instalar {args.lote}")
             return 2
-        return cmd_instalar(args.lote, args.anillo, ejecutar)
+        return cmd_instalar(args.lote, Path(anillo_instalar), ejecutar)
     return cmd_preparar(args.lote, args.clave)
 
 
