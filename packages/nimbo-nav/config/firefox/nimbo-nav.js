@@ -1,5 +1,7 @@
 // nimbo-nav — preferencias por defecto de firefox-esr (ADR-012, RF-NAV-01).
-// Se instala en /usr/lib/firefox-esr/defaults/pref/: Firefox lo lee siempre al arrancar.
+// Se instala en /etc/firefox-esr/: es el mecanismo de Debian para las preferencias del
+// sistema (firefox-esr NO aplicaba este fichero en /usr/lib/firefox-esr/defaults/pref/;
+// medido en una VM Debian 12 el 10-nov).
 // Cubre lo que la política "Preferences" de policies.json no admite (prefijos
 // toolkit.*, datareporting.*, app.normandy.*, services.*, extensions.*, media.gmp-*).
 // Cada ajuste se confirma con el pcap en reposo (pruebas/prueba-reposo-navegador.sh).
@@ -39,10 +41,19 @@ pref("media.gmp-manager.url", "");
 pref("media.gmp-gmpopenh264.enabled", false);
 pref("media.gmp-widevinecdm.enabled", false);
 
+// Nueva pestaña en blanco, sin precarga ni fondos. Firefox precarga about:newtab aunque
+// arranque en about:blank, y esa página descargaba sus fondos (newtab-wallpapers-v2) desde
+// firefox-settings-attachments.cdn.mozilla.net: era la última conexión en reposo (VM, 10-nov).
+pref("browser.newtabpage.enabled", false);
+pref("browser.newtab.preload", false);
+pref("browser.newtabpage.activity-stream.newtabWallpapers.enabled", false);
+
 // DNS sobre HTTPS apagado (modo 5 = desactivado a propósito)
 pref("network.trr.mode", 5);
 
-// Remote Settings: EXPERIMENTAL. Sin servidor no hay sincronización al arrancar.
-// Pendiente de medir que el navegador siga funcionando (ADR-012, "pendiente de medir").
+// Remote Settings: sin servidor no hay sincronización al arrancar. Firefox release solo
+// respeta esta preferencia con MOZ_REMOTE_SETTINGS_DEVTOOLS=1 (config/x11/90nimbo-firefox).
+// Los adjuntos que quedaban (firefox-settings-attachments) eran los fondos de la nueva
+// pestaña: se apagan arriba.
 pref("services.settings.server", "data:,");
 pref("services.settings.poll_interval", 0);

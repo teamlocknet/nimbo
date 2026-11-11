@@ -1,59 +1,93 @@
-"""nimbo-tor on/off/estado: orden de los pasos y fallo cerrado (ADR-012, C1 + D2)."""
+"""nimbo-tor on/off/estado (ADR-012 aceptado, #45; revisión de #59).
+
+El encendido lo hace la unidad nimbo-modo-tor.service (tabla -> tor -> vigilante; al
+parar, al revés). nimbo-tor solo arranca, para o consulta esa unidad: no corre como root.
+Nunca afirma "red restaurada" sin comprobar el estado real de la unidad.
+"""
 import subprocess
 
 from nimbo_nav import tor_modo
 
 
-class Registro:
-    def __init__(self, falla_en=None):
+class Sistema:
+    """Simula systemctl. respuestas: prefijo de argv -> salida, o ('falla', código, salida)."""
+
+    def __init__(self, respuestas=None):
         self.llamadas = []
-        self.falla_en = falla_en
+        self.respuestas = respuestas or {}
 
     def __call__(self, argv):
         self.llamadas.append(list(argv))
-        if self.falla_en and argv[: len(self.falla_en)] == self.falla_en:
-            raise subprocess.CalledProcessError(1, argv, "", "fallo simulado")
+        for prefijo, r in self.respuestas.items():
+            if tuple(argv[: len(prefijo)]) == prefijo:
+                if isinstance(r, tuple) and r[0] == "falla":
+                    raise subprocess.CalledProcessError(r[1], argv, r[2], "fallo simulado")
+                return r
         return ""
 
 
-def test_on_carga_la_tabla_antes_de_arrancar_tor():
-    r = Registro()
-    assert tor_modo.main(["on"], ejecutar=r, es_root=lambda: True) == 0
-    assert r.llamadas == [
-        ["nft", "-f", tor_modo.TABLA_NFT],
-        ["systemctl", "start", "tor@default.service"],
-        ["systemctl", "start", "nimbo-leakcheck.service"],
-    ]
+ACTIVO = ("systemctl", "is-active")
 
 
-def test_on_falla_cerrado_si_la_tabla_no_carga():
-    r = Registro(falla_en=["nft", "-f"])
-    assert tor_modo.main(["on"], ejecutar=r, es_root=lambda: True) == 1
-    assert ["systemctl", "start", "tor@default.service"] not in r.llamadas
+def test_on_arranca_la_unidad(tmp_path):
+    s = Sistema()
+    assert tor_modo.main(["on"], ejecutar=s, sys_net=tmp_path) == 0
+    assert ["systemctl", "start", "nimbo-modo-tor.service"] in s.llamadas
 
 
-def test_off_para_tor_y_borra_la_tabla():
-    r = Registro()
-    assert tor_modo.main(["off"], ejecutar=r, es_root=lambda: True) == 0
-    assert r.llamadas == [
-        ["systemctl", "stop", "nimbo-leakcheck.service"],
-        ["systemctl", "stop", "tor@default.service"],
-        ["nft", "delete", "table", "inet", "nimbo_tor"],
-    ]
+def test_on_que_falla_avisa_sin_traceback(tmp_path, capsys):
+    s = Sistema({("systemctl", "start"): ("falla", 1, "")})
+    assert tor_modo.main(["on"], ejecutar=s, sys_net=tmp_path) == 1
+    salida = capsys.readouterr().out
+    assert "journalctl -u nimbo-modo-tor" in salida
+    assert "Traceback" not in salida
 
 
-def test_off_tolera_tabla_ya_borrada():
-    r = Registro(falla_en=["nft", "delete"])
-    assert tor_modo.main(["off"], ejecutar=r, es_root=lambda: True) == 0
+def test_on_se_niega_si_nimbo_net_esta_activo(tmp_path, capsys):
+    (tmp_path / tor_modo.INTERFAZ_NIMBO_NET).mkdir()
+    s = Sistema()
+    assert tor_modo.main(["on"], ejecutar=s, sys_net=tmp_path) == 2
+    assert "nimbo-net leave" in capsys.readouterr().out
+    assert not any(a[:2] == ["systemctl", "start"] for a in s.llamadas)
 
 
-def test_exige_root(capsys):
-    assert tor_modo.main(["on"], ejecutar=Registro(), es_root=lambda: False) == 2
-    assert "sudo nimbo-tor" in capsys.readouterr().out
+def test_off_limpio_dice_restaurada(tmp_path, capsys):
+    s = Sistema({ACTIVO: ("falla", 3, "inactive\n")})
+    assert tor_modo.main(["off"], ejecutar=s, sys_net=tmp_path) == 0
+    assert s.llamadas[0] == ["systemctl", "stop", "nimbo-modo-tor.service"]
+    assert "restaurada" in capsys.readouterr().out
 
 
-def test_estado(capsys):
-    r = Registro()
-    assert tor_modo.main(["estado"], ejecutar=r, es_root=lambda: True) == 0
-    assert ["nft", "list", "table", "inet", "nimbo_tor"] in r.llamadas
-    assert "activo" in capsys.readouterr().out
+def test_off_con_la_unidad_fallida_no_dice_restaurada(tmp_path, capsys):
+    # systemctl stop devuelve 0 sobre una unidad fallida, pero no ejecuta ExecStop=.
+    s = Sistema({ACTIVO: ("falla", 3, "failed\n")})
+    assert tor_modo.main(["off"], ejecutar=s, sys_net=tmp_path) == 1
+    salida = capsys.readouterr().out
+    assert "restaurada" not in salida
+    assert "fallo" in salida
+    assert ["systemctl", "reset-failed", "nimbo-modo-tor.service"] in s.llamadas
+
+
+def test_off_que_falla_avisa_sin_traceback_y_dice_que_la_red_sigue_cerrada(tmp_path, capsys):
+    s = Sistema({("systemctl", "stop"): ("falla", 1, "")})
+    assert tor_modo.main(["off"], ejecutar=s, sys_net=tmp_path) == 1
+    salida = capsys.readouterr().out
+    assert "red sigue cerrada" in salida
+    assert "nft delete table inet nimbo_tor" in salida
+
+
+def test_estado_activo(tmp_path, capsys):
+    assert tor_modo.main(["estado"], ejecutar=Sistema({ACTIVO: "active\n"}), sys_net=tmp_path) == 0
+    assert "modo Tor activo" in capsys.readouterr().out
+
+
+def test_estado_inactivo(tmp_path, capsys):
+    s = Sistema({ACTIVO: ("falla", 3, "inactive\n")})
+    assert tor_modo.main(["estado"], ejecutar=s, sys_net=tmp_path) == 0
+    assert "inactivo" in capsys.readouterr().out
+
+
+def test_estado_fallido(tmp_path, capsys):
+    s = Sistema({ACTIVO: ("falla", 3, "failed\n")})
+    assert tor_modo.main(["estado"], ejecutar=s, sys_net=tmp_path) == 1
+    assert "falló" in capsys.readouterr().out

@@ -1,0 +1,7 @@
+# /etc/X11/Xsession.d/90nimbo-firefox — nimbo-nav (ADR-012, RF-NAV-01).
+# En las versiones release de Firefox, la preferencia services.settings.server (que en
+# /etc/firefox-esr/nimbo-nav.js apaga Remote Settings) solo se respeta si existe esta
+# variable. Sin ella, Firefox descargaba decenas de MB de Remote Settings con el
+# navegador en reposo (medido en una VM Debian 12 el 10-nov: 40 521 -> 1 517 paquetes).
+# Solo la lee Firefox; no cambia nada más de la sesión.
+export MOZ_REMOTE_SETTINGS_DEVTOOLS=1

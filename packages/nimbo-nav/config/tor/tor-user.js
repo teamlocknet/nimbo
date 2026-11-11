@@ -28,3 +28,7 @@ user_pref("network.connectivity-service.enabled", false);
 // Sesión sin rastro en disco
 user_pref("browser.privatebrowsing.autostart", true);
 user_pref("browser.cache.disk.enable", false);
+
+// Huella del navegador (ADR-012 aceptado, #45): reduce la brecha con Tor Browser, no la cierra
+user_pref("privacy.resistFingerprinting", true);
+user_pref("privacy.resistFingerprinting.letterboxing", true);

@@ -20,15 +20,21 @@ apt-get install -y -qq --no-install-recommends \
 trabajo=$(mktemp -d)
 cp -a "$PKG" "$trabajo/nimbo-nav"
 ( cd "$trabajo/nimbo-nav" && dpkg-buildpackage -us -uc -b )
-apt-get install -y "$trabajo"/nimbo-nav_*_all.deb
+# --reinstall: con la misma versión (0.1.0-1), apt no reemplaza el paquete instalado y las
+# pruebas correrían con el código viejo (visto en la VM el 10-nov).
+# --force-confnew/--force-confmiss: en la VM de prueba, la configuración del paquete manda
+# sobre cualquier copia editada a mano (p. ej. /etc/firefox-esr/nimbo-nav.js).
+apt-get install -y --reinstall -o Dpkg::Options::=--force-confnew   -o Dpkg::Options::=--force-confmiss "$trabajo"/nimbo-nav_*_all.deb
 
 echo
 echo "== Comprobaciones de la instalación"
 dpkg -s nimbo-nav | grep -E '^(Status|Version):'
-echo "tor habilitado al arrancar: $(systemctl is-enabled tor@default.service 2>/dev/null || true) (esperado: disabled)"
+echo "tor.service al arrancar:    $(systemctl is-enabled tor.service 2>/dev/null || true) (esperado: disabled; tor@default solo cuelga de tor.service)"
 echo "tor activo ahora:           $(systemctl is-active tor@default.service 2>/dev/null || true) (esperado: inactive)"
 echo "puerto 9050 en escucha:     $(ss -Hltn 'sport = :9050' | wc -l) (esperado: 0)"
-echo "políticas de Firefox:       $(test -f /etc/firefox/policies/policies.json && echo instaladas || echo FALTAN)"
+echo "políticas de Firefox:       $(test -f /usr/lib/firefox-esr/distribution/policies.json && echo instaladas || echo FALTAN)"
+echo "preferencias del sistema:   $(test -f /etc/firefox-esr/nimbo-nav.js && echo instaladas || echo FALTAN)"
+echo "AVISO: cierra sesión y vuelve a entrar para que se aplique /etc/X11/Xsession.d/90nimbo-firefox"
 echo
 echo "Listo. Siguientes pruebas (como tu usuario, en la sesión gráfica):"
 echo "  bash $HERE/prueba-reposo-navegador.sh      # RF-NAV-01"

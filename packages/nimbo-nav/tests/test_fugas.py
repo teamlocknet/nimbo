@@ -55,3 +55,16 @@ def test_evaluar():
     assert not sucio.limpio
     sucio2 = evaluar(0, [Conexion("tcp", "SYN-SENT", "a:1", "b:2", "curl")])
     assert not sucio2.limpio
+
+
+def test_dhcp_no_es_fuga_igual_que_en_la_tabla():
+    # Visto en la VM (10-nov): el cliente DHCP de NetworkManager deja un socket UDP
+    # 68 -> 67 "ESTAB". La tabla lo permite a propósito (renovar la concesión, #44);
+    # el detector no debe contarlo como fuga. Lo mismo para DHCPv6 (546 -> 547).
+    ss = (
+        'udp ESTAB 0 0 10.0.2.15%enp0s3:68 10.0.2.2:67 users:(("NetworkManager",pid=5,fd=9))\n'
+        'udp ESTAB 0 0 [fe80::1%enp0s3]:546 [ff02::1:2]:547 users:(("NetworkManager",pid=5,fd=10))\n'
+        'udp ESTAB 0 0 10.0.2.15:5353 10.0.2.2:67 users:(("raro",pid=6,fd=3))\n'
+    )
+    fugas = conexiones_fuera_de_tor(ss)
+    assert [c.proceso for c in fugas] == ["raro"]  # solo 68->67 y 546->547 son DHCP

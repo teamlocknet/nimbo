@@ -51,6 +51,20 @@ def _es_loopback(direccion: str) -> bool:
     return direccion.startswith(LOOPBACK)
 
 
+def _puerto(direccion: str) -> str:
+    return direccion.rsplit(":", 1)[-1]
+
+
+# Puesta en marcha de la NIC que la tabla nimbo_tor permite a propósito (revisión de #44):
+# DHCPv4 (cliente 68 -> servidor 67) y DHCPv6 (546 -> 547). El detector usa la misma
+# excepción; si no, el cliente DHCP de NetworkManager daba un falso positivo (VM, 10-nov).
+_DHCP = {("68", "67"), ("546", "547")}
+
+
+def _es_dhcp(protocolo: str, local: str, remota: str) -> bool:
+    return protocolo == "udp" and (_puerto(local), _puerto(remota)) in _DHCP
+
+
 def conexiones_fuera_de_tor(salida_ss: str) -> list[Conexion]:
     """Conexiones no-loopback de procesos que no son tor, en la salida de `ss -Htunp`."""
     fugas = []
@@ -62,6 +76,8 @@ def conexiones_fuera_de_tor(salida_ss: str) -> list[Conexion]:
         if estado in ("LISTEN", "UNCONN"):
             continue
         if _es_loopback(local) and _es_loopback(remota):
+            continue
+        if _es_dhcp(protocolo, local, remota):
             continue
         m = _PROCESO.search(linea)
         proceso = m.group(1) if m else "desconocido"

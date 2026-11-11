@@ -1,0 +1,31 @@
+# nimbo-modo-tor.service — modo Tor de nimbo (ADR-012 aceptado, #45; revisión de #59).
+# La arranca y la para `nimbo-tor on|off` (systemd pide la autorización con polkit).
+#
+# Falla cerrada y en orden:
+#   arranque: tabla nftables -> tor -> vigilante. Si la tabla no carga, tor NO arranca.
+#   parada:   vigilante -> tor -> tabla.
+#   arranque fallido: systemd NO ejecuta ExecStop=, pero sí ExecStopPost=, que deshace lo
+#             hecho en el mismo orden inverso. El modo queda apagado y la red como estaba.
+#             Mientras tanto, el perfil Tor no navega: sin el SOCKS 9050 no hay salida.
+# SIN sección de instalación: nunca arranca sola, así que en reposo no existe (RNF-01).
+# La tabla vive en "table inet nimbo_tor"; nunca se vacía el ruleset entero (nimbo-net).
+# En v1 es excluyente con nimbo-net: no arranca si existe su interfaz (nombre PROVISIONAL,
+# a acordar con Alejandro; debe coincidir con INTERFAZ_NIMBO_NET de tor_modo.py).
+# La red la levanta antes `nimbo-red on` (ADR-019). Cambios aquí = checkpoint de Juan José.
+[Unit]
+Description=nimbo: modo Tor (tabla nftables, tor y vigilante de fugas)
+Documentation=file:///usr/share/doc/nimbo-nav/README.md
+AssertPathExists=!/sys/class/net/wg-nimbo
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/sbin/nft -f /usr/share/nimbo-nav/nimbo-tor.nft
+ExecStart=/bin/systemctl start tor@default.service
+ExecStart=/bin/systemctl start nimbo-leakcheck.service
+ExecStop=/bin/systemctl stop nimbo-leakcheck.service
+ExecStop=/bin/systemctl stop tor@default.service
+ExecStop=/usr/sbin/nft delete table inet nimbo_tor
+ExecStopPost=-/bin/systemctl stop nimbo-leakcheck.service
+ExecStopPost=-/bin/systemctl stop tor@default.service
+ExecStopPost=-/usr/sbin/nft delete table inet nimbo_tor

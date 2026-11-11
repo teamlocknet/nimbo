@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
-Name=Navegar por Tor (nimbo)
-Comment=Abre el navegador por Tor; primero activa el modo con: sudo nimbo-tor on
+Name=Navegar por Tor
+Comment=Evita fugas de red; no protege frente a la huella del navegador. Antes: sudo nimbo-red on y nimbo-tor on
 Exec=nimbo-navegar-tor
 Icon=firefox-esr
 Terminal=false

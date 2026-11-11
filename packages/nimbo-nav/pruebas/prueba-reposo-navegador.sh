@@ -49,11 +49,12 @@ DNS=$(contar "$PCAP" "udp port 53 or tcp port 53")
   echo "# RF-NAV-01 — Firefox abierto en reposo ($ETIQUETA)"
   echo
   echo "- Fecha: $(date -Is) · Interfaz: $IFACE · Ventana: ${IDLE_S}s · firefox-esr $(dpkg-query -W -f='${Version}' firefox-esr)"
+  echo "- MOZ_REMOTE_SETTINGS_DEVTOOLS=${MOZ_REMOTE_SETTINGS_DEVTOOLS:-<sin definir>} (nimbo-nav la define en la sesión gráfica)"
   echo "- Paquetes capturados: $TOTAL · **Sospechosos: $SOSP** (DNS: $DNS)"
   echo
   echo "## Sospechosos (primeros 50)"
   echo '```'
-  tcpdump -nn -r "$PCAP" "$SOSPECHOSO" 2>/dev/null | head -50
+  tcpdump -nn -r "$PCAP" "$SOSPECHOSO" 2>/dev/null | head -50 || true  # con pipefail, head corta tcpdump (SIGPIPE): no debe abortar el informe
   echo '```'
   echo
   echo "## Nombres consultados por DNS"
