@@ -4,10 +4,13 @@ No sustituyen la medición con pcap en la VM: aseguran que nadie quite por error
 ajuste del que depende RF-NAV-01 / RF-NAV-02.
 """
 import json
+import os
 import re
 from pathlib import Path
 
-RAIZ = Path(__file__).resolve().parents[1]
+# Al construir el .deb, pybuild copia las pruebas a otro directorio sin config/ ni debian/:
+# debian/rules exporta NIMBO_NAV_SRC con la raíz de la fuente (visto en la VM, 10-nov).
+RAIZ = Path(os.environ.get("NIMBO_NAV_SRC") or Path(__file__).resolve().parents[1])
 CONFIG = RAIZ / "config"
 
 

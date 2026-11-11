@@ -57,7 +57,8 @@ def test_comprobacion_puntual_con_ss_roto_no_dice_limpio(capsys):
 
 def test_unidad_vigilante_se_reinicia_si_cae():
     from pathlib import Path
-    unidad = (Path(__file__).resolve().parents[1] / "config" / "systemd"
+    from test_config import RAIZ
+    unidad = (RAIZ / "config" / "systemd"
               / "nimbo-leakcheck.service").read_text(encoding="utf-8")
     assert "Restart=on-failure" in unidad
 
