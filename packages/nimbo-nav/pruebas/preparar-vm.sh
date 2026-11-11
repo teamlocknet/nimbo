@@ -22,7 +22,9 @@ cp -a "$PKG" "$trabajo/nimbo-nav"
 ( cd "$trabajo/nimbo-nav" && dpkg-buildpackage -us -uc -b )
 # --reinstall: con la misma versión (0.1.0-1), apt no reemplaza el paquete instalado y las
 # pruebas correrían con el código viejo (visto en la VM el 10-nov).
-apt-get install -y --reinstall "$trabajo"/nimbo-nav_*_all.deb
+# --force-confnew/--force-confmiss: en la VM de prueba, la configuración del paquete manda
+# sobre cualquier copia editada a mano (p. ej. /etc/firefox-esr/nimbo-nav.js).
+apt-get install -y --reinstall -o Dpkg::Options::=--force-confnew   -o Dpkg::Options::=--force-confmiss "$trabajo"/nimbo-nav_*_all.deb
 
 echo
 echo "== Comprobaciones de la instalación"

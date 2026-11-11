@@ -77,6 +77,11 @@ def test_preferencias_del_sistema_apagan_lo_que_no_cubren_las_politicas():
         "extensions.getAddons.cache.enabled": False,
         "media.gmp-manager.updateEnabled": False,
         "network.trr.mode": 5,
+        # Nueva pestaña: sin precarga ni fondos. La precarga de about:newtab descargaba los
+        # fondos (newtab-wallpapers-v2) con el navegador en reposo (VM, 10-nov).
+        "browser.newtabpage.enabled": False,
+        "browser.newtab.preload": False,
+        "browser.newtabpage.activity-stream.newtabWallpapers.enabled": False,
     }
     for nombre, valor in esperadas.items():
         assert prefs.get(nombre) == valor, nombre

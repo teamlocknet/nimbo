@@ -41,11 +41,19 @@ pref("media.gmp-manager.url", "");
 pref("media.gmp-gmpopenh264.enabled", false);
 pref("media.gmp-widevinecdm.enabled", false);
 
+// Nueva pestaña en blanco, sin precarga ni fondos. Firefox precarga about:newtab aunque
+// arranque en about:blank, y esa página descargaba sus fondos (newtab-wallpapers-v2) desde
+// firefox-settings-attachments.cdn.mozilla.net: era la última conexión en reposo (VM, 10-nov).
+pref("browser.newtabpage.enabled", false);
+pref("browser.newtab.preload", false);
+pref("browser.newtabpage.activity-stream.newtabWallpapers.enabled", false);
+
 // DNS sobre HTTPS apagado (modo 5 = desactivado a propósito)
 pref("network.trr.mode", 5);
 
 // Remote Settings: sin servidor no hay sincronización al arrancar. Firefox release solo
 // respeta esta preferencia con MOZ_REMOTE_SETTINGS_DEVTOOLS=1 (config/x11/90nimbo-firefox).
-// Queda una descarga de adjuntos (firefox-settings-attachments) sin explicar: ver evidencia.
+// Los adjuntos que quedaban (firefox-settings-attachments) eran los fondos de la nueva
+// pestaña: se apagan arriba.
 pref("services.settings.server", "data:,");
 pref("services.settings.poll_interval", 0);
