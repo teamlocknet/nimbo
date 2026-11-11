@@ -44,6 +44,11 @@ cualquier otro programa se quedan sin red. Es a propósito.
 - **El aviso falla hacia la alerta:** si el vigilante de fugas se detiene, da error o deja de
   actualizarse, el navegador avisa igual que ante una fuga. Nunca se toma por "limpio".
 - Solo red por cable (ADR-019). Wi-Fi queda fuera de v1.
+- **El modo Tor y la red del equipo (`nimbo-net`) no pueden estar activos a la vez en v1:**
+  `nimbo-tor on` se niega si hay un túnel de `nimbo-net` (primero, `nimbo-net leave`).
+- Si el modo Tor no llega a arrancar, systemd deshace lo que alcanzó a hacer y
+  `nimbo-tor estado` dice "falló". `nimbo-tor off` solo dice "red restaurada" cuando la
+  unidad quedó realmente apagada.
 - El navegador queda en la versión del snapshot de la ISO (`firefox-esr`
   140.14.0esr-1~deb12u1, publicada el 21-ago-2026) y no se actualiza solo (ADR-012).
 

@@ -38,7 +38,11 @@ def motivo_aviso(estado: dict | None, ahora: float) -> str | None:
         return "el vigilante de fugas no está funcionando (no hay estado)"
     if estado.get("vigilante") == "error":
         return f"el vigilante de fugas tiene un error: {estado.get('error', 'desconocido')}"
-    if ahora - float(estado.get("actualizado", 0)) > MAX_EDAD_S:
+    try:
+        actualizado = float(estado.get("actualizado", 0))
+    except (TypeError, ValueError):
+        return "el estado del vigilante de fugas es inválido (no se puede saber si hay fugas)"
+    if ahora - actualizado > MAX_EDAD_S:
         return "el vigilante de fugas no se actualiza (puede haberse detenido)"
     if not estado.get("modo_tor"):
         return "el modo Tor se ha apagado"

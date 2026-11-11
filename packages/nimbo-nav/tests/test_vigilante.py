@@ -89,3 +89,8 @@ def test_vigilante_en_error_es_aviso():
 def test_fugas_es_aviso():
     m = navegar.motivo_aviso(dict(BIEN, paquetes_descartados=2), ahora=101.0)
     assert "2 paquetes" in m
+
+
+def test_estado_con_fecha_invalida_es_aviso_sin_traceback():
+    m = navegar.motivo_aviso(dict(BIEN, actualizado="no-es-un-numero"), ahora=101.0)
+    assert "inválido" in m

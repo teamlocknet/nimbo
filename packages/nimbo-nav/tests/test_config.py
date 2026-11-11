@@ -213,3 +213,21 @@ def test_sesion_grafica_activa_el_apagado_de_remote_settings():
     script = (CONFIG / "x11" / "90nimbo-firefox").read_text(encoding="utf-8")
     assert "export MOZ_REMOTE_SETTINGS_DEVTOOLS=1" in script
     assert _destinos()["config/x11/90nimbo-firefox"] == "etc/X11/Xsession.d/"
+
+
+# --- Revisión de #59: la limpieza también ocurre si el arranque falla ------------------
+
+def test_unidad_limpia_con_execstoppost_aunque_el_arranque_falle():
+    # systemd NO ejecuta ExecStop= si el arranque falló; ExecStopPost= sí.
+    lineas = _sin_comentarios(CONFIG / "systemd" / "nimbo-modo-tor.service")
+    post = [l for l in lineas if l.startswith("ExecStopPost=")]
+    assert post == [
+        "ExecStopPost=-/bin/systemctl stop nimbo-leakcheck.service",
+        "ExecStopPost=-/bin/systemctl stop tor@default.service",
+        "ExecStopPost=-/usr/sbin/nft delete table inet nimbo_tor",
+    ]
+
+
+def test_unidad_no_arranca_con_nimbo_net_activo():
+    lineas = _sin_comentarios(CONFIG / "systemd" / "nimbo-modo-tor.service")
+    assert "AssertPathExists=!/sys/class/net/wg-nimbo" in lineas
