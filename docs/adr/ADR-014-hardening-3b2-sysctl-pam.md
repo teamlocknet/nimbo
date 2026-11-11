@@ -45,6 +45,18 @@ editar `common-auth` a mano): 5 fallos en 15 min bloquean la cuenta 10 min; **ro
 bloquea** (recuperación). **No** se activa `pam_pwquality`: obligaría contraseñas fuertes,
 y RF-CORE-03 pide solo sugerirlas.
 
+*Corrección de la revisión de #47:* `pam-auth-update` convierte el `success=end` de
+`pam_unix` en un salto al final del bloque Primary, así que una línea `authsucc` colocada
+después nunca se ejecuta y el contador no se pone a cero tras un acierto (3 fallos →
+acierto → 2 fallos = bloqueo). Por eso el perfil queda así:
+- `auth`: `requisite pam_faillock.so preauth` (antes de `pam_unix`) y
+  `[default=die] pam_faillock.so authfail` (después). **Sin `authsucc`.**
+- `account`: `required pam_faillock.so` en el bloque **Additional**, que va después del salto
+  de `pam_unix` y se ejecuta siempre tras un acierto. Es la fase que limpia el registro. (En
+  el bloque Primary volvería a saltarse.)
+- `faillock.conf` **sin `silent`**: la persona ve que la cuenta está bloqueada, en vez de creer
+  que olvidó la contraseña (mensajes honestos, como ADR-009).
+
 **Verificación:** `verify-hardening.sh`, un único script para live e instalado que comprueba
 actualizaciones automáticas (sin cambiarlas), cada sysctl de la lista y PAM.
 
@@ -52,14 +64,20 @@ actualizaciones automáticas (sin cambiarlas), cada sysctl de la lista y PAM.
 
 | Qué | Prueba | Pasa si |
 |---|---|---|
-| El verificador detecta cada ajuste roto | `pruebas/test-verify-hardening.sh` (raíz falsa, sin root). Rojo: 9/9 MAL sin verificador | 9/9 casos OK |
+| El verificador detecta cada ajuste roto | `pruebas/test-verify-hardening.sh` (raíz falsa, sin root). Rojo: 9/9 MAL sin verificador; después, 5 MAL con los casos de #47 | 13/13 casos OK |
 | Medición antes/después | `aplicar-en-vm.sh` en una VM bookworm: `lynis` y `verify-hardening` antes y después | El índice de lynis sube; `VEREDICTO: OK — 0 fallos` después |
 | No rompe herramientas | La misma ejecución: `tcpdump` en `lo`, `ping` sin root, `nimbo-audit --help`, `firefox-esr` | Todas funcionan |
-| No deja sin acceso | A mano en la VM (con snapshot y una sesión de root abierta): iniciar sesión, 5 fallos → bloqueo, `faillock --reset` | Entra, se bloquea y se desbloquea |
+| No deja sin acceso | A mano en la VM (con snapshot y una sesión de root abierta): iniciar sesión; **3 fallos → acierto → 2 fallos** (no debe bloquear); 5 fallos seguidos → bloqueo con el mensaje visible; `faillock --reset` | Entra, no bloquea tras el acierto, bloquea a los 5 y se desbloquea |
 | RF-CORE-04 CA-1/CA-2 | `verify-hardening.sh` en la ISO live y en el sistema instalado (QEMU, Juan José) | 0 fallos en ambos |
 | No empeora el resto | MATCH ×2 · hermetismo 0/0 · RAM < 500 MB | Sin cambios |
 
 ## Consecuencias
+
+- **`rp_filter = 1` frente a WireGuard (`nimbo-net`):** con túnel completo y rutas por
+  *fwmark*, el modo estricto puede descartar tráfico legítimo. Se mide con Alejandro cuando
+  exista `nimbo-net`. Si choca, `rp_filter = 2` (modo flexible) conserva casi todo el beneficio.
+- `aplicar-en-vm.sh` instala `lynis` con red solo en la VM de prueba; `lynis` **nunca** entra
+  en la receta de la ISO.
 
 - **Gana:** RF-CORE-04 con una verificación automatizada reutilizable que además cubre lo de
   3B.1, y pruebas que demuestran que detecta cada ajuste roto.

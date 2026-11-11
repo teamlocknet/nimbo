@@ -77,8 +77,11 @@ herramientas > "$SALIDA/herramientas-despues.txt"
   grep -v '^#' "$SALIDA/common-auth.nuevo" | sed '/^$/d'
   echo '```'
   echo
-  echo "FALTA A MANO (no se automatiza a propósito): cerrar sesión y volver a entrar con tu"
-  echo "usuario; equivocarte 5 veces y comprobar el bloqueo con 'sudo faillock --user <tú>';"
-  echo "desbloquear con 'sudo faillock --user <tú> --reset'. Anotar el resultado aquí."
+  echo "FALTA A MANO (no se automatiza a propósito), en otra consola (Ctrl+Alt+F3) y con una"
+  echo "sesión de root abierta en la primera:"
+  echo "  1. 3 contraseñas mal -> 1 bien (entra) -> 2 mal: NO debe bloquear (el acierto pone a cero)."
+  echo "  2. 5 mal seguidas: debe BLOQUEAR y decir que la cuenta está bloqueada."
+  echo "  3. 'sudo faillock --user <tú>' muestra los fallos; '--reset' desbloquea."
+  echo "Anotar el resultado de cada paso aquí."
 } | tee "$SALIDA/informe.md"
 exit "$RC"
