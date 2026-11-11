@@ -1,6 +1,6 @@
 # ADR-012 — Navegación segura: navegador endurecido y Tor con detección de fugas
 
-**Estado:** Propuesto (9-nov, Emmanuel) · **Valida:** Juan José, antes de implementar
+**Estado:** Aceptado (10-nov, Juan José, checkpoint en #45) · **Autor:** Emmanuel
 
 ## Contexto
 
@@ -20,8 +20,12 @@ Restricciones del proyecto (no negociables):
 - **Reproducible y offline:** solo paquetes de bookworm `main` del snapshot anclado (o un `.deb`
   propio). Nada se descarga en tiempo de ejecución.
 - **RAM < 500 MB en reposo** (se mide con el escritorio cargado y el navegador cerrado).
-- La base hoy **no trae** navegador, `tor`, `nftables` ni NetworkManager (listas de paquetes
-  de `iso/live-build/config/package-lists/`).
+- La base hoy **no trae** navegador ni `tor` ni NetworkManager. **`nftables` sí está en la ISO**
+  (1.0.6-2+deb12u2, en `live-image-amd64.packages`) con `nftables.service` deshabilitado: lo
+  nuevo es la tabla de nimbo, no el paquete. *(Errata de la versión Propuesta, que decía que
+  no lo traía.)*
+- La red tampoco se levanta sola: no hay ninguna interfaz configurada. La levanta a demanda
+  `sudo nimbo-red on` (ADR-019).
 
 ## Opciones
 
@@ -52,23 +56,37 @@ Restricciones del proyecto (no negociables):
 | Opción | A favor | En contra |
 |---|---|---|
 | D1. Solo la configuración del navegador (proxy SOCKS con DNS remoto) | Simple | Si un ajuste falla, nadie lo nota; no cubre otros procesos |
-| **D2. Configuración del navegador + cortafuegos que falla cerrado en modo Tor + contador** | Con `nftables`: en modo Tor solo puede salir el usuario `debian-tor` (más loopback); cualquier otro paquete saliente **se descarta y se cuenta**. El contador es el detector: si sube, `nimbo-leakcheck` avisa | Añade `nftables` a la ISO y toca la red del sistema: **es núcleo (checkpoint)** |
+| **D2. Configuración del navegador + cortafuegos que falla cerrado en modo Tor + contador** | Con `nftables`: en modo Tor solo puede salir el usuario `debian-tor` (más loopback); cualquier otro paquete saliente **se descarta y se cuenta**. El contador es el detector: si sube, `nimbo-leakcheck` avisa | Toca la red del sistema (la tabla, no el paquete, que ya está): **es núcleo (checkpoint)** |
 
-## Decisión (propuesta)
+## Decisión (aceptada el 10-nov con las condiciones de #45)
 
 1. **A1:** `firefox-esr` de bookworm, endurecido con `policies.json` (bloqueado) y preferencias
    del sistema. La lista inicial está abajo; `arkenfox/user.js` sirve **solo de referencia** de qué
    revisar, no se copia.
 2. **B1 + C1:** `tor` de bookworm, con el servicio **deshabilitado por defecto**.
-   `nimbo-tor on` lo arranca y abre Firefox con un **perfil Tor** separado (SOCKS5
+   El modo Tor lo arranca y lo para **una unidad systemd propia, `nimbo-modo-tor.service`**:
+   al arrancar, **tabla → tor → vigilante**; al parar, en orden inverso (vigilante → tor →
+   tabla). `nimbo-tor on/off` solo arranca o para esa unidad: no hay scripts con `sudo`
+   sueltos ni un CLI entero corriendo como root. La red la levanta antes `nimbo-red on`
+   (ADR-019); `nimbo-tor` no la configura. El navegador abre un **perfil Tor** separado (SOCKS5
    `127.0.0.1:9050`, `network.proxy.socks_remote_dns = true`, WebRTC apagado, sin prefetch ni
-   especulación). `nimbo-tor off` lo para. El listener 9050 es **solo loopback** y solo existe
-   mientras el modo está activo.
+   especulación, `privacy.resistFingerprinting = true` y
+   `privacy.resistFingerprinting.letterboxing = true`). El listener 9050 es **solo loopback** y
+   solo existe mientras el modo está activo.
+   **Nombre y textos:** el lanzador se llama "Navegar por Tor"; ni el lanzador ni el manual dicen
+   "Tor Browser" ni "anónimo". El límite se dice siempre igual: *"evita fugas de red; no protege
+   frente a la huella del navegador"*. Contrapartida declarada: en el perfil Tor el OCSP queda
+   apagado (`security.OCSP.enabled = 0`), para no hacer peticiones de revocación fuera de la
+   navegación.
 3. **D2:** en modo Tor, una tabla `nftables` propia de nimbo permite solo `lo` y el UID
    `debian-tor`; el resto se descarta con contador. `nimbo-leakcheck` lee el contador y las
    consultas DNS. Si encuentra algo, **avisa** (notificación en el escritorio y código de salida
    distinto de 0) y lo deja en un registro. Mientras el modo Tor está activo, **nada más sale a
-   la red**, incluido el navegador normal. Fuera del modo Tor, la tabla no existe.
+   la red**, incluido el navegador normal. Fuera del modo Tor, la tabla no existe y
+   `nftables.service` sigue deshabilitado. La tabla vive en su propio espacio
+   (`table inet nimbo_tor`) y **nunca** usa `flush ruleset`, para no pisar las reglas de
+   `nimbo-net` (WireGuard). En IPv6 se descarta todo el saliente que no sea link-local.
+   Cualquier cambio a la tabla o a la unidad es checkpoint de Juan José.
    **Excepción explícita, sin contar como fuga** (observación de Juan José en #44): el tráfico
    de puesta en marcha de la NIC que ya admite el criterio de hermetismo, es decir, DHCPv4
    (UDP 68 → 67) y NDP/RS de IPv6 link-local (ICMPv6 hacia `ff02::/16` y `fe80::/10`). Sin
@@ -112,8 +130,8 @@ ISO, que se mide aparte y sin red.
 
 - **Gana:** RF-NAV-01 y RF-NAV-02 con evidencia medida. La protección falla cerrada: si Tor cae,
   el perfil Tor no navega en vez de salir directo, y el cortafuegos descarta lo que se escape.
-- **Paga:** `firefox-esr` + `tor` + `nftables` hacen crecer la ISO. Instalados ocupan unos
-  272 MiB, 5.7 MiB y 0.2 MiB respectivamente (`Installed-Size` del snapshot, antes de la
+- **Paga:** `firefox-esr` y `tor` hacen crecer la ISO (`nftables` ya está). Instalados ocupan
+  unos 272 MiB y 5.7 MiB respectivamente (`Installed-Size` del snapshot, antes de la
   compresión del squashfs); el crecimiento real de la ISO **se mide** al integrar. La RAM en
   reposo no debería cambiar porque nada arranca solo; se mide igual. Endurecer Firefox es
   trabajo de medir y ajustar, no de una sola vez.
@@ -130,19 +148,21 @@ ISO, que se mide aparte y sin red.
   | `nftables` | `1.0.6-2+deb12u2` | bookworm | — |
 
   Al 30-nov el navegador llevará unos tres meses sin parches. Afecta a todo el sistema, pero el
-  navegador es lo más expuesto. **Propuesta:** (1) para v1, aceptarlo y declararlo en el
-  manual y en la sustentación, con la versión y la fecha; (2) **subir `NIMBO_SNAPSHOT` antes
-  del release v1.0** para que entre el último `firefox-esr` de `bookworm-security`. Lo segundo
-  cambia el SHA de toda la ISO y es **checkpoint de receta**: lo decide Juan José. No hace
-  falta anclar `debian-security` aparte: ya está anclado. Las actualizaciones posteriores en
-  campo dependen de RF-UPD-01 (`nimbo-update-offline`, dueño por decidir).
-- **Límite honesto:** el perfil Tor de Firefox **no** es Tor Browser: evita fugas de red, no el
-  *fingerprinting*. Se dirá así en el manual y en la sustentación.
-- **Checkpoints:** integrar los paquetes a la ISO (cambia el SHA) y la tabla `nftables` (red del
-  sistema) esperan el OK de Juan José.
-- **Abierto:** cómo se activa la red en la ISO (no hay NetworkManager) para navegar fuera de la
-  VM de prueba: se resuelve con Juan José en el checkpoint de integración.
+  navegador es lo más expuesto. **Decidido (#45):** (1) para v1 se acepta y se declara en el
+  manual y en la sustentación, con la versión y la fecha; (2) subir `NIMBO_SNAPSHOT` antes
+  del release v1.0 se decide en la revisión de alcance #2 del 16-nov (checkpoint de receta).
+  No hace falta anclar `debian-security` aparte: ya está anclado. Las actualizaciones
+  posteriores en campo van por `nimbo-update-offline` (ADR-013).
+- **Límite honesto (aceptado en #45):** el perfil Tor de Firefox **no** es Tor Browser. Texto
+  fijo para el lanzador, el manual y la sustentación: *"evita fugas de red; no protege frente
+  a la huella del navegador"*. `resistFingerprinting` y `letterboxing` reducen la brecha, pero
+  no la cierran.
+- **Checkpoints:** integrar los paquetes a la ISO (cambia el SHA) y cualquier cambio a la tabla
+  `nftables` o a `nimbo-modo-tor.service` esperan el OK de Juan José.
+- **Red (resuelto en #45 → ADR-019):** sin NetworkManager y offline por defecto. La red por cable
+  la levanta `sudo nimbo-red on` y la suelta `sudo nimbo-red off`. **Wi-Fi queda fuera de v1.**
+  El modo Tor da por hecho que la red ya está levantada.
 
 ## Fecha
 
-2026-11-09
+2026-11-09 (propuesto) · 2026-11-10 (aceptado)
