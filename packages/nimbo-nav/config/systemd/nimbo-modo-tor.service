@@ -1,0 +1,23 @@
+# nimbo-modo-tor.service — modo Tor de nimbo (ADR-012 aceptado, #45).
+# La arranca y la para `nimbo-tor on|off` (systemd pide la autorización con polkit).
+#
+# Falla cerrada y en orden:
+#   arranque: tabla nftables -> tor -> vigilante. Si la tabla no carga, tor NO arranca.
+#             Si tor no arranca, la tabla queda cargada: la red sigue cerrada (lo seguro).
+#   parada:   vigilante -> tor -> tabla.
+# SIN sección de instalación: nunca arranca sola, así que en reposo no existe (RNF-01).
+# La tabla vive en "table inet nimbo_tor"; nunca se vacía el ruleset entero (nimbo-net).
+# La red la levanta antes `nimbo-red on` (ADR-019). Cambios aquí = checkpoint de Juan José.
+[Unit]
+Description=nimbo: modo Tor (tabla nftables, tor y vigilante de fugas)
+Documentation=file:///usr/share/doc/nimbo-nav/README.md
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/sbin/nft -f /usr/share/nimbo-nav/nimbo-tor.nft
+ExecStart=/bin/systemctl start tor@default.service
+ExecStart=/bin/systemctl start nimbo-leakcheck.service
+ExecStop=/bin/systemctl stop nimbo-leakcheck.service
+ExecStop=/bin/systemctl stop tor@default.service
+ExecStop=/usr/sbin/nft delete table inet nimbo_tor

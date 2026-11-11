@@ -13,8 +13,9 @@ Implementa el [ADR-012](../../docs/adr/ADR-012-navegacion-segura-tor.md): RF-NAV
 | `config/firefox/nimbo-nav.js` | `/usr/lib/firefox-esr/defaults/pref/` | Preferencias que las políticas no cubren (telemetría de `toolkit.*`, Normandy, actualizaciones de extensiones y de complementos multimedia, Remote Settings) |
 | `config/tor/tor-user.js` | `/usr/share/nimbo-nav/` | Perfil Tor: SOCKS5 `127.0.0.1:9050`, DNS remoto, sin caída a directo, WebRTC e IPv6 apagados |
 | `config/nftables/nimbo-tor.nft` | `/usr/share/nimbo-nav/` | Tabla del modo Tor: solo sale `debian-tor`; lo demás se cuenta como fuga y se descarta |
-| `config/systemd/nimbo-leakcheck.service` | `/usr/lib/systemd/system/` | Vigilante de fugas, solo mientras el modo Tor está activo (sin `[Install]`) |
-| `config/applications/nimbo-navegar-tor.desktop` | `/usr/share/applications/` | Lanzador "Navegar por Tor (nimbo)" |
+| `config/systemd/nimbo-modo-tor.service` | `/usr/lib/systemd/system/` | El modo Tor: tabla → tor → vigilante; al parar, al revés. Sin `[Install]`: nunca arranca sola |
+| `config/systemd/nimbo-leakcheck.service` | `/usr/lib/systemd/system/` | Vigilante de fugas, solo mientras el modo Tor está activo; `Restart=on-failure` |
+| `config/applications/nimbo-navegar-tor.desktop` | `/usr/share/applications/` | Lanzador "Navegar por Tor" |
 | `src/nimbo_nav/` | Python 3.11, solo biblioteca estándar | `nimbo-tor`, `nimbo-leakcheck`, `nimbo-navegar-tor` |
 
 Al instalarse por primera vez, el `postinst` **deshabilita y para** el servicio de `tor`
@@ -24,15 +25,19 @@ que deja el paquete de Debian: tor no arranca solo (RNF-01).
 
 ```
 firefox-esr                 # navegador normal, endurecido (sin Tor)
-sudo nimbo-tor on           # carga la tabla (falla cerrada) y luego arranca tor
-nimbo-navegar-tor           # Firefox con el perfil Tor; avisa en el escritorio si hay fuga
-sudo nimbo-leakcheck        # comprobación puntual: 0 = sin fugas · 1 = FUGA · 2 = modo apagado
-sudo nimbo-tor off          # para tor y vuelve a la red normal
+sudo nimbo-red on           # levanta la red por cable (ADR-019); sin red no hay Tor
+nimbo-tor on                # arranca nimbo-modo-tor.service (systemd pide autorización)
+nimbo-navegar-tor           # Firefox con el perfil Tor; avisa si hay fuga o si el vigilante falla
+sudo nimbo-leakcheck        # 0 = sin fugas · 1 = FUGA · 2 = modo apagado · 3 = no se pudo comprobar
+nimbo-tor off               # para el modo Tor (vigilante -> tor -> tabla)
+sudo nimbo-red off          # suelta la red
 ```
 
 Mientras el modo Tor está activo, **solo tor sale a la red** (también el navegador normal
-queda sin red). El perfil Tor de Firefox **no es Tor Browser**: evita fugas de red, no el
-*fingerprinting* (ADR-012, límite declarado).
+queda sin red). Límite declarado (ADR-012): *"evita fugas de red; no protege frente a la
+huella del navegador"*. El perfil Tor lleva `resistFingerprinting` y `letterboxing`, que
+reducen la brecha con Tor Browser pero no la cierran, y el **OCSP apagado** (no consulta la
+revocación de certificados, para no hacer peticiones fuera de la navegación).
 
 ## Pruebas
 

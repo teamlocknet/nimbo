@@ -1,8 +1,10 @@
 """nimbo-navegar-tor — abre firefox-esr con el perfil Tor y avisa si hay fugas.
 
 Se ejecuta como el usuario (sin sudo). Exige que el modo Tor esté activo
-(`sudo nimbo-tor on`). Mientras el navegador está abierto, lee el estado que deja
-nimbo-leakcheck y muestra una notificación de escritorio si aparece una fuga (HU-08 CA-3).
+(`nimbo-tor on`). Mientras el navegador está abierto, lee el estado que deja el
+vigilante y muestra una notificación si algo va mal (HU-08 CA-3). Falla hacia el aviso:
+"sin estado", "estado viejo" o "vigilante en error" también avisan; nunca se toman
+por "limpio".
 """
 from __future__ import annotations
 
@@ -20,6 +22,7 @@ from .leakcheck import RUTA_ESTADO
 
 PLANTILLA = Path("/usr/share/nimbo-nav/tor-user.js")
 PERFIL = Path.home() / ".local" / "share" / "nimbo-nav" / "perfil-tor"
+MAX_EDAD_S = 10.0  # el vigilante escribe cada 2 s; más de 10 s sin cambios = algo va mal
 
 
 def leer_estado(ruta: Path) -> dict | None:
@@ -29,14 +32,22 @@ def leer_estado(ruta: Path) -> dict | None:
         return None
 
 
-def debe_avisar(anterior: dict | None, actual: dict | None) -> bool:
-    """Avisa cuando aumentan los paquetes descartados o las conexiones fuera de Tor."""
-    if not actual or not actual.get("modo_tor"):
-        return False
-    previo_p = (anterior or {}).get("paquetes_descartados", 0)
-    previo_c = len((anterior or {}).get("conexiones", []))
-    return (actual.get("paquetes_descartados", 0) > previo_p
-            or len(actual.get("conexiones", [])) > previo_c)
+def motivo_aviso(estado: dict | None, ahora: float) -> str | None:
+    """Texto del aviso, o None si todo está bien."""
+    if not estado:
+        return "el vigilante de fugas no está funcionando (no hay estado)"
+    if estado.get("vigilante") == "error":
+        return f"el vigilante de fugas tiene un error: {estado.get('error', 'desconocido')}"
+    if ahora - float(estado.get("actualizado", 0)) > MAX_EDAD_S:
+        return "el vigilante de fugas no se actualiza (puede haberse detenido)"
+    if not estado.get("modo_tor"):
+        return "el modo Tor se ha apagado"
+    paquetes = estado.get("paquetes_descartados", 0)
+    conexiones = len(estado.get("conexiones", []))
+    if paquetes or conexiones:
+        return (f"posible FUGA: {paquetes} paquetes bloqueados fuera de Tor y "
+                f"{conexiones} conexiones directas. Detalle: sudo nimbo-leakcheck")
+    return None
 
 
 def preparar_perfil(perfil: Path, plantilla: Path) -> None:
@@ -45,12 +56,8 @@ def preparar_perfil(perfil: Path, plantilla: Path) -> None:
     shutil.copyfile(plantilla, perfil / "user.js")
 
 
-def avisar(estado: dict) -> None:
-    texto = (f"{estado.get('paquetes_descartados', 0)} paquetes bloqueados fuera de Tor; "
-             f"{len(estado.get('conexiones', []))} conexiones directas. "
-             "Detalle: sudo nimbo-leakcheck")
-    subprocess.run(["notify-send", "--urgency=critical", "nimbo: posible FUGA fuera de Tor", texto],
-                   check=False)
+def avisar(texto: str) -> None:
+    subprocess.run(["notify-send", "--urgency=critical", "nimbo: modo Tor", texto], check=False)
     print(f"nimbo-navegar-tor: AVISO — {texto}", file=sys.stderr)
 
 
@@ -66,24 +73,23 @@ def main(argv: list[str] | None = None, ruta_estado: Path = Path(RUTA_ESTADO),
 
     estado = leer_estado(ruta_estado)
     if not estado or not estado.get("modo_tor"):
-        print("nimbo-navegar-tor: el modo Tor no está activo. Primero: sudo nimbo-tor on")
+        print("nimbo-navegar-tor: el modo Tor no está activo. Primero: "
+              "sudo nimbo-red on && nimbo-tor on")
         return 2
 
     preparar_perfil(args.perfil, PLANTILLA)
     proceso = lanzar(args.perfil)
     if not isinstance(proceso, subprocess.Popen):
         return 0
-    anterior = estado
-    if debe_avisar(None, estado):
-        avisar(estado)
-    while proceso.poll() is None:
+    ultimo = None
+    while True:
+        motivo = motivo_aviso(leer_estado(ruta_estado), time.time())
+        if motivo and motivo != ultimo:
+            avisar(motivo)
+        ultimo = motivo
+        if proceso.poll() is not None:
+            return 0
         time.sleep(2)
-        actual = leer_estado(ruta_estado)
-        if debe_avisar(anterior, actual):
-            avisar(actual)
-        if actual:
-            anterior = actual
-    return 0
 
 
 if __name__ == "__main__":

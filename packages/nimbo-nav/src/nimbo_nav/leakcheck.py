@@ -3,11 +3,13 @@
 Códigos de salida:
   0  modo Tor activo y sin fugas
   1  FUGA: paquetes descartados por la tabla o conexiones directas de otros procesos
-  2  el modo Tor no está activo (o no se pudo leer el estado)
+  2  el modo Tor no está activo
+  3  no se pudo comprobar (falló `ss` u otra herramienta): NO se da por limpio
 
 Necesita root para leer el contador de nftables. Con --vigilar lo arranca
 nimbo-leakcheck.service y deja el estado en /run/nimbo-nav/leakcheck.json, que
-nimbo-navegar-tor lee para avisar al usuario en el escritorio.
+nimbo-navegar-tor lee para avisar al usuario. Un fallo en una vuelta NO detiene el
+vigilante: se escribe "vigilante": "error" y se reintenta en la siguiente.
 """
 from __future__ import annotations
 
@@ -31,28 +33,47 @@ CMD_SOCKETS = ["ss", "-Htunp"]
 Ejecutor = Callable[[list[str]], str]
 
 
+class NoSePudoComprobar(Exception):
+    """Falló una herramienta: el resultado es desconocido, nunca 'limpio'."""
+
+
 def ejecutar_sistema(argv: list[str]) -> str:
     return subprocess.run(argv, check=True, capture_output=True, text=True).stdout
 
 
 def comprobar(ejecutar: Ejecutor) -> Resultado | None:
-    """Resultado de la comprobación, o None si el modo Tor no está activo."""
+    """Resultado, o None si el modo Tor no está activo (no existe la tabla).
+
+    Lanza NoSePudoComprobar si la tabla existe pero no se pueden leer los sockets.
+    """
     try:
         paquetes = leer_contador(ejecutar(CMD_CONTADOR))
     except (subprocess.CalledProcessError, ValueError, FileNotFoundError):
         return None
-    return evaluar(paquetes, conexiones_fuera_de_tor(ejecutar(CMD_SOCKETS)))
+    try:
+        salida_ss = ejecutar(CMD_SOCKETS)
+    except (subprocess.CalledProcessError, FileNotFoundError, OSError) as e:
+        raise NoSePudoComprobar(f"ss falló: {e}") from e
+    return evaluar(paquetes, conexiones_fuera_de_tor(salida_ss))
 
 
-def estado_json(resultado: Resultado | None) -> dict:
+def estado_json(resultado: Resultado | None, ahora: float) -> dict:
     if resultado is None:
-        return {"modo_tor": False, "limpio": None, "paquetes_descartados": 0, "conexiones": []}
+        return {"modo_tor": False, "vigilante": "ok", "actualizado": ahora, "limpio": None,
+                "paquetes_descartados": 0, "conexiones": []}
     return {
         "modo_tor": True,
+        "vigilante": "ok",
+        "actualizado": ahora,
         "limpio": resultado.limpio,
         "paquetes_descartados": resultado.paquetes_descartados,
         "conexiones": [asdict(c) for c in resultado.conexiones],
     }
+
+
+def estado_error(error: str, ahora: float) -> dict:
+    return {"modo_tor": True, "vigilante": "error", "error": error, "actualizado": ahora,
+            "limpio": None, "paquetes_descartados": 0, "conexiones": []}
 
 
 def escribir_estado(ruta: Path, datos: dict) -> None:
@@ -65,9 +86,19 @@ def escribir_estado(ruta: Path, datos: dict) -> None:
     os.replace(tmp, ruta)
 
 
+def vuelta_vigilante(ruta: Path, ejecutar: Ejecutor, ahora: Callable[[], float] = time.time) -> dict:
+    """Una comprobación del vigilante. Nunca lanza: cualquier fallo queda en el estado."""
+    try:
+        datos = estado_json(comprobar(ejecutar), ahora())
+    except Exception as e:  # noqa: BLE001 — el vigilante no puede morir en silencio
+        datos = estado_error(str(e), ahora())
+    escribir_estado(Path(ruta), datos)
+    return datos
+
+
 def informar(resultado: Resultado | None) -> int:
     if resultado is None:
-        print("nimbo-leakcheck: el modo Tor no está activo (ejecuta: sudo nimbo-tor on)")
+        print("nimbo-leakcheck: el modo Tor no está activo (actívalo con: nimbo-tor on)")
         return 2
     if resultado.limpio:
         print("nimbo-leakcheck: OK — 0 fugas (modo Tor activo)")
@@ -81,7 +112,8 @@ def informar(resultado: Resultado | None) -> int:
     return 1
 
 
-def main(argv: list[str] | None = None, ejecutar: Ejecutor = ejecutar_sistema) -> int:
+def main(argv: list[str] | None = None, ejecutar: Ejecutor = ejecutar_sistema,
+         dormir: Callable[[float], None] = time.sleep) -> int:
     p = argparse.ArgumentParser(prog="nimbo-leakcheck", description=__doc__.splitlines()[0])
     p.add_argument("--estado", help="escribe el resultado en este fichero JSON")
     p.add_argument("--vigilar", action="store_true",
@@ -92,12 +124,18 @@ def main(argv: list[str] | None = None, ejecutar: Ejecutor = ejecutar_sistema) -
     if args.vigilar:
         ruta = Path(args.estado or RUTA_ESTADO)
         while True:
-            escribir_estado(ruta, estado_json(comprobar(ejecutar)))
-            time.sleep(args.intervalo)
+            vuelta_vigilante(ruta, ejecutar)
+            dormir(args.intervalo)
 
-    resultado = comprobar(ejecutar)
+    try:
+        resultado = comprobar(ejecutar)
+    except NoSePudoComprobar as e:
+        if args.estado:
+            escribir_estado(Path(args.estado), estado_error(str(e), time.time()))
+        print(f"nimbo-leakcheck: ERROR — no se pudo comprobar ({e}). No se da por limpio.")
+        return 3
     if args.estado:
-        escribir_estado(Path(args.estado), estado_json(resultado))
+        escribir_estado(Path(args.estado), estado_json(resultado, time.time()))
     return informar(resultado)
 
 

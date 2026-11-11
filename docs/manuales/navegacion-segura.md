@@ -21,20 +21,29 @@
 | Quiero… | Comando |
 |---|---|
 | Navegar normal (sin Tor) | Menú → Firefox, o `firefox-esr` |
-| Activar el modo Tor | `sudo nimbo-tor on` |
-| Navegar por Tor | Menú → "Navegar por Tor (nimbo)", o `nimbo-navegar-tor` |
-| Comprobar que no hay fugas | `sudo nimbo-leakcheck` → `0` sin fugas · `1` FUGA · `2` modo apagado |
+| Levantar la red por cable (sin red no hay Tor) | `sudo nimbo-red on` |
+| Activar el modo Tor | `nimbo-tor on` (el sistema pide tu contraseña) |
+| Navegar por Tor | Menú → "Navegar por Tor", o `nimbo-navegar-tor` |
+| Comprobar que no hay fugas | `sudo nimbo-leakcheck` → `0` sin fugas · `1` FUGA · `2` modo apagado · `3` no se pudo comprobar |
 | Ver los paquetes bloqueados | `sudo journalctl -k \| grep nimbo-fuga` |
-| Saber si el modo está activo | `sudo nimbo-tor estado` |
-| Volver a la red normal | `sudo nimbo-tor off` |
+| Saber si el modo está activo | `nimbo-tor estado` |
+| Apagar el modo Tor | `nimbo-tor off` |
+| Soltar la red | `sudo nimbo-red off` |
 
 **Mientras el modo Tor está activo, solo Tor sale a la red**: el navegador normal y
 cualquier otro programa se quedan sin red. Es a propósito.
 
 ## Lo que NO hace (límites declarados)
 
-- El perfil Tor de Firefox **no es Tor Browser**: evita fugas de red, pero no iguala la
-  protección de Tor Browser contra la identificación del navegador (*fingerprinting*).
+- **Evita fugas de red; no protege frente a la huella del navegador.** El perfil Tor no es
+  Tor Browser: lleva `resistFingerprinting` y `letterboxing`, que reducen la diferencia pero
+  no la eliminan.
+- **OCSP apagado en el perfil Tor** (`security.OCSP.enabled = 0`): el navegador no consulta
+  si un certificado fue revocado, para no hacer peticiones fuera de la navegación. Es una
+  contrapartida aceptada: un certificado revocado pero aún válido no se detectaría.
+- **El aviso falla hacia la alerta:** si el vigilante de fugas se detiene, da error o deja de
+  actualizarse, el navegador avisa igual que ante una fuga. Nunca se toma por "limpio".
+- Solo red por cable (ADR-019). Wi-Fi queda fuera de v1.
 - El navegador queda en la versión del snapshot de la ISO (`firefox-esr`
   140.14.0esr-1~deb12u1, publicada el 21-ago-2026) y no se actualiza solo (ADR-012).
 

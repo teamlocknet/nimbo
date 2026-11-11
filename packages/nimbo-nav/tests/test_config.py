@@ -142,3 +142,43 @@ def test_vigilante_no_se_habilita_nunca():
     assert "[Install]" not in [l.strip() for l in unidad.splitlines() if not l.startswith("#")]
     assert "ExecStart=/usr/bin/nimbo-leakcheck --vigilar" in unidad
     assert "--no-enable --no-start" in (RAIZ / "debian" / "rules").read_text(encoding="utf-8")
+
+
+# --- ADR-012 aceptado (#45) ---------------------------------------------------------------
+
+def test_perfil_tor_reduce_la_huella_del_navegador():
+    prefs = _prefs(CONFIG / "tor" / "tor-user.js")
+    assert prefs.get("privacy.resistFingerprinting") is True
+    assert prefs.get("privacy.resistFingerprinting.letterboxing") is True
+
+
+def _sin_comentarios(ruta):
+    return [l.strip() for l in ruta.read_text(encoding="utf-8").splitlines()
+            if l.strip() and not l.lstrip().startswith("#")]
+
+
+def test_unidad_modo_tor_falla_cerrada_y_en_orden():
+    lineas = _sin_comentarios(CONFIG / "systemd" / "nimbo-modo-tor.service")
+    arranque = [l for l in lineas if l.startswith("ExecStart=")]
+    parada = [l for l in lineas if l.startswith("ExecStop=")]
+    assert arranque == [
+        "ExecStart=/usr/sbin/nft -f /usr/share/nimbo-nav/nimbo-tor.nft",
+        "ExecStart=/bin/systemctl start tor@default.service",
+        "ExecStart=/bin/systemctl start nimbo-leakcheck.service",
+    ]
+    assert parada == [
+        "ExecStop=/bin/systemctl stop nimbo-leakcheck.service",
+        "ExecStop=/bin/systemctl stop tor@default.service",
+        "ExecStop=/usr/sbin/nft delete table inet nimbo_tor",
+    ]
+    assert "Type=oneshot" in lineas and "RemainAfterExit=yes" in lineas
+    assert "[Install]" not in lineas  # nunca arranca sola
+    assert not any("flush ruleset" in l for l in lineas)
+
+
+def test_lanzador_no_promete_anonimato():
+    texto = (CONFIG / "applications" / "nimbo-navegar-tor.desktop").read_text(encoding="utf-8")
+    assert "Name=Navegar por Tor\n" in texto
+    for prohibido in ("Tor Browser", "anónim", "anonim"):
+        assert prohibido not in texto
+    assert "no protege frente a la huella del navegador" in texto

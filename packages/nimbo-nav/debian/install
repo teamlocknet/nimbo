@@ -4,3 +4,4 @@ config/tor/tor-user.js usr/share/nimbo-nav/
 config/nftables/nimbo-tor.nft usr/share/nimbo-nav/
 config/systemd/nimbo-leakcheck.service usr/lib/systemd/system/
 config/applications/nimbo-navegar-tor.desktop usr/share/applications/
+config/systemd/nimbo-modo-tor.service usr/lib/systemd/system/
