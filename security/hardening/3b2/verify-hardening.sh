@@ -26,10 +26,10 @@ SYSCTL="${NIMBO_SYSCTL:-sysctl}"
 SYSTEMCTL="${NIMBO_SYSTEMCTL:-systemctl}"
 if [ -n "${NIMBO_REF_SYSCTL:-}" ]; then
   REF="$NIMBO_REF_SYSCTL"
-elif [ -f "$HERE/sysctl/99-nimbo-hardening.conf" ]; then
-  REF="$HERE/sysctl/99-nimbo-hardening.conf"
+elif [ -f "$HERE/sysctl/99-zz-nimbo-hardening.conf" ]; then
+  REF="$HERE/sysctl/99-zz-nimbo-hardening.conf"
 else
-  REF="/usr/share/nimbo/hardening/99-nimbo-hardening.conf"
+  REF="/usr/share/nimbo/hardening/99-zz-nimbo-hardening.conf"
 fi
 
 fallos=0
@@ -57,10 +57,10 @@ fi
 
 # --- 2. sysctl ----------------------------------------------------------------------------
 echo "== Parámetros del kernel (sysctl)"
-if [ -f "$RAIZ/etc/sysctl.d/99-nimbo-hardening.conf" ]; then
-  ok "sysctl persistente /etc/sysctl.d/99-nimbo-hardening.conf"
+if [ -f "$RAIZ/etc/sysctl.d/99-zz-nimbo-hardening.conf" ]; then
+  ok "sysctl persistente /etc/sysctl.d/99-zz-nimbo-hardening.conf"
 else
-  fallo "sysctl persistente: falta /etc/sysctl.d/99-nimbo-hardening.conf"
+  fallo "sysctl persistente: falta /etc/sysctl.d/99-zz-nimbo-hardening.conf"
 fi
 while IFS= read -r linea; do
   linea="${linea%%#*}"

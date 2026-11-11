@@ -19,8 +19,8 @@ PR-B de `nimbo-audit` (#42).
 |---|---|
 | `config/package-lists/nav.list.chroot` | `nimbo-nav` (arrastra `firefox-esr`, `tor`, `nftables`, `libnotify-bin` desde el snapshot) |
 | `config/hooks/normal/0185-nimbo-nav.hook.chroot` | Como 0180: `apt-mark manual nimbo-nav`; comprobar que `tor@default.service` **no** está habilitado; que existen `/etc/firefox/policies/policies.json` y `/usr/share/nimbo-nav/nimbo-tor.nft`; `nimbo-tor --help`. Debe ir **antes** de 0200 (pool local) |
-| `config/includes.chroot/etc/sysctl.d/99-nimbo-hardening.conf` | Copia de `security/hardening/3b2/sysctl/` |
-| `config/includes.chroot/usr/share/nimbo/hardening/99-nimbo-hardening.conf` | Lista de referencia del verificador |
+| `config/includes.chroot/etc/sysctl.d/99-zz-nimbo-hardening.conf` | Copia de `security/hardening/3b2/sysctl/` |
+| `config/includes.chroot/usr/share/nimbo/hardening/99-zz-nimbo-hardening.conf` | Lista de referencia del verificador |
 | `config/includes.chroot/etc/security/faillock.conf` y `usr/share/pam-configs/nimbo-faillock*` | Copias de `security/hardening/3b2/pam/` |
 | `config/includes.chroot/usr/lib/nimbo/verify-hardening` | `security/hardening/3b2/verify-hardening.sh` (modo 0755) |
 | `config/hooks/normal/0170-nimbo-hardening-3b2.hook.chroot` | `pam-auth-update --package --enable nimbo-faillock nimbo-faillock-preauth` y comprobar que `common-auth` lleva `pam_faillock` |

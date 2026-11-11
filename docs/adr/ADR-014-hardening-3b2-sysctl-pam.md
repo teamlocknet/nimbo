@@ -26,7 +26,7 @@ sistema instalado."* (HU-04 CA-1/CA-2/CA-3).
 
 ## Decisión (propuesta): B
 
-**sysctl** (`security/hardening/3b2/sysctl/99-nimbo-hardening.conf` → `/etc/sysctl.d/`):
+**sysctl** (`security/hardening/3b2/sysctl/99-zz-nimbo-hardening.conf` → `/etc/sysctl.d/`):
 
 | Grupo | Parámetros | Por qué |
 |---|---|---|

@@ -7,7 +7,7 @@
 
 - **Actualizaciones automáticas deshabilitadas.** Lo cerró 3B.1 (Juan José); aquí solo se
   verifica que sigue cerrado.
-- **Parámetros del kernel restrictivos** (33, en `/etc/sysctl.d/99-nimbo-hardening.conf`).
+- **Parámetros del kernel restrictivos** (33, en `/etc/sysctl.d/99-zz-nimbo-hardening.conf`).
   Ocultan información del kernel a usuarios sin privilegios, cierran BPF y kexec, protegen
   procesos y enlaces de ficheros, y hacen que el equipo no acepte desvíos de tráfico de la
   red del cliente.

@@ -42,9 +42,9 @@ bash "$HERE/verify-hardening.sh" > "$SALIDA/verify-antes.txt" 2>&1 || true
 herramientas > "$SALIDA/herramientas-antes.txt"
 
 echo ">> Aplicando sysctl y PAM"
-install -m 0644 "$HERE/sysctl/99-nimbo-hardening.conf" /etc/sysctl.d/
+install -m 0644 "$HERE/sysctl/99-zz-nimbo-hardening.conf" /etc/sysctl.d/
 mkdir -p /usr/share/nimbo/hardening
-install -m 0644 "$HERE/sysctl/99-nimbo-hardening.conf" /usr/share/nimbo/hardening/
+install -m 0644 "$HERE/sysctl/99-zz-nimbo-hardening.conf" /usr/share/nimbo/hardening/
 sysctl --system > "$SALIDA/sysctl-system.txt" 2>&1
 cp -a /etc/security/faillock.conf "$SALIDA/faillock.conf.original" 2>/dev/null || true
 install -m 0644 "$HERE/pam/faillock.conf" /etc/security/faillock.conf
