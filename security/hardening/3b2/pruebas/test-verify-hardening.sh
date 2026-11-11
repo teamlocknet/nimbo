@@ -24,12 +24,19 @@ preparar() {  # crea una raíz falsa correcta en $T
 auth	requisite			pam_faillock.so preauth
 auth	[success=1 default=ignore]	pam_unix.so nullok
 auth	[default=die]			pam_faillock.so authfail
-auth	sufficient			pam_faillock.so authsucc
 auth	requisite			pam_deny.so
 auth	required			pam_permit.so
 PAM
   printf 'password\t[success=1 default=ignore]\tpam_unix.so obscure yescrypt\n' \
     > "$T/root/etc/pam.d/common-password"
+  # Fase account: pone a cero el contador tras un acierto (revisión de #47). Va en el
+  # bloque Additional, DESPUÉS del salto de pam_unix, para que se ejecute siempre.
+  cat > "$T/root/etc/pam.d/common-account" <<'PAM'
+account	[success=1 new_authtok_reqd=done default=ignore]	pam_unix.so
+account	requisite			pam_deny.so
+account	required			pam_permit.so
+account	required			pam_faillock.so
+PAM
   # Valores "en ejecución" = los de referencia
   grep -vE '^\s*(#|$)' "$BASE/sysctl/99-nimbo-hardening.conf" | sed 's/ *= */=/' > "$T/valores"
   printf 'apt-daily.timer=masked\napt-daily-upgrade.timer=masked\n' > "$T/unidades"
@@ -89,6 +96,20 @@ caso "sin faillock preauth falla" 1 "FALLO pam faillock preauth"
 preparar; sed -i '1{h;d};2{G}' "$T/root/etc/pam.d/common-auth"; correr
 caso "faillock preauth después de pam_unix falla" 1 "FALLO pam faillock preauth"
 
+preparar; sed -i '/pam_faillock/d' "$T/root/etc/pam.d/common-account"; correr
+caso "sin faillock en account falla (el contador no se pone a cero)" 1 "FALLO pam faillock account"
+
+preparar
+printf 'account\t[success=1 new_authtok_reqd=done default=ignore]\tpam_faillock.so\naccount\t[success=1 new_authtok_reqd=done default=ignore]\tpam_unix.so\naccount\trequisite\t\t\tpam_deny.so\naccount\trequired\t\t\tpam_permit.so\n' \
+  > "$T/root/etc/pam.d/common-account"; correr
+caso "faillock en account antes de pam_unix (bloque Primary) falla" 1 "FALLO pam faillock account"
+
+preparar; printf 'auth\tsufficient\t\t\tpam_faillock.so authsucc\n' >> "$T/root/etc/pam.d/common-auth"; correr
+caso "authsucc (código muerto) falla" 1 "FALLO pam faillock authsucc"
+
+preparar; printf 'silent\n' >> "$T/root/etc/security/faillock.conf"; correr
+caso "silent en faillock.conf falla (mensajes honestos, ADR-009)" 1 "FALLO pam faillock.conf silent"
+
 preparar; sed -i 's/^deny = .*/deny = 0/' "$T/root/etc/security/faillock.conf"; correr
 caso "faillock deny desactivado falla" 1 "FALLO pam faillock.conf deny"
 
@@ -96,6 +117,6 @@ preparar; printf 'password\trequisite\tpam_pwquality.so retry=3\n' >> "$T/root/e
 caso "pam_pwquality obligatorio falla (RF-CORE-03)" 1 "FALLO pam pwquality"
 
 echo
-if [ "$fallos" -eq 0 ]; then echo "RESULTADO: 9/9 casos OK"; exit 0; fi
+if [ "$fallos" -eq 0 ]; then echo "RESULTADO: 13/13 casos OK"; exit 0; fi
 echo "RESULTADO: $fallos casos MAL"
 exit 1
