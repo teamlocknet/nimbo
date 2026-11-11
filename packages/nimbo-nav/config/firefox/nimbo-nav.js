@@ -1,5 +1,7 @@
 // nimbo-nav — preferencias por defecto de firefox-esr (ADR-012, RF-NAV-01).
-// Se instala en /usr/lib/firefox-esr/defaults/pref/: Firefox lo lee siempre al arrancar.
+// Se instala en /etc/firefox-esr/: es el mecanismo de Debian para las preferencias del
+// sistema (firefox-esr NO aplicaba este fichero en /usr/lib/firefox-esr/defaults/pref/;
+// medido en una VM Debian 12 el 10-nov).
 // Cubre lo que la política "Preferences" de policies.json no admite (prefijos
 // toolkit.*, datareporting.*, app.normandy.*, services.*, extensions.*, media.gmp-*).
 // Cada ajuste se confirma con el pcap en reposo (pruebas/prueba-reposo-navegador.sh).
@@ -42,7 +44,8 @@ pref("media.gmp-widevinecdm.enabled", false);
 // DNS sobre HTTPS apagado (modo 5 = desactivado a propósito)
 pref("network.trr.mode", 5);
 
-// Remote Settings: EXPERIMENTAL. Sin servidor no hay sincronización al arrancar.
-// Pendiente de medir que el navegador siga funcionando (ADR-012, "pendiente de medir").
+// Remote Settings: sin servidor no hay sincronización al arrancar. Firefox release solo
+// respeta esta preferencia con MOZ_REMOTE_SETTINGS_DEVTOOLS=1 (config/x11/90nimbo-firefox).
+// Queda una descarga de adjuntos (firefox-settings-attachments) sin explicar: ver evidencia.
 pref("services.settings.server", "data:,");
 pref("services.settings.poll_interval", 0);

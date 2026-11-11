@@ -9,8 +9,8 @@ Implementa el [ADR-012](../../docs/adr/ADR-012-navegacion-segura-tor.md): RF-NAV
 
 | Fichero | Destino | Para qué |
 |---|---|---|
-| `config/firefox/policies.json` | `/etc/firefox/policies/` | Políticas bloqueadas: sin telemetría, estudios, Pocket, cuentas, DoH, portal cautivo, sugerencias ni Safe Browsing (RF-NAV-01) |
-| `config/firefox/nimbo-nav.js` | `/usr/lib/firefox-esr/defaults/pref/` | Preferencias que las políticas no cubren (telemetría de `toolkit.*`, Normandy, actualizaciones de extensiones y de complementos multimedia, Remote Settings) |
+| `config/firefox/policies.json` | `/usr/lib/firefox-esr/distribution/` | Políticas bloqueadas: sin telemetría, estudios, Pocket, cuentas, DoH, portal cautivo, sugerencias ni Safe Browsing (RF-NAV-01) |
+| `config/firefox/nimbo-nav.js` | `/etc/firefox-esr/` (mecanismo de Debian) | Preferencias que las políticas no cubren (telemetría de `toolkit.*`, Normandy, actualizaciones de extensiones y de complementos multimedia, Remote Settings) |
 | `config/tor/tor-user.js` | `/usr/share/nimbo-nav/` | Perfil Tor: SOCKS5 `127.0.0.1:9050`, DNS remoto, sin caída a directo, WebRTC e IPv6 apagados |
 | `config/nftables/nimbo-tor.nft` | `/usr/share/nimbo-nav/` | Tabla del modo Tor: solo sale `debian-tor`; lo demás se cuenta como fuga y se descarta |
 | `config/systemd/nimbo-modo-tor.service` | `/usr/lib/systemd/system/` | El modo Tor: tabla → tor → vigilante; al parar, al revés. Sin `[Install]`: nunca arranca sola |

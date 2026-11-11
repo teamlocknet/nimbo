@@ -185,3 +185,31 @@ def test_lanzador_no_promete_anonimato():
     for prohibido in ("Tor Browser", "anónim", "anonim"):
         assert prohibido not in texto
     assert "no protege frente a la huella del navegador" in texto
+
+
+# --- Rutas que firefox-esr de Debian lee DE VERDAD (medido en una VM Debian 12, 10-nov) ---
+# /etc/firefox/policies y /usr/lib/firefox-esr/defaults/pref NO se aplicaban: Normandy,
+# aus5, classify-client y services.addons seguían conectándose con el navegador en reposo.
+
+def _destinos():
+    destinos = {}
+    for linea in (RAIZ / "debian" / "install").read_text(encoding="utf-8").splitlines():
+        if linea.strip():
+            origen, destino = linea.split()
+            destinos[origen] = destino
+    return destinos
+
+
+def test_politicas_en_el_directorio_distribution_de_firefox_esr():
+    assert _destinos()["config/firefox/policies.json"] == "usr/lib/firefox-esr/distribution/"
+
+
+def test_preferencias_en_etc_firefox_esr_el_mecanismo_de_debian():
+    assert _destinos()["config/firefox/nimbo-nav.js"] == "etc/firefox-esr/"
+
+
+def test_sesion_grafica_activa_el_apagado_de_remote_settings():
+    # En Firefox release, services.settings.server solo se respeta con esta variable.
+    script = (CONFIG / "x11" / "90nimbo-firefox").read_text(encoding="utf-8")
+    assert "export MOZ_REMOTE_SETTINGS_DEVTOOLS=1" in script
+    assert _destinos()["config/x11/90nimbo-firefox"] == "etc/X11/Xsession.d/"
