@@ -11,6 +11,7 @@ Build-Depends:
  python3-pytest,
  gpg,
  gpgv,
+ gpg-agent,
 Standards-Version: 4.6.2
 Homepage: https://github.com/teamlocknet/nimbo
 Rules-Requires-Root: no
