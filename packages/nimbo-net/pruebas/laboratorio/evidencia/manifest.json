@@ -1,0 +1,7 @@
+{
+  "iso": "/home/nimbo/Projects/nimbo/iso/live-build/live-image-amd64.hybrid.iso",
+  "iso_sha256": "243769073218934f7813cb8c10978a401937fdcbe5101e3b5305c6509f8cbe9f",
+  "port": 41721,
+  "base_commit": "682193648ecea7ef9d4a768f2a8f3e3215255d79",
+  "tipo": "live de laboratorio, no ISO integrada"
+}

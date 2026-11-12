@@ -1,0 +1,1031 @@
+[
+  {
+    "node": "A",
+    "cmd": "profile",
+    "response": {
+      "ok": true,
+      "result": {
+        "perfil_preparado": true
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "profile",
+    "response": {
+      "ok": true,
+      "result": {
+        "perfil_preparado": true
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "join",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-net: esperando al par; ejecuta join en ambos equipos\nnimbo-net: conectado; handshake y trafico al par comprobados\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "join",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-net: esperando al par; ejecuta join en ambos equipos\nnimbo-net: conectado; handshake y trafico al par comprobados\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "tor_on",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 2,
+        "output": "nimbo-tor: la red del equipo (nimbo-net) est\u00e1 activa. El modo Tor y nimbo-net no pueden estar activos a la vez en v1. Primero: nimbo-net leave\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "coexistence",
+    "response": {
+      "ok": true,
+      "result": {
+        "tor": "inactive",
+        "links": [
+          {
+            "ifindex": 1,
+            "ifname": "lo",
+            "flags": [
+              "LOOPBACK",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 65536,
+            "qdisc": "noqueue",
+            "operstate": "UNKNOWN",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "loopback",
+            "address": "00:00:00:00:00:00",
+            "broadcast": "00:00:00:00:00:00"
+          },
+          {
+            "ifindex": 2,
+            "ifname": "ens3",
+            "flags": [
+              "BROADCAST",
+              "MULTICAST",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 1500,
+            "qdisc": "fq_codel",
+            "operstate": "UP",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "ether",
+            "address": "52:54:00:11:00:01",
+            "broadcast": "ff:ff:ff:ff:ff:ff",
+            "altnames": [
+              "enp0s3"
+            ]
+          },
+          {
+            "ifindex": 3,
+            "ifname": "wg-nimbo",
+            "flags": [
+              "POINTOPOINT",
+              "NOARP",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 1420,
+            "qdisc": "noqueue",
+            "operstate": "UNKNOWN",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "none",
+            "ifalias": "nimbo-net:d6ed2dbd760b96e2df845971cb7f9f31"
+          }
+        ],
+        "tables": {
+          "nftables": [
+            {
+              "metainfo": {
+                "version": "1.0.6",
+                "release_name": "Lester Gooch #5",
+                "json_schema_version": 1
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "leave",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-net: tunel retirado; red fisica sin cambios\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "leave",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-net: tunel retirado; red fisica sin cambios\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "tor_on",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-tor: modo Tor ACTIVO. Abre \"Navegar por Tor\" o ejecuta: nimbo-navegar-tor\nMientras est\u00e9 activo, solo tor puede salir a la red.\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "coexistence",
+    "response": {
+      "ok": true,
+      "result": {
+        "tor": "active",
+        "links": [
+          {
+            "ifindex": 1,
+            "ifname": "lo",
+            "flags": [
+              "LOOPBACK",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 65536,
+            "qdisc": "noqueue",
+            "operstate": "UNKNOWN",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "loopback",
+            "address": "00:00:00:00:00:00",
+            "broadcast": "00:00:00:00:00:00"
+          },
+          {
+            "ifindex": 2,
+            "ifname": "ens3",
+            "flags": [
+              "BROADCAST",
+              "MULTICAST",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 1500,
+            "qdisc": "fq_codel",
+            "operstate": "UP",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "ether",
+            "address": "52:54:00:11:00:01",
+            "broadcast": "ff:ff:ff:ff:ff:ff",
+            "altnames": [
+              "enp0s3"
+            ]
+          }
+        ],
+        "tables": {
+          "nftables": [
+            {
+              "metainfo": {
+                "version": "1.0.6",
+                "release_name": "Lester Gooch #5",
+                "json_schema_version": 1
+              }
+            },
+            {
+              "table": {
+                "family": "inet",
+                "name": "nimbo_tor",
+                "handle": 12
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "join",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 1,
+        "output": "nimbo-net: Tor activo, en transicion o sin estado fiable; apaga nimbo-tor antes de join\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "coexistence",
+    "response": {
+      "ok": true,
+      "result": {
+        "tor": "active",
+        "links": [
+          {
+            "ifindex": 1,
+            "ifname": "lo",
+            "flags": [
+              "LOOPBACK",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 65536,
+            "qdisc": "noqueue",
+            "operstate": "UNKNOWN",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "loopback",
+            "address": "00:00:00:00:00:00",
+            "broadcast": "00:00:00:00:00:00"
+          },
+          {
+            "ifindex": 2,
+            "ifname": "ens3",
+            "flags": [
+              "BROADCAST",
+              "MULTICAST",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 1500,
+            "qdisc": "fq_codel",
+            "operstate": "UP",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "ether",
+            "address": "52:54:00:11:00:01",
+            "broadcast": "ff:ff:ff:ff:ff:ff",
+            "altnames": [
+              "enp0s3"
+            ]
+          }
+        ],
+        "tables": {
+          "nftables": [
+            {
+              "metainfo": {
+                "version": "1.0.6",
+                "release_name": "Lester Gooch #5",
+                "json_schema_version": 1
+              }
+            },
+            {
+              "table": {
+                "family": "inet",
+                "name": "nimbo_tor",
+                "handle": 12
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "tor_off",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-tor: modo Tor APAGADO. Red normal restaurada.\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "race",
+    "response": {
+      "ok": true,
+      "result": {
+        "join": {
+          "rc": 1,
+          "output": "nimbo-net: Tor activo, en transicion o sin estado fiable; apaga nimbo-tor antes de join\n",
+          "error": ""
+        },
+        "tor": {
+          "rc": 0,
+          "output": "nimbo-tor: modo Tor ACTIVO. Abre \"Navegar por Tor\" o ejecuta: nimbo-navegar-tor\nMientras est\u00e9 activo, solo tor puede salir a la red.\n",
+          "error": ""
+        }
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "join",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 1,
+        "output": "nimbo-net: esperando al par; ejecuta join en ambos equipos\nnimbo-net: timeout sin handshake y trafico; activa join en ambos equipos y revisa perfiles\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "coexistence",
+    "response": {
+      "ok": true,
+      "result": {
+        "tor": "active",
+        "links": [
+          {
+            "ifindex": 1,
+            "ifname": "lo",
+            "flags": [
+              "LOOPBACK",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 65536,
+            "qdisc": "noqueue",
+            "operstate": "UNKNOWN",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "loopback",
+            "address": "00:00:00:00:00:00",
+            "broadcast": "00:00:00:00:00:00"
+          },
+          {
+            "ifindex": 2,
+            "ifname": "ens3",
+            "flags": [
+              "BROADCAST",
+              "MULTICAST",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 1500,
+            "qdisc": "fq_codel",
+            "operstate": "UP",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "ether",
+            "address": "52:54:00:11:00:01",
+            "broadcast": "ff:ff:ff:ff:ff:ff",
+            "altnames": [
+              "enp0s3"
+            ]
+          }
+        ],
+        "tables": {
+          "nftables": [
+            {
+              "metainfo": {
+                "version": "1.0.6",
+                "release_name": "Lester Gooch #5",
+                "json_schema_version": 1
+              }
+            },
+            {
+              "table": {
+                "family": "inet",
+                "name": "nimbo_tor",
+                "handle": 14
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "coexistence",
+    "response": {
+      "ok": true,
+      "result": {
+        "tor": "inactive",
+        "links": [
+          {
+            "ifindex": 1,
+            "ifname": "lo",
+            "flags": [
+              "LOOPBACK",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 65536,
+            "qdisc": "noqueue",
+            "operstate": "UNKNOWN",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "loopback",
+            "address": "00:00:00:00:00:00",
+            "broadcast": "00:00:00:00:00:00"
+          },
+          {
+            "ifindex": 2,
+            "ifname": "ens3",
+            "flags": [
+              "BROADCAST",
+              "MULTICAST",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 1500,
+            "qdisc": "fq_codel",
+            "operstate": "UP",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "ether",
+            "address": "52:54:00:11:00:02",
+            "broadcast": "ff:ff:ff:ff:ff:ff",
+            "altnames": [
+              "enp0s3"
+            ]
+          }
+        ],
+        "tables": {
+          "nftables": [
+            {
+              "metainfo": {
+                "version": "1.0.6",
+                "release_name": "Lester Gooch #5",
+                "json_schema_version": 1
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "tor_off",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-tor: modo Tor APAGADO. Red normal restaurada.\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "leave",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-net: tunel retirado; red fisica sin cambios\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "leave",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-net: tunel retirado; red fisica sin cambios\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "race",
+    "response": {
+      "ok": true,
+      "result": {
+        "join": {
+          "rc": 1,
+          "output": "nimbo-net: Tor activo, en transicion o sin estado fiable; apaga nimbo-tor antes de join\n",
+          "error": ""
+        },
+        "tor": {
+          "rc": 0,
+          "output": "nimbo-tor: modo Tor ACTIVO. Abre \"Navegar por Tor\" o ejecuta: nimbo-navegar-tor\nMientras est\u00e9 activo, solo tor puede salir a la red.\n",
+          "error": ""
+        }
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "join",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 1,
+        "output": "nimbo-net: esperando al par; ejecuta join en ambos equipos\nnimbo-net: timeout sin handshake y trafico; activa join en ambos equipos y revisa perfiles\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "coexistence",
+    "response": {
+      "ok": true,
+      "result": {
+        "tor": "active",
+        "links": [
+          {
+            "ifindex": 1,
+            "ifname": "lo",
+            "flags": [
+              "LOOPBACK",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 65536,
+            "qdisc": "noqueue",
+            "operstate": "UNKNOWN",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "loopback",
+            "address": "00:00:00:00:00:00",
+            "broadcast": "00:00:00:00:00:00"
+          },
+          {
+            "ifindex": 2,
+            "ifname": "ens3",
+            "flags": [
+              "BROADCAST",
+              "MULTICAST",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 1500,
+            "qdisc": "fq_codel",
+            "operstate": "UP",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "ether",
+            "address": "52:54:00:11:00:01",
+            "broadcast": "ff:ff:ff:ff:ff:ff",
+            "altnames": [
+              "enp0s3"
+            ]
+          }
+        ],
+        "tables": {
+          "nftables": [
+            {
+              "metainfo": {
+                "version": "1.0.6",
+                "release_name": "Lester Gooch #5",
+                "json_schema_version": 1
+              }
+            },
+            {
+              "table": {
+                "family": "inet",
+                "name": "nimbo_tor",
+                "handle": 16
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "coexistence",
+    "response": {
+      "ok": true,
+      "result": {
+        "tor": "inactive",
+        "links": [
+          {
+            "ifindex": 1,
+            "ifname": "lo",
+            "flags": [
+              "LOOPBACK",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 65536,
+            "qdisc": "noqueue",
+            "operstate": "UNKNOWN",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "loopback",
+            "address": "00:00:00:00:00:00",
+            "broadcast": "00:00:00:00:00:00"
+          },
+          {
+            "ifindex": 2,
+            "ifname": "ens3",
+            "flags": [
+              "BROADCAST",
+              "MULTICAST",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 1500,
+            "qdisc": "fq_codel",
+            "operstate": "UP",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "ether",
+            "address": "52:54:00:11:00:02",
+            "broadcast": "ff:ff:ff:ff:ff:ff",
+            "altnames": [
+              "enp0s3"
+            ]
+          }
+        ],
+        "tables": {
+          "nftables": [
+            {
+              "metainfo": {
+                "version": "1.0.6",
+                "release_name": "Lester Gooch #5",
+                "json_schema_version": 1
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "tor_off",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-tor: modo Tor APAGADO. Red normal restaurada.\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "leave",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-net: tunel retirado; red fisica sin cambios\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "leave",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-net: tunel retirado; red fisica sin cambios\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "race",
+    "response": {
+      "ok": true,
+      "result": {
+        "join": {
+          "rc": 1,
+          "output": "nimbo-net: Tor activo, en transicion o sin estado fiable; apaga nimbo-tor antes de join\n",
+          "error": ""
+        },
+        "tor": {
+          "rc": 0,
+          "output": "nimbo-tor: modo Tor ACTIVO. Abre \"Navegar por Tor\" o ejecuta: nimbo-navegar-tor\nMientras est\u00e9 activo, solo tor puede salir a la red.\n",
+          "error": ""
+        }
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "join",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 1,
+        "output": "nimbo-net: esperando al par; ejecuta join en ambos equipos\nnimbo-net: timeout sin handshake y trafico; activa join en ambos equipos y revisa perfiles\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "coexistence",
+    "response": {
+      "ok": true,
+      "result": {
+        "tor": "active",
+        "links": [
+          {
+            "ifindex": 1,
+            "ifname": "lo",
+            "flags": [
+              "LOOPBACK",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 65536,
+            "qdisc": "noqueue",
+            "operstate": "UNKNOWN",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "loopback",
+            "address": "00:00:00:00:00:00",
+            "broadcast": "00:00:00:00:00:00"
+          },
+          {
+            "ifindex": 2,
+            "ifname": "ens3",
+            "flags": [
+              "BROADCAST",
+              "MULTICAST",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 1500,
+            "qdisc": "fq_codel",
+            "operstate": "UP",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "ether",
+            "address": "52:54:00:11:00:01",
+            "broadcast": "ff:ff:ff:ff:ff:ff",
+            "altnames": [
+              "enp0s3"
+            ]
+          }
+        ],
+        "tables": {
+          "nftables": [
+            {
+              "metainfo": {
+                "version": "1.0.6",
+                "release_name": "Lester Gooch #5",
+                "json_schema_version": 1
+              }
+            },
+            {
+              "table": {
+                "family": "inet",
+                "name": "nimbo_tor",
+                "handle": 18
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "coexistence",
+    "response": {
+      "ok": true,
+      "result": {
+        "tor": "inactive",
+        "links": [
+          {
+            "ifindex": 1,
+            "ifname": "lo",
+            "flags": [
+              "LOOPBACK",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 65536,
+            "qdisc": "noqueue",
+            "operstate": "UNKNOWN",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "loopback",
+            "address": "00:00:00:00:00:00",
+            "broadcast": "00:00:00:00:00:00"
+          },
+          {
+            "ifindex": 2,
+            "ifname": "ens3",
+            "flags": [
+              "BROADCAST",
+              "MULTICAST",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 1500,
+            "qdisc": "fq_codel",
+            "operstate": "UP",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "ether",
+            "address": "52:54:00:11:00:02",
+            "broadcast": "ff:ff:ff:ff:ff:ff",
+            "altnames": [
+              "enp0s3"
+            ]
+          }
+        ],
+        "tables": {
+          "nftables": [
+            {
+              "metainfo": {
+                "version": "1.0.6",
+                "release_name": "Lester Gooch #5",
+                "json_schema_version": 1
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "tor_off",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-tor: modo Tor APAGADO. Red normal restaurada.\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "leave",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-net: tunel retirado; red fisica sin cambios\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "leave",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-net: tunel retirado; red fisica sin cambios\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "tor_off",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-tor: modo Tor APAGADO. Red normal restaurada.\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "leave",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-net: tunel retirado; red fisica sin cambios\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "network_off",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-red: ens3 apagada. El equipo queda sin red.\n",
+        "status": "nimbo-net: inactivo\n"
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "shutdown",
+    "response": {
+      "ok": true,
+      "result": {
+        "apagando": true
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "tor_off",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-tor: modo Tor APAGADO. Red normal restaurada.\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "leave",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-net: tunel retirado; red fisica sin cambios\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "network_off",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-red: ens3 apagada. El equipo queda sin red.\n",
+        "status": "nimbo-net: inactivo\n"
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "shutdown",
+    "response": {
+      "ok": true,
+      "result": {
+        "apagando": true
+      }
+    }
+  }
+]
