@@ -1,7 +1,8 @@
 # ADR-020 — Módulos propios y hardening 3B.2 dentro de la ISO
 
-**Estado:** Propuesto (12-nov, plan aprobado por Juan José; pasa a Aceptado con la
-verificación en QEMU) · **Paso:** integración para la demo de la semana del 16-nov
+**Estado:** Aceptado (12-nov, verificado en QEMU por Juan José:
+[evidencia](../../repro/evidencia/2026-11-12-qemu-pr81.md)) · **Paso:** integración para la demo
+de la semana del 16-nov
 
 ## Contexto
 
@@ -51,8 +52,12 @@ peso, y (2) `nimbo-nav` y `nimbo-net`, que añaden `firefox-esr`, `tor` y `wireg
   contenedor anclado. Sus tests crean claves y `gpg` sin `gpg-agent`
   (`--no-install-recommends`) falla. El job de CI no lo veía porque instala `gnupg`
   completo. Corregido en `Build-Depends`.
-- Riesgos que se miden en QEMU, no en el build: faillock con la sesión live (autologin) y
-  con el lanzador del instalador; `rp_filter=1` del sysctl con `nimbo-red`.
+- Riesgos medidos en QEMU el 12-nov (ISO `2a6cbaaa…`, MATCH ×2): faillock no rompe el
+  autologin del live, el login por consola ni el lanzador del instalador; 5 fallos bloquean y lo
+  dicen; un acierto pone el contador a cero; `nimbo-red on/off` funciona con `rp_filter=1`;
+  `verify-hardening` 0 fallos en live e instalado.
+- Hallazgo al verificar: en el live, `nimbo-red estado` dice "sin red" aunque `live-boot` ya
+  levantó la interfaz por DHCP (mensaje engañoso; en el instalado no pasa). Arreglo aparte.
 
 ## Fecha
 
