@@ -93,7 +93,7 @@ def extract_archive(archive, target, allowed, max_total):
 
 def artifact(api, run_id, name, target, allowed, max_total):
     matches = [a for a in api.pages("actions/runs/"+str(run_id)+"/artifacts", "artifacts")
-               if a["name"] == name]
+               if a["name"] == name and a.get("expired") is False]
     if len(matches) != 1:
         raise ValueError("artifact ausente o ambiguo")
     a = matches[0]

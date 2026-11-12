@@ -10,8 +10,16 @@ workflow_dispatch desde refs/heads/main, con tag, SHA completo, build_run y
 repro_run explícitos. Primer candidato aprobado: v1.0.0-rc1,
 03ff84cd1804908cbd1fd7cdb90c0e8c1734a5fa, build 42850483095,
 repro 42850482997. La consulta del 11-nov confirma main/push/success y las
-rutas build-iso.yml y repro-verify.yml para ese SHA. Artifact ISO:
-13781341509, nimbo-iso-03ff84c, caduca 17-nov a las 16:11:17 UTC.
+rutas build-iso.yml y repro-verify.yml para ese SHA.
+
+Límite real del conjunto: **17-nov-2026 a las 16:11:04 UTC**, cuando caduca
+iso-sha-B, antes que la ISO. Fechas observadas en la revisión de Juan José:
+
+| Artifact | Run | Caducidad UTC (17-nov-2026) |
+|---|---|---|
+| iso-sha-B | 42850482997 | 16:11:04 |
+| nimbo-iso-03ff84c (13781341509) | 42850483095 | 16:11:17 |
+| iso-sha-A | 42850482997 | 16:12:03 |
 
 Antes de firmar, consultar la API del repositorio fijo teamlocknet/nimbo:
 
@@ -51,10 +59,13 @@ Pages u OIDC. Un rollback no borra evidencias ni reemplaza assets.
 
 ## Compuertas antes de operar con la clave real
 
-El desglose está aprobado con las condiciones de Juan José. Primero se revisa
-y cierra ADR-015 (Propuesto). El workflow se entrega en un PR aparte y la firma
-rechaza la ejecución mientras el ADR no figure como Aceptado.
-Faltan la huella pública real y su configuración de environment/secretos.
+Juan José decidió el 12-nov la política de ADR-015: rechazar siempre al
+caducar la subclave, aunque la firma sea anterior; un solo UID sin correo;
+primaria ed25519 solo para certificar, 2 años, y subclave ed25519 de firma,
+1 año. La conducta estricta del verificador ya coincide con esa decisión.
+La firma exige que el ADR figure como Aceptado en el checkout de main usado
+por el workflow; la decisión comunicada no sustituye ese cambio versionado.
+Faltan la huella pública real y la configuración de environment/secretos.
 La evidencia QEMU de #73 ya está versionada; el workflow comprobará su bloque
 NIMBO_APROBACION_QEMU contra el hash, SHA y runs indicados. R11-R14 se cubren con pruebas locales de compuertas: procedencia incorrecta,
 QEMU ausente/ambiguo, colisiones de tag/release y subida o publicación incompleta.
@@ -65,10 +76,19 @@ Esto no sustituye una ejecución de Actions con environment y permisos reales.
 nimbo-v1.0.0-rc1-amd64.iso, PROCEDENCIA.json, release-key.asc, SHA256SUMS y
 SHA256SUMS.asc. El manifiesto cubre ISO, procedencia y certificado público.
 
-Si caduca el artifact, recompilar 03ff84c en CI y exigir de nuevo el mismo hash
+Si caduca cualquiera de los tres artifacts, re-ejecutar completos **los dos
+runs originales**, build-iso 42850483095 y repro-verify 42850482997, usando
+**Re-run all jobs**. No basta con reconstruir la ISO: hacen falta también los
+artifacts nuevos de ambas piernas A/B. El rerun conserva el run ID y aumenta
+run_attempt; se registran los intentos y los IDs nuevos de artifacts.
+
+Exigir de nuevo el mismo hash
 28760694ba8e20d13b98d04435d97937ae4e33ece521d62324c0ed33c484ae90.
-Promover el nuevo run explícito con las mismas compuertas. La copia local
-conservada no se presenta como un nuevo artifact de CI.
+Promover los runs/attempts aprobados con las mismas compuertas. artifact()
+descarta los expired antes de contar: un vigente y uno caducado permite elegir
+el vigente; dos vigentes del mismo nombre siguen siendo ambiguos y se rechazan.
+No cambian las comprobaciones de run, digest ZIP, contenido y SHA/MATCH.
+La copia local conservada no se presenta como un nuevo artifact de CI.
 
 ## Implementacion entregada
 
@@ -91,8 +111,8 @@ privadas a los artifacts. Todas las acciones estan fijadas por SHA completo.
 
 Alcance inicial deliberado: solo v1.0.0-rc1 y 03ff84c con hash 28760694….
 Otro candidato requiere revisar las constantes y su evidencia. Si caduca el
-artifact, reejecutar el build original que conserva evento push/main y SHA,
-y promover los runs/attempts aprobados con el mismo hash; un build disparado
+conjunto, reejecutar completos ambos runs originales que conservan evento
+push/main y SHA, y promover los runs/attempts aprobados con el mismo hash; un build disparado
 por workflow_dispatch no cumple la compuerta de evento push aprobada.
 
 Si una operacion de escritura falla despues de crear el tag o el borrador,
@@ -113,3 +133,43 @@ Comprobacion real de solo lectura: promover.py validar paso con build
 42850483095 y repro 42850482997. Se comprobaron digests ZIP de la API,
 procedencia push/main, SHA, MATCH y bloque QEMU en main. El resultado validado
 se conserva en ~/.cache/nimbo-release/candidato-validado-03ff84c/.
+
+## Configuración obligatoria del environment
+
+Antes de cualquier dispatch, Juan José configura `release` con las dos barreras:
+
+- **Required reviewers:** Juan José (@Duque-Londono).
+- **Deployment branches:** solo `main`.
+
+El if github.ref == refs/heads/main del YAML no protege por sí solo los secretos:
+workflow_dispatch desde otra rama usa el YAML de esa rama, que podría omitirlo.
+La restricción de ramas del environment protege los secretos independientemente
+del YAML. Sin ambas políticas el workflow no debe utilizarse con claves reales.
+Su configuración corresponde a Juan José; este PR no modifica ajustes de GitHub.
+
+## Ensayos previos propuestos por Juan José
+
+1. Tras mergear #78 y configurar el environment: dispatch con valores por defecto.
+   validar corre sin secretos en Actions; firmar queda esperando aprobación y
+   Juan José **la rechaza**. Prueba de permisos, rutas y gh, sin firmar ni crear
+   tag, borrador o release. Este ensayo aún no se ha ejecutado.
+2. Plan B sin tocar el candidato: usar los runs de main del commit 3825b0e,
+   build 42525558358 y repro 42525558338. Caducan el 15-nov hacia las 21:42 UTC.
+   Registrar la expiración exacta de cada artifact; después de que caduquen,
+   re-ejecutar **ambos completos (Re-run all jobs)** y llamar artifact() en
+   lectura para la ISO y A/B, comprobando digests e IDs de los vigentes.
+   Esa noche debe completarse el ensayo antes del lunes y comunicarse el resultado.
+   No llamar validar ni cambiar sus constantes: ese comando solo acepta rc1/03ff84c.
+   No re-ejecutar ahora ni tocar los runs candidatos. Ensayo futuro pendiente;
+   los tests con API simulada no acreditan el comportamiento real tras caducar.
+
+## Revision del plan B (#78)
+
+Rojo: el caso con un artifact caducado y otro vigente del mismo nombre falla
+con el filtro anterior (artifact ausente o ambiguo). Verde: tras excluir expired
+antes de contar, pasa y descarga el ID del vigente; dos vigentes siguen fallando.
+38 pruebas locales aprobadas en Python 3.13/GnuPG 2.4.7. Alejandro repitio la
+bateria en bookworm: 38 passed, 1 warning en 1.53 s; Python 3.11.2-1+b1,
+pytest 7.2.1-2 y GnuPG 2.2.40-1.1+deb12u2. El warning corresponde al ZIP
+duplicado deliberado de la prueba negativa. El ensayo real tras caducar sigue
+pendiente; no se ha re-ejecutado ningun run ni usado la clave real.

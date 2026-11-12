@@ -1,4 +1,6 @@
 import copy
+import hashlib
+import io
 import importlib.util
 import json
 from pathlib import Path
@@ -82,6 +84,34 @@ class Gates(unittest.TestCase):
             def download(self,endpoint,path):path.write_bytes(b'alterado')
         with tempfile.TemporaryDirectory() as tmp,self.assertRaises(ValueError):
             promover.artifact(API(),2,'iso',Path(tmp)/'out',{'data'},100)
+
+    def same_name_artifacts(self, second_expired):
+        content=io.BytesIO()
+        with zipfile.ZipFile(content,'w') as z:z.writestr('data','bytes')
+        data=content.getvalue()
+        class API:
+            downloaded=[]
+            def pages(self,*args):
+                return [dict(name='iso',id=10,workflow_run=dict(id=2),expired=second_expired,
+                             digest='sha256:'+hashlib.sha256(data).hexdigest()),
+                        dict(name='iso',id=20,workflow_run=dict(id=2),expired=False,
+                             digest='sha256:'+hashlib.sha256(data).hexdigest())]
+            def download(self,endpoint,path):
+                self.downloaded.append(endpoint);path.write_bytes(data)
+        return API()
+
+    def test_artifact_expired_duplicate_selects_current(self):
+        api=self.same_name_artifacts(second_expired=True)
+        with tempfile.TemporaryDirectory() as tmp:
+            out=promover.artifact(api,2,'iso',Path(tmp)/'out',{'data'},100)
+            self.assertEqual((out/'data').read_text(),'bytes')
+        self.assertEqual(api.downloaded,['actions/artifacts/20/zip'])
+
+    def test_artifact_two_current_duplicates_rejected(self):
+        api=self.same_name_artifacts(second_expired=False)
+        with tempfile.TemporaryDirectory() as tmp,self.assertRaises(ValueError):
+            promover.artifact(api,2,'iso',Path(tmp)/'out',{'data'},100)
+        self.assertEqual(api.downloaded,[])
 
     def test_artifact_expired_or_wrong_run(self):
         class API:
