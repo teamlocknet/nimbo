@@ -109,7 +109,7 @@ nimbo/
 ├── README.md
 ├── .gitignore
 ├── docs/
-│   ├── adr/                 # decisiones de arquitectura (ADR-000…017) — compartido
+│   ├── adr/                 # decisiones de arquitectura (ADR-000…019) — compartido
 │   ├── documento-maestro/   # solo el v2.0 histórico (el vivo está fuera del repo)
 │   ├── hallazgos/           # H-001, H-004… (material de sustentación)
 │   └── manuales/            # usuario + ingeniería — compartido
@@ -120,13 +120,17 @@ nimbo/
 │   └── calamares/           #   receta del instalador (engancha LUKS/TPM)
 ├── packages/                # módulos Python → .deb
 │   ├── nimbo-audit/         #   CLI de auditoría — Alejandro (ADR-010)
-│   └── nimbo-net/           #   red privada del equipo — Alejandro
+│   ├── nimbo-nav/           #   navegación segura + modo Tor — Emmanuel (ADR-012)
+│   ├── nimbo-net/           #   red privada del equipo (WireGuard) — Alejandro (ADR-011)
+│   ├── nimbo-red/           #   red por cable a demanda — Juan José (ADR-019)
+│   └── nimbo-update-offline/ #  actualización sin red con GPG — Emmanuel (ADR-013)
 ├── security/
 │   ├── luks-tpm/            #   nimbo-tpm-setup + evidencias — Juan José
-│   ├── air-gapped/          #   nimbo-update-offline + verificación GPG — Emmanuel (dueño de RF-UPD-01 por decidir)
+│   ├── air-gapped/          #   documentación air-gapped (el código: packages/nimbo-update-offline) — Emmanuel
 │   └── hardening/           #   sysctl, PAM (3B.2) — Emmanuel (núcleo: checkpoint)
 ├── repro/                   # reproducibilidad: build-twice, diff-isos, espejo/ (ADR-016) — Juan José
 ├── apt-repo/                # config aptly → GitHub Pages — Alejandro
+├── release/                 # release firmado: release.py, procedencia (ADR-015) — Alejandro + Juan José
 ├── ci/                      # scripts reutilizables — Juan José
 └── .github/
     ├── CODEOWNERS
@@ -158,7 +162,8 @@ evalúan en ADR-011, sin decidir) · **Calamares 3.3.8** (única excepción de b
 - **Nunca trabajes directo en `main`.** Rama por tarea, desde `main` actualizado; PRs
   pequeños y no apilados. Ramas por persona: `jj/…`, `alejandro/…`, `emmanuel/…`
   (también se usan `chore/…`, `feat/…`, `fix/…`, `docs/…`). Nadie hace *force-push* a
-  ramas ajenas. (La protección de `main` con review obligatoria sigue pendiente.)
+  ramas ajenas. `main` está protegida: exige una aprobación de `CODEOWNERS` y nadie
+  aprueba su propio PR.
 - **Commits pequeños y descriptivos**, uno por bloque lógico. Mensajes en español,
   imperativo, con prefijo (`chore:`, `docs:`, `ci:`, `feat:`, `fix:`).
 - **Un solo PR por tarea/paso**, contra `main`. **No hagas merge tú**: Juan José revisa y
