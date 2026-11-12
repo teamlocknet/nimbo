@@ -11,7 +11,7 @@ Un lote es: los `.deb`, un `MANIFIESTO` con el SHA-256 de cada uno y la firma GP
   paquete de más o de menos, nombres con rutas, manifiesto vacío.
 - **Verifica la copia, no la USB:** copia el lote a un directorio propio y comprueba esa copia,
   para que nadie cambie un paquete entre la verificación y la instalación.
-- **Sin red:** instala con `apt-get --no-download`.
+- **Sin red:** instala con `apt-get` sin ninguna fuente remota, así que no puede descargar nada.
 - **No acepta otra clave al instalar:** `instalar` no tiene opción `--anillo`, así que un lote
   no puede traer su propia clave y pedir que se use.
 
@@ -34,12 +34,19 @@ ejecución; ninguna clave entra al repositorio).
 
 1. **`--anillo` en `instalar` era una puerta trasera** (lo vio Juan José): con esa opción se
    aceptaba un lote firmado por cualquiera. Se quitó y se añadió como caso 11.
-2. **Las pruebas exigen el motivo del rechazo, no solo el rechazo:** un fallo de rutas en Windows
+2. **`instalar` no habría instalado nada en la realidad** (#70): con `.deb` locales,
+   `apt-get --no-download` falla en bookworm (`Internal Error, Pathname to install is not
+   absolute`). Las pruebas unitarias simulan `apt-get` y no podían verlo; salió al medir en la
+   VM la bajada de versión. Ahora `apt` corre sin fuentes remotas.
+3. **Las pruebas exigen el motivo del rechazo, no solo el rechazo:** un fallo de rutas en Windows
    hizo fallar el caso válido, y así se comprobó que los rechazos no pasan "por accidente".
 
 ## Límites declarados
 
-Un lote **viejo** pero bien firmado sigue siendo válido (la bajada de versión la frena `apt`).
+Un lote **viejo** pero bien firmado sigue siendo válido. Lo que sí está medido (VM, 11-nov,
+`pruebas/prueba-bajada-version.sh`, #70): `apt` **se niega a bajar de versión** (la 1.0 se
+rechaza con código 100 y la 2.0 sigue instalada). Repetirlo con un lote firmado y sin red queda
+para la prueba de Juan José (RNF-03).
 La clave real la genera y custodia Juan José (ADR-015).
 
 *Diseño:* ADR-013 · *Procedimiento por USB:* `packages/nimbo-update-offline/README.md`

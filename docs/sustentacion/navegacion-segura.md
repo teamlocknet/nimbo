@@ -43,12 +43,17 @@ bloqueó y `nimbo-leakcheck` la detectó.
 3. **La última conexión eran los fondos de la nueva pestaña:** Firefox la precarga aunque abra en
    blanco. Identificado con el registro HTTP interno (`MOZ_LOG`).
 4. **Falso positivo de DHCP** en el detector de fugas (la tabla lo permitía; el detector no).
-5. **Fallo cerrado de verdad:** si el modo Tor no arranca, systemd deshace lo hecho y nunca se
-   dice "red restaurada" sin comprobarlo (revisión de Juan José).
+5. **Fallo cerrado, provocado a propósito en la VM** (`pruebas/prueba-arranque-fallido.sh`,
+   11-nov): con tor sin poder arrancar, `nimbo-tor on` falla, la unidad queda `failed`,
+   `ExecStopPost` **borra la tabla** (`nft` confirma que ya no existe), `nimbo-tor estado` dice
+   "falló" y `nimbo-tor off` **no** dice "red restaurada". `nimbo-tor off` decide por el estado
+   de la unidad; que la tabla no quede la confirmó la prueba con `nft`.
 
 ## Lo que falta
 
-Repetir las dos pruebas sobre **la ISO integrada** (lleva `firefox-esr` 140.14; la VM, 153.6).
+Repetir las dos pruebas sobre **la ISO integrada**. Hoy la ISO **no lleva Firefox**: entrará
+al integrar `nimbo-nav`, en la versión del snapshot (`firefox-esr` 140.14). Las mediciones de
+arriba se hicieron con la 153.6 de Debian actual.
 
 *Evidencia:* `packages/nimbo-nav/evidencia/2026-11-10-vm-rf-nav-01.md` · *Diseño:* ADR-012 ·
 *Manual:* `docs/manuales/navegacion-segura.md`
