@@ -1,0 +1,56 @@
+.TH NIMBO-NET 1 "2026-11-11" "nimbo-net 0.1.0" "Manual de LockNet"
+.SH NAME
+nimbo-net \- activa una red privada WireGuard entre dos pares preparados
+.SH SYNOPSIS
+.B sudo nimbo-net join
+.br
+.B sudo nimbo-net leave
+.br
+.B nimbo-net status
+.SH DESCRIPTION
+Gestiona la interfaz wg-nimbo solo a demanda. La preparacion de claves y perfiles
+es un paso previo separado: cada equipo genera su propia clave privada localmente.
+La conectividad fisica se activa antes con nimbo-red.
+El tunel usa rutas de host al par; no cambia DNS ni la ruta por defecto.
+No configura DHCP, NAT, forwarding ni parametros sysctl.
+.SH COMMANDS
+.TP
+.B join
+Requiere privilegios y un perfil preparado. Se niega si Tor esta activo,
+en transicion o no se puede determinar su estado.
+Solo confirma conexion tras handshake y ping al par.
+Ejecutar join en ambos equipos dentro de la ventana de espera.
+.TP
+.B leave
+Retira solo la interfaz y el estado identificados como propios.
+Conserva la interfaz fisica; para apagarla, usar nimbo-red off por separado.
+Si la identidad del enlace cambio o la limpieza falla, informa el error.
+.TP
+.B status
+Consulta sin privilegios y sin activar la VPN.
+La presencia de interfaz no acredita conectividad con el par.
+.SH FILES
+.TP
+.B /etc/nimbo-net/perfil.json
+Perfil de version 1 administrado por root, modo 0600, directorio 0700.
+Contiene las direcciones IPv4, clave publica del par, endpoint numerico,
+puertos y numero acotado de intentos de conexion (timeout, 1 a 300).
+.TP
+.B /etc/nimbo-net/private.key
+Clave privada generada en el equipo, root:root 0600. Nunca se comparte.
+.TP
+.B /run/nimbo-net/
+Estado y bloqueo temporales. No se restaura la VPN automaticamente al reiniciar.
+.SH EXIT STATUS
+0 indica exito; 1 indica fallo; 2 indica uso incorrecto o falta de privilegios;
+130 indica interrupcion. Un fallo no acredita que la limpieza haya terminado:
+revisar status y leave.
+.SH NOTES
+En v1 Tor y nimbo-net son mutuamente excluyentes. El bloqueo del modulo no
+acredita exclusion atomica con Tor; la prueba concurrente sigue pendiente.
+Mantener rp_filter=1 y verificarlo con el tunel activo.
+Sin CGNAT garantizado, Wi-Fi, relay ni tunel completo.
+La validacion en dos VMs y la integracion ISO siguen pendientes.
+.SH SEE ALSO
+.BR wg (8),
+.BR ip (8)

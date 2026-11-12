@@ -18,7 +18,7 @@ preparar() {  # crea una raíz falsa correcta en $T
   mkdir -p "$T/root/etc/apt/apt.conf.d" "$T/root/etc/sysctl.d" "$T/root/etc/pam.d" \
            "$T/root/etc/security" "$T/bin"
   printf 'APT::Periodic::Enable "0";\n' > "$T/root/etc/apt/apt.conf.d/99nimbo-no-telemetry"
-  cp "$BASE/sysctl/99-nimbo-hardening.conf" "$T/root/etc/sysctl.d/"
+  cp "$BASE/sysctl/99-zz-nimbo-hardening.conf" "$T/root/etc/sysctl.d/"
   cp "$BASE/pam/faillock.conf" "$T/root/etc/security/faillock.conf"
   cat > "$T/root/etc/pam.d/common-auth" <<'PAM'
 auth	requisite			pam_faillock.so preauth
@@ -38,7 +38,7 @@ account	required			pam_permit.so
 account	required			pam_faillock.so
 PAM
   # Valores "en ejecución" = los de referencia
-  grep -vE '^\s*(#|$)' "$BASE/sysctl/99-nimbo-hardening.conf" | sed 's/ *= */=/' > "$T/valores"
+  grep -vE '^\s*(#|$)' "$BASE/sysctl/99-zz-nimbo-hardening.conf" | sed 's/ *= */=/' > "$T/valores"
   printf 'apt-daily.timer=masked\napt-daily-upgrade.timer=masked\n' > "$T/unidades"
   cat > "$T/bin/sysctl" <<'EOF2'
 #!/usr/bin/env bash
@@ -81,7 +81,7 @@ preparar; correr; caso "todo endurecido pasa" 0 "VEREDICTO: OK"
 preparar; sed -i 's/^kernel.kptr_restrict=.*/kernel.kptr_restrict=0/' "$T/valores"; correr
 caso "kptr_restrict en 0 falla" 1 "FALLO sysctl kernel.kptr_restrict"
 
-preparar; rm "$T/root/etc/sysctl.d/99-nimbo-hardening.conf"; correr
+preparar; rm "$T/root/etc/sysctl.d/99-zz-nimbo-hardening.conf"; correr
 caso "sin el fichero persistente falla" 1 "FALLO sysctl persistente"
 
 preparar; sed -i 's/^apt-daily.timer=.*/apt-daily.timer=enabled/' "$T/unidades"; correr
@@ -116,7 +116,19 @@ caso "faillock deny desactivado falla" 1 "FALLO pam faillock.conf deny"
 preparar; printf 'password\trequisite\tpam_pwquality.so retry=3\n' >> "$T/root/etc/pam.d/common-password"; correr
 caso "pam_pwquality obligatorio falla (RF-CORE-03)" 1 "FALLO pam pwquality"
 
+# --- Orden de sysctl.d (VM, 11-nov): systemd aplica los ficheros en orden alfabético y el
+# último gana. procps instala /usr/lib/sysctl.d/99-protect-links.conf con
+# fs.protected_fifos = 1; si nuestro fichero va antes, nos pisa el 2. Debe ir DESPUÉS.
+nuestro=$(basename "$(ls "$BASE"/sysctl/*.conf)")
+ultimo=$(printf '%s\n' "99-protect-links.conf" "50-default.conf" "50-pid-max.conf" "99-sysctl.conf" "$nuestro" | LC_ALL=C sort | tail -1)
+if [ "$ultimo" = "$nuestro" ]; then
+  echo "  ok   $nuestro se aplica después de 99-protect-links.conf (procps)"
+else
+  echo "  MAL  $nuestro se aplica antes que $ultimo: procps pisa fs.protected_fifos"
+  fallos=$((fallos + 1))
+fi
+
 echo
-if [ "$fallos" -eq 0 ]; then echo "RESULTADO: 13/13 casos OK"; exit 0; fi
+if [ "$fallos" -eq 0 ]; then echo "RESULTADO: 14/14 casos OK"; exit 0; fi
 echo "RESULTADO: $fallos casos MAL"
 exit 1

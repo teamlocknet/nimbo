@@ -5,7 +5,7 @@ RF-CORE-04 / HU-04. **Dueño:** Emmanuel (`@Cardozo-Mosquera`).
 
 | Fichero | Destino en el sistema | Qué es |
 |---|---|---|
-| `sysctl/99-nimbo-hardening.conf` | `/etc/sysctl.d/` y `/usr/share/nimbo/hardening/` | Parámetros del kernel; también es la lista de referencia del verificador |
+| `sysctl/99-zz-nimbo-hardening.conf` | `/etc/sysctl.d/` y `/usr/share/nimbo/hardening/` | Parámetros del kernel; también es la lista de referencia del verificador |
 | `pam/faillock.conf` | `/etc/security/faillock.conf` | 5 fallos en 15 min → 10 min de bloqueo; root no se bloquea |
 | `pam/nimbo-faillock`, `pam/nimbo-faillock-preauth` | `/usr/share/pam-configs/` | Perfiles de `pam-auth-update` para `pam_faillock` |
 | `verify-hardening.sh` | `/usr/lib/nimbo/verify-hardening` | Verificación de RF-CORE-04 en live e instalado: actualizaciones automáticas, sysctl y PAM |
