@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Callable
 
 UNIDAD = "nimbo-modo-tor.service"
-# Interfaz de nimbo-net (WireGuard). PROVISIONAL: acordar el nombre con Alejandro (ADR-011).
+# Interfaz de nimbo-net (WireGuard): la misma que INTERFAZ de nimbo_net/cli.py (ADR-011, #66).
 # Debe coincidir con AssertPathExists= de nimbo-modo-tor.service.
 INTERFAZ_NIMBO_NET = "wg-nimbo"
 
