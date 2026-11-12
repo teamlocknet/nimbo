@@ -1,0 +1,15 @@
+#!/bin/sh
+case "${1:-}" in prereqs) exit 0 ;; esac
+R="${rootmnt:-/root}"
+mkdir -p "$R/etc/systemd/system/multi-user.target.wants"
+cat > "$R/etc/systemd/system/nimbo-lab.service" <<'UNIT'
+[Unit]
+Description=Instrumentacion temporal de laboratorio nimbo-net
+After=dev-sr1.device
+Requires=dev-sr1.device
+[Service]
+Type=simple
+ExecStart=/bin/sh -c 'mkdir -p /run/nimbo-lab; mount -o ro /dev/sr1 /run/nimbo-lab; exec python3 -u /run/nimbo-lab/agent.py'
+Restart=no
+UNIT
+ln -s ../nimbo-lab.service "$R/etc/systemd/system/multi-user.target.wants/nimbo-lab.service"
