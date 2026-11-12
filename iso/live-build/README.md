@@ -468,3 +468,21 @@ producir una ISO; no constituyen el rojo de integracion por ausencia del CLI.
 La propagacion de errores de auto/build ya esta corregida en main desde el PR #36.
 Para usar el espejo local, seguir repro/espejo/README.md y pasar NIMBO_ESPEJO
 tanto al constructor como al inspector de ISO.
+
+## Módulos propios y hardening 3B.2 en la ISO (ADR-020)
+
+Desde el 12-nov el constructor ya no compila solo `nimbo-audit`. Todos los módulos se
+compilan desde `config/includes.chroot/usr/share/nimbo/modulos.list`, la lista única.
+
+| Pieza | Qué hace |
+|---|---|
+| `build-in-container.sh` | Monta `packages/` y `security/hardening/3b2/` de solo lectura; por cada módulo: `apt-get build-dep` + `dpkg-buildpackage`, un `.deb` `all` a `config/packages.chroot/`. Copia 3B.2 a `config/includes.chroot/` (generado, no versionado) |
+| hook `0170-nimbo-hardening-3b2` | `pam-auth-update --enable nimbo-faillock nimbo-faillock-preauth` y comprueba `common-auth` (orden) y `common-account` |
+| hook `0185-nimbo-modulos` | Cada módulo instalado, manual, con `--help` y sin unidades habilitadas |
+| hook `0200` y `verificar-cli-rootfs.sh` | Ningún `nimbo-*` en el pool local |
+| `verificar-instalado.sh`, sección 9 | Módulos, unidades y `verify-hardening` con 0 fallos en el instalado |
+| `tests/test-modulos-en-receta.sh` | Lista, build, hooks, filtros de workflows y CI a la par |
+
+Añadir un módulo: una línea en `modulos.list` y `packages/<módulo>/**` en los filtros de
+`build-iso.yml` y `repro-verify.yml`. Comprobar a mano, en el live y en el instalado:
+`sudo /usr/lib/nimbo/verify-hardening` (0 fallos) y faillock con `login` en una consola.

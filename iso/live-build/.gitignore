@@ -80,6 +80,8 @@ config/includes.chroot/**
 !config/includes.chroot/usr/bin/nimbo-instalar
 !config/includes.chroot/usr/share/applications/nimbo-instalar.desktop
 !config/includes.chroot/usr/share/applications/nimbo-instalar-sincifrar.desktop
+# ADR-020: lista única de módulos propios (build, hook 0185 y verificadores).
+!config/includes.chroot/usr/share/nimbo/modulos.list
 # H-002 / ADR-009: mensajes honestos al desbloquear el disco en el initramfs (initramfs-tools).
 !config/includes.chroot/etc/initramfs-tools/hooks/nimbo-cryptsetup-honesto
 !config/includes.chroot/etc/initramfs-tools/scripts/local-top/nimbo-aviso-ram
@@ -96,7 +98,10 @@ config/hooks/**
 !config/hooks/normal/0100-nimbo-hermetismo.hook.chroot
 # Paso 3C.1: pool APT local determinista + auditoría de la excepción de backports.
 # Segunda configuración de Calamares (sin cifrado) DERIVADA de la principal en build-time.
+# ADR-020: hardening 3B.2 (PAM) y comprobación de los módulos propios.
+!config/hooks/normal/0170-nimbo-hardening-3b2.hook.chroot
 !config/hooks/normal/0180-nimbo-audit.hook.chroot
+!config/hooks/normal/0185-nimbo-modulos.hook.chroot
 !config/hooks/normal/0190-nimbo-calamares-sincifrar.hook.chroot
 !config/hooks/normal/0200-nimbo-pool-local.hook.chroot
 !config/hooks/normal/0210-nimbo-backports-audit.hook.chroot

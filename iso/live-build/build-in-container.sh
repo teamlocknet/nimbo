@@ -18,9 +18,13 @@ set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$HERE"
-AUDIT_SOURCE="$(cd "$HERE/../../packages/nimbo-audit" && pwd)"
-AUDIT_VOL=":ro"
-[ "${CONTAINER_ENGINE:-podman}" != podman ] || AUDIT_VOL=":ro,Z"
+# Módulos propios (ADR-020): se compilan de packages/<módulo>/ según la lista única
+# config/includes.chroot/usr/share/nimbo/modulos.list. El hardening 3B.2 se copia de
+# security/hardening/3b2/ (una sola fuente; ADR-014). Ambos se montan de solo lectura.
+PACKAGES_SOURCE="$(cd "$HERE/../../packages" && pwd)"
+HARDENING_SOURCE="$(cd "$HERE/../../security/hardening/3b2" && pwd)"
+SRC_VOL=":ro"
+[ "${CONTAINER_ENGINE:-podman}" != podman ] || SRC_VOL=":ro,Z"
 
 # --- Motor de contenedor -------------------------------------------------------
 ENGINE="${CONTAINER_ENGINE:-podman}"
@@ -94,7 +98,8 @@ exec "$ENGINE" run --rm "${TTY_OPT[@]}" \
     --privileged \
     --network=host \
     -v "$HERE":/build"$VOL_OPT" \
-    -v "$AUDIT_SOURCE:/src/nimbo-audit$AUDIT_VOL" \
+    -v "$PACKAGES_SOURCE:/src/packages$SRC_VOL" \
+    -v "$HARDENING_SOURCE:/src/hardening-3b2$SRC_VOL" \
     -w /build \
     -e SOURCE_DATE_EPOCH \
     -e NIMBO_SNAPSHOT \
@@ -119,24 +124,42 @@ exec "$ENGINE" run --rm "${TTY_OPT[@]}" \
         apt-get install -y --no-install-recommends live-build ca-certificates \
             build-essential fakeroot debhelper dh-python pybuild-plugin-pyproject \
             python3-all python3-setuptools python3-pytest python3-typer
-        # Compilar la misma fuente montada de solo lectura; sin Docker anidado.
+        # Compilar cada módulo de la lista desde la fuente montada de solo lectura; sin
+        # Docker anidado. Las Build-Depends salen del debian/control de cada módulo.
+        MODULOS="$(grep -v "^[[:space:]]*#" config/includes.chroot/usr/share/nimbo/modulos.list | grep -v "^[[:space:]]*$")"
         mkdir -p /tmp/nimbo-package
-        cp -a /src/nimbo-audit /tmp/nimbo-package/nimbo-audit
-        cd /tmp/nimbo-package/nimbo-audit
-        dpkg-buildpackage -us -uc -b
+        for m in $MODULOS; do
+            cp -a "/src/packages/$m" "/tmp/nimbo-package/$m"
+            apt-get build-dep -y "/tmp/nimbo-package/$m"
+            (cd "/tmp/nimbo-package/$m" && dpkg-buildpackage -us -uc -b)
+        done
         cd /build
         lb clean --purge || true
         lb config
-        # Solo el paquete propio entra en el repositorio temporal nativo de live-build.
+        # Solo los paquetes propios entran en el repositorio temporal nativo de live-build:
+        # exactamente un .deb por módulo, Architecture all.
         mkdir -p config/packages.chroot
         find config/packages.chroot -maxdepth 1 -type f -name "*.deb" -delete
-        set -- /tmp/nimbo-package/*.deb
-        [ "$#" -eq 1 ]
-        [ "$(dpkg-deb -f "$1" Package)" = nimbo-audit ]
-        [ "$(dpkg-deb -f "$1" Architecture)" = all ]
-        dpkg-deb -f "$1" Package Version Architecture Depends
-        sha256sum "$1"
-        cp "$1" config/packages.chroot/
+        for m in $MODULOS; do
+            set -- /tmp/nimbo-package/"$m"_*.deb
+            [ "$#" -eq 1 ] && [ -f "$1" ] || { echo "ERROR: $m no dejó exactamente un .deb" >&2; exit 1; }
+            [ "$(dpkg-deb -f "$1" Package)" = "$m" ]
+            [ "$(dpkg-deb -f "$1" Architecture)" = all ]
+            dpkg-deb -f "$1" Package Version Architecture Depends
+            sha256sum "$1"
+            cp "$1" config/packages.chroot/
+        done
+        [ "$(find /tmp/nimbo-package -maxdepth 1 -name "*.deb" | wc -l)" -eq "$(printf "%s\n" $MODULOS | wc -l)" ] \
+            || { echo "ERROR: hay .deb de más en /tmp/nimbo-package" >&2; exit 1; }
+        # Hardening 3B.2 (ADR-014): sysctl, faillock, perfiles PAM y verificador, copiados
+        # con permisos explícitos. Los activa el hook 0170. Ficheros generados: no se versionan.
+        H=/src/hardening-3b2; I=config/includes.chroot
+        install -D -m 0644 "$H/sysctl/99-zz-nimbo-hardening.conf" "$I/etc/sysctl.d/99-zz-nimbo-hardening.conf"
+        install -D -m 0644 "$H/sysctl/99-zz-nimbo-hardening.conf" "$I/usr/share/nimbo/hardening/99-zz-nimbo-hardening.conf"
+        install -D -m 0644 "$H/pam/faillock.conf" "$I/etc/security/faillock.conf"
+        install -D -m 0644 "$H/pam/nimbo-faillock" "$I/usr/share/pam-configs/nimbo-faillock"
+        install -D -m 0644 "$H/pam/nimbo-faillock-preauth" "$I/usr/share/pam-configs/nimbo-faillock-preauth"
+        install -D -m 0755 "$H/verify-hardening.sh" "$I/usr/lib/nimbo/verify-hardening"
         lb build
         echo
         # Segunda barrera: auto/build ya corta en la etapa que falla, pero si lb build
