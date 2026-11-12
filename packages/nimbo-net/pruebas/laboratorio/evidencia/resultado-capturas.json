@@ -1,0 +1,24 @@
+{
+  "A": {
+    "ens3": {
+      "bytes": 3020,
+      "patron_real_visible": false
+    },
+    "wg-nimbo": {
+      "bytes": 824,
+      "patron_real_visible": true
+    },
+    "qemu_activo": false
+  },
+  "B": {
+    "ens3": {
+      "bytes": 3020,
+      "patron_real_visible": false
+    },
+    "wg-nimbo": {
+      "bytes": 824,
+      "patron_real_visible": true
+    },
+    "qemu_activo": false
+  }
+}
