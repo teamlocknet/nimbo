@@ -1,6 +1,6 @@
 # ADR-015 — Custodia de la clave y distribución firmada
 
-**Estado:** Propuesto. Juan José decide su paso a Aceptado.
+**Estado:** Aceptado (12-nov, Juan José: política de caducidad y plazos decididos).
 **Responsable de implementación:** Alejandro. **Custodio de la clave:** Juan José.
 **Alcance:** release firmado; el repositorio APT queda para una etapa posterior.
 
@@ -12,7 +12,7 @@ procedencia. El candidato aprobado es v1.0.0-rc1 como prerelease, promoviendo
 los bytes de CI del commit 03ff84cd1804908cbd1fd7cdb90c0e8c1734a5fa,
 no la punta de main y sin reconstruir durante la firma.
 
-## Decisión propuesta
+## Decisión
 
 ### Custodia y caducidad
 
@@ -24,6 +24,15 @@ Para CI exporta exclusivamente una subclave apta para firma con caducidad,
 vinculada a la identidad primaria. Juan José define su vigencia y renovación;
 no se inventan fechas, huellas ni identidades antes de generar la clave.
 El desarrollo y las pruebas usan claves efímeras, nunca la identidad real.
+
+**Decidido por Juan José (12-nov):**
+
+- Una sola identidad (UID), **sin correo**; el texto lo elige Juan José al generarla.
+- Primaria ed25519 **solo para certificar**, con caducidad de **2 años**, ampliable
+  desde la copia fuera de línea.
+- Una sola subclave de firma ed25519 con caducidad de **1 año**; se renueva (o se
+  sustituye) desde la primaria antes de que caduque y se vuelve a publicar el
+  certificado público.
 
 El environment `release`, configurado por Juan José, exige su aprobación para
 el job de firma y contiene:
@@ -40,17 +49,17 @@ Se selecciona y registra la huella pública de la subclave que firma.
 El llavero del job es temporal y se limpia al terminar, también ante errores.
 No se imprimen secretos, passphrases ni comandos que expongan sus valores.
 
-### Estados de firma y política de caducidad propuesta
+### Estados de firma y política de caducidad
 
 Se acepta solo exactamente un GOODSIG y un VALIDSIG con la primaria autorizada.
 Se rechazan REVKEYSIG, EXPKEYSIG, EXPSIG, BADSIG, ERRSIG y NO_PUBKEY;
 también KEYEXPIRED, SIGEXPIRED y KEYREVOKED. La salida 0 de gpgv no basta:
 puede emitir VALIDSIG incluso con una subclave revocada o caducada.
 
-**Propuesta para decisión de Juan José:** rechazar siempre al caducar la subclave,
+**Decidido por Juan José (12-nov): rechazar siempre** al caducar la subclave,
 aunque la firma sea anterior. Es simple y falla cerrada; como coste, un release
-antiguo deja de pasar la verificación normal cuando caduca su subclave.
-Esta es la conducta provisional implementada hasta su decisión.
+antiguo deja de pasar la verificación normal cuando caduca su subclave. Es la
+conducta que ya implementa `release/release.py`.
 
 Alternativa que requiere otro diseño y pruebas: verificación histórica con aviso
 explícito, solo para firmas anteriores a la caducidad y nunca con revocación.
@@ -69,7 +78,7 @@ primaria autorizada. Importa tanto ese certificado como el adjunto al llavero
 aislado para conservar cualquier revocación conocida. Sin un certificado actualizado
 no se pueden conocer revocaciones posteriores: un atacante con una subclave
 robada podría adjuntar el certificado antiguo sin revocar. Se recomienda una
-caducidad corta, cuyo plazo decide Juan José; limita la ventana pero no sustituye
+caducidad corta (1 año, decidido el 12-nov); limita la ventana pero no sustituye
 la actualización del certificado.
 
 Ante compromiso, pérdida o caducidad, Juan José deshabilita el uso de la
@@ -125,9 +134,12 @@ usan rc2 y marcan rc1 como retirado en sus notas. No se borran evidencias.
 - Commit: 03ff84cd1804908cbd1fd7cdb90c0e8c1734a5fa.
 - Build run: 42850483095; repro run: 42850482997.
 - ISO SHA-256: 28760694ba8e20d13b98d04435d97937ae4e33ece521d62324c0ed33c484ae90.
-- Artifact de build: caduca el 17-nov-2026 a las 16:11:17 UTC.
+- Artifact de build: caduca el 17-nov-2026 a las 16:11:17 UTC. Las piernas de
+  repro-verify caducan antes o casi a la vez: `iso-sha-B` a las **16:11:04** y
+  `iso-sha-A` a las 16:12:03 (API, 12-nov). El límite real es 16:11:04 UTC.
 
-Si caduca, el plan B aprobado es recompilar ese mismo commit en CI,
+Si caducan, el plan B aprobado es recompilar ese mismo commit en CI (los dos
+runs, build-iso y repro-verify),
 comprobar el mismo hash 28760694…, repetir las comprobaciones de procedencia y
 promover el nuevo run explícito. No se sustituye por una compilación de main
 ni se publica una ISO local como si fuera el artifact de CI aprobado.
@@ -149,8 +161,9 @@ La puerta humana y el manifiesto vinculan la promoción a bytes y evidencias
 concretos. Sigue siendo necesario custodiar y renovar la subclave y comunicar
 revocaciones; una firma no convierte software vulnerable en software seguro.
 
-Pendientes de Juan José: generar la identidad, comunicar su huella pública,
-configurar environment/secretos y decidir la política de caducidad.
+Pendientes de Juan José: generar la identidad, comunicar su huella pública y
+configurar environment/secretos (Required reviewers = Juan José; Deployment
+branches = solo `main`).
 La evidencia QEMU redactada ya está versionada por #73.
 No se publica una huella de ejemplo como identidad real. Este ADR no configura
 un repositorio APT, claves reales ni workflows; esos cambios requieren su revisión.
