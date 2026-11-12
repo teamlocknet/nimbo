@@ -65,7 +65,7 @@ jobs:
         run: ./packages/nimbo-audit/test-in-bookworm.sh
 
   tests-modulos-bookworm:
-    # Tests de los módulos Python (Emmanuel y nimbo-red) con el Python 3.11 de bookworm y sus
+    # Tests de los módulos Python (Emmanuel, nimbo-red y nimbo-net) con el Python 3.11 de bookworm y sus
     # dependencias desde APT, en el mismo contenedor anclado que la ISO (como el CLI).
     name: tests-modulos-bookworm (${{ matrix.modulo }})
     runs-on: ubuntu-24.04
@@ -79,6 +79,8 @@ jobs:
             apt: "gnupg"   # los tests generan claves efímeras con gpg y verifican con gpgv
           - modulo: nimbo-red
             apt: ""
+          - modulo: nimbo-net
+            apt: ""   # ejecutor simulado: ni wg ni ip en los tests
     steps:
       - name: Checkout
         uses: actions/checkout@v7
