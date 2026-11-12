@@ -50,8 +50,9 @@ python3 -m unittest discover -s release/tests -v
 
 Las pruebas generan dos identidades efímeras en un directorio temporal,
 eliminan su llavero y no imprimen ni versionan material privado. Usan un archivo
-pequeño de prueba que no es una ISO arrancable. Las 15 pruebas locales pasaron
-en Python 3.13 y GnuPG 2.4.7 de trixie; falta ejecutar en bookworm antes de cerrar.
+pequeño de prueba que no es una ISO arrancable. Las 15 pruebas pasaron localmente en Python 3.13/GnuPG 2.4.7 y en el
+contenedor bookworm anclado: Python 3.11.2-1+b1, pytest 7.2.1-2 y
+GnuPG 2.2.40-1.1+deb12u2 (15 passed en 0.73 s, ejecución de Alejandro).
 No prueban publicación, permisos de Actions ni verificación de descargas de Releases.
 
 ## Correcciones
