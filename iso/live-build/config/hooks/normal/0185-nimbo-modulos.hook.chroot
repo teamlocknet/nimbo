@@ -1,0 +1,37 @@
+#!/bin/sh
+# 0185-nimbo-modulos.hook.chroot — los módulos propios están instalados y se quedan (ADR-020).
+#
+# Recorre /usr/share/nimbo/modulos.list (la misma lista con la que build-in-container.sh
+# los compila). Por cada módulo:
+#   - instalado y marcado MANUAL: nimbo-final.sh hace autoremove al purgar el instalador y
+#     el hook 0200 simula esa purga; un módulo automático desaparecería del instalado.
+#   - cada orden de /usr/bin que trae responde a --help (Python y dependencias completas).
+#   - NINGUNA unidad systemd que trae queda habilitada: nada arranca solo (RNF-01,
+#     hermetismo; Tor, WireGuard y la red son a demanda).
+# Va ANTES de 0200 (pool local). No descarga nada ni depende del reloj.
+set -e
+
+LISTA=/usr/share/nimbo/modulos.list
+[ -s "$LISTA" ] || { echo "E: [hook 0185] falta $LISTA" >&2; exit 1; }
+MODULOS=$(grep -v '^[[:space:]]*#' "$LISTA" | grep -v '^[[:space:]]*$')
+
+for m in $MODULOS; do
+    [ "$(dpkg-query -W -f='${db:Status-Status}' "$m" 2>/dev/null)" = installed ] \
+        || { echo "E: [hook 0185] $m no está instalado" >&2; exit 1; }
+    apt-mark manual "$m" >/dev/null
+    ordenes=0
+    for b in $(dpkg -L "$m" | grep '^/usr/bin/' | LC_ALL=C sort); do
+        "$b" --help >/dev/null || { echo "E: [hook 0185] $b --help falla" >&2; exit 1; }
+        ordenes=$((ordenes + 1))
+    done
+    [ "$ordenes" -gt 0 ] || { echo "E: [hook 0185] $m no instala ninguna orden en /usr/bin" >&2; exit 1; }
+    for u in $(dpkg -L "$m" | grep -E '/systemd/system/[^/]+\.(service|socket|timer|path)$' | xargs -r -n1 basename | LC_ALL=C sort); do
+        estado=$(systemctl --root=/ is-enabled "$u" 2>/dev/null || true)
+        case "$estado" in
+            enabled|enabled-runtime|alias|linked)
+                echo "E: [hook 0185] $u ($m) está '$estado': nada debe arrancar solo" >&2; exit 1 ;;
+        esac
+        echo "P: [hook 0185]   $u: ${estado:-sin estado} (no arranca solo)"
+    done
+    echo "P: [hook 0185] $m $(dpkg-query -W -f='${Version}' "$m"): manual, $ordenes orden(es) con --help OK"
+done
