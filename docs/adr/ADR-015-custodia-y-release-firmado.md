@@ -40,12 +40,37 @@ Se selecciona y registra la huella pública de la subclave que firma.
 El llavero del job es temporal y se limpia al terminar, también ante errores.
 No se imprimen secretos, passphrases ni comandos que expongan sus valores.
 
+### Estados de firma y política de caducidad propuesta
+
+Se acepta solo exactamente un GOODSIG y un VALIDSIG con la primaria autorizada.
+Se rechazan REVKEYSIG, EXPKEYSIG, EXPSIG, BADSIG, ERRSIG y NO_PUBKEY;
+también KEYEXPIRED, SIGEXPIRED y KEYREVOKED. La salida 0 de gpgv no basta:
+puede emitir VALIDSIG incluso con una subclave revocada o caducada.
+
+**Propuesta para decisión de Juan José:** rechazar siempre al caducar la subclave,
+aunque la firma sea anterior. Es simple y falla cerrada; como coste, un release
+antiguo deja de pasar la verificación normal cuando caduca su subclave.
+Esta es la conducta provisional implementada hasta su decisión.
+
+Alternativa que requiere otro diseño y pruebas: verificación histórica con aviso
+explícito, solo para firmas anteriores a la caducidad y nunca con revocación.
+No se implementa ahora ni se permite ignorar estados mediante una opción insegura.
+
 ### Confianza inicial y revocación
 
 La huella primaria pública completa se publica en el README y en el documento
 de sustentación como canal independiente. La clave pública incluida en el
 release debe coincidir con esa huella; descargar ambos del mismo lugar no
 establece por sí solo la confianza inicial.
+
+El verificador ofrece `--clave <ruta>` para aportar el certificado público vigente
+obtenido por el canal independiente (README/repo), manteniendo la misma huella
+primaria autorizada. Importa tanto ese certificado como el adjunto al llavero
+aislado para conservar cualquier revocación conocida. Sin un certificado actualizado
+no se pueden conocer revocaciones posteriores: un atacante con una subclave
+robada podría adjuntar el certificado antiguo sin revocar. Se recomienda una
+caducidad corta, cuyo plazo decide Juan José; limita la ventana pero no sustituye
+la actualización del certificado.
 
 Ante compromiso, pérdida o caducidad, Juan José deshabilita el uso de la
 subclave en CI y comunica la revocación o sustitución por los canales anteriores.
@@ -62,7 +87,11 @@ Antes de firmar, el workflow comprueba en el repositorio fijo teamlocknet/nimbo:
 2. Run de repro-verify.yml sobre el mismo SHA con las piernas A y B disponibles
    y sus hashes iguales; los bytes de la ISO descargada dan ese mismo hash.
 3. Evidencia QEMU versionada en main que existe y nombra el SHA-256 completo
-   de esa ISO. Juan José publica la salida redactada de verificar-instalado.
+   de esa ISO. La salida redactada ya está versionada por #73:
+   repro/evidencia/2026-11-10-qemu-instalado-03ff84c.md, bloque
+   NIMBO_APROBACION_QEMU. Se cita por enlace blob fijado al commit
+   b4d41e4c965c7c33b9871a314359164e96ea9e23; el workflow verifica además
+   que el fichero existe en main y que el bloque nombra el hash esperado.
    Su aprobación del environment constituye además la puerta humana.
 
 Los candidatos/run se indican expresamente: no se elige el último artifact.
@@ -121,6 +150,7 @@ concretos. Sigue siendo necesario custodiar y renovar la subclave y comunicar
 revocaciones; una firma no convierte software vulnerable en software seguro.
 
 Pendientes de Juan José: generar la identidad, comunicar su huella pública,
-configurar environment/secretos y versionar la evidencia QEMU redactada.
+configurar environment/secretos y decidir la política de caducidad.
+La evidencia QEMU redactada ya está versionada por #73.
 No se publica una huella de ejemplo como identidad real. Este ADR no configura
 un repositorio APT, claves reales ni workflows; esos cambios requieren su revisión.
