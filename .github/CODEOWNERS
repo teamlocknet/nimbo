@@ -24,6 +24,7 @@
 /packages/nimbo-audit/              @Alejandro-Murillo22 @Duque-Londono
 /packages/nimbo-net/                @Alejandro-Murillo22 @Duque-Londono
 /apt-repo/                          @Alejandro-Murillo22 @Duque-Londono
+/release/                           @Alejandro-Murillo22 @Duque-Londono
 
 # Emmanuel — navegación segura, air-gapped con GPG, hardening 3B.2
 /packages/nimbo-nav/                @Cardozo-Mosquera @Duque-Londono
