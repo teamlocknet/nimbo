@@ -1,4 +1,6 @@
 """CLI nimbo-update-offline: códigos de salida e instalación sin red (HU-14 CA-1)."""
+import pathlib
+
 from nimbo_update_offline import cli
 
 
@@ -22,12 +24,34 @@ def test_instalar_exige_root(lote, claves, capsys):
 
 def test_instalar_verifica_copias_e_instala_sin_red(lote, claves):
     llamadas = []
+    fuentes = {}
+
+    def ejecutar(argv):
+        llamadas.append(argv)
+        # En el momento de llamar a apt, las fuentes que se le pasan existen y están VACÍAS:
+        # apt no tiene ningún repositorio del que descargar nada.
+        for opcion in argv:
+            if opcion.startswith("Dir::Etc::source"):
+                clave, ruta = opcion.split("=", 1)
+                fuentes[clave] = pathlib.Path(ruta)
+        assert fuentes["Dir::Etc::sourcelist"].is_file()
+        assert fuentes["Dir::Etc::sourcelist"].read_text() == ""
+        assert fuentes["Dir::Etc::sourceparts"].is_dir()
+        assert list(fuentes["Dir::Etc::sourceparts"].iterdir()) == []
+
     rc = cli.main(["instalar", str(lote)], anillo_instalar=claves["anillo"],
-                  es_root=lambda: True, ejecutar=llamadas.append)
+                  es_root=lambda: True, ejecutar=ejecutar)
     assert rc == 0
     (argv,) = llamadas
-    assert argv[:4] == ["apt-get", "install", "--no-download", "-y"]
-    debs = argv[4:]
+    # --no-download NO: con .deb locales, el apt de bookworm falla con "Internal Error,
+    # Pathname to install is not absolute" (medido en VM el 11-nov). Sin fuentes remotas,
+    # apt no puede descargar nada y conserva su negativa a bajar de versión.
+    assert "--no-download" not in argv
+    assert argv[:3] == ["apt-get", "install", "-y"]
+    assert argv[3] == "-o" and argv[4].startswith("Dir::Etc::sourcelist=")
+    assert argv[5] == "-o" and argv[6].startswith("Dir::Etc::sourceparts=")
+    assert "--allow-downgrades" not in argv
+    debs = argv[7:]
     assert len(debs) == 2
     # Instala las COPIAS verificadas, nunca los ficheros del USB (que podrían cambiar
     # entre la verificación y la instalación).

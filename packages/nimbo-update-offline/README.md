@@ -37,7 +37,8 @@ exactamente los del manifiesto; y cada SHA-256 coincide.
 2. `nimbo-update-offline verificar /media/<usuario>/<usb>/nimbo-0.1.1` → `ACEPTADO` y la lista de paquetes.
 3. `sudo nimbo-update-offline instalar /media/<usuario>/<usb>/nimbo-0.1.1`.
    Copia el lote a un directorio propio, **verifica la copia** (así nadie puede cambiar la
-   USB entre la verificación y la instalación) e instala con `apt-get --no-download`.
+   USB entre la verificación y la instalación) e instala con `apt-get` **sin ninguna fuente
+   remota**: no puede descargar nada.
 4. Si dice `RECHAZADO`, **no se instaló nada**. Anota el motivo y avisa al equipo.
 
 ⚠ `instalar` usa **siempre** el anillo de nimbo y **no admite `--anillo`**. Si un lote o una
@@ -68,5 +69,6 @@ anillo y pide `--anillo`. Además, un MANIFIESTO que no es UTF-8 o un directorio
 - Prueba en una VM bookworm **sin red** (RNF-03, la lleva Juan José): instalar un lote válido
   y comprobar el rechazo de uno manipulado.
 - **Límite de v1 — repetición:** un lote viejo pero bien firmado sigue siendo válido. La
-  bajada de versión la frena `apt-get -y` (sin `--allow-downgrades` se niega), pero falta
-  comprobarlo en la VM. Mejora posible: fecha o número de serie dentro del MANIFIESTO firmado.
+  **bajada de versión** la frena `apt-get -y` (sin `--allow-downgrades` se niega): **medido en
+  VM el 11-nov** con `pruebas/prueba-bajada-version.sh`. Mejora posible: fecha o número de
+  serie dentro del MANIFIESTO firmado.
