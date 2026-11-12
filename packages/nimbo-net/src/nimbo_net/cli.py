@@ -258,9 +258,12 @@ def join(run, config_dir, run_dir, red_dir, uid, dormir, imprimir):
         return
     comprobar_red(run, red_dir, p, uid)
     token = "nimbo-net:" + secrets.token_hex(16)
-    # Alias en la propia creacion: si add falla nunca se elimina una interfaz ajena.
-    run(["ip", "link", "add", "dev", INTERFAZ, "alias", token, "type", "wireguard"])
+    # add exitoso acredita la creacion: EEXIST falla y no autoriza limpieza.
+    # El kernel no aplica alias en add; se asigna con set inmediatamente despues.
+    run(["ip", "link", "add", "dev", INTERFAZ, "type", "wireguard"])
+    s = None
     try:
+        run(["ip", "link", "set", "dev", INTERFAZ, "alias", token])
         link = enlace(run)
         if not link or link.get("ifalias") != token:
             raise ErrorNet("no se pudo identificar la interfaz creada")
@@ -279,14 +282,14 @@ def join(run, config_dir, run_dir, red_dir, uid, dormir, imprimir):
         if not propio(enlace(run), s):
             raise ErrorNet("la identidad de la interfaz cambio durante join")
     except (Exception, KeyboardInterrupt):
-        # Solo retirar si la identidad coincide; un fallo de limpieza conserva
-        # estado para permitir leave/revision, sin anunciar silencio falso.
-        if s and s.get("alias") == token:
-            retirar(run, run_dir, s)
+        if s is None:
+            # Fallo de set/lectura inicial: add acaba de crear este nombre.
+            # No depender de un alias/ifindex que aun no se pudo registrar.
+            run(["ip", "link", "delete", "dev", INTERFAZ])
         else:
-            current = enlace(run)
-            if current and current.get("ifalias") == token:
-                run(["ip", "link", "delete", "dev", INTERFAZ])
+            # Una vez identificada, exigir alias+ifindex para no borrar reemplazos.
+            # Si falla la limpieza se conserva estado y se informa el error.
+            retirar(run, run_dir, s)
         raise
     imprimir("nimbo-net: conectado; handshake y trafico al par comprobados")
 

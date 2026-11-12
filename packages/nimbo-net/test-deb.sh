@@ -30,6 +30,8 @@ RO=":ro"; [ "$ENGINE" != podman ] || RO=":ro,Z"
         cp -a /src-red /trabajo/nimbo-red
         cd /trabajo/nimbo-red
         dpkg-buildpackage -us -uc -b
+        # El slim excluye manuales; excepcion solo en este contenedor de prueba.
+        printf "%s\n" "path-include /usr/share/man/" "path-include /usr/share/man/man1/" "path-include /usr/share/man/man1/nimbo-net.1.gz" > /etc/dpkg/dpkg.cfg.d/zz-nimbo-net-test-manual
         apt-get install -y --no-install-recommends \
             /trabajo/nimbo-red_0.1.0-1_all.deb /paquetes/nimbo-net_0.1.0-1_all.deb
         cd /tmp
@@ -39,6 +41,9 @@ RO=":ro"; [ "$ENGINE" != podman ] || RO=":ro,Z"
         ip -j link show > /tmp/enlaces-antes.json
         command -v nimbo-net
         nimbo-net --help
+        test -s /usr/share/man/man1/nimbo-net.1.gz
+        gzip -t /usr/share/man/man1/nimbo-net.1.gz
+        echo "OK: manual instalado e integro"
         nimbo-net status
         rc=0
         nimbo-net join || rc=$?

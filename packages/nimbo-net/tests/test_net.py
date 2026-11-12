@@ -39,7 +39,12 @@ class Sistema:
         if argv[:4] == ["ip", "-j", "route", "show"]:
             return "[]"
         if argv[:3] == ["ip", "link", "add"]:
-            self.link = {"ifname": "wg-nimbo", "ifindex": 20, "ifalias": argv[argv.index("alias") + 1]}
+            if self.link is not None:
+                raise subprocess.CalledProcessError(2, argv, stderr="EEXIST")
+            # Bookworm/iproute2: add no aplica ifalias aunque reciba alias.
+            self.link = {"ifname": "wg-nimbo", "ifindex": 20}
+        if argv[:6] == ["ip", "link", "set", "dev", "wg-nimbo", "alias"]:
+            self.link["ifalias"] = argv[6]
         if argv[:3] == ["ip", "link", "delete"]:
             self.link = None
         if argv[:1] == ["ping"]:
@@ -95,6 +100,36 @@ class PruebasNet(unittest.TestCase):
         self.assertTrue(any(c[:3] == ["ip", "route", "add"] and "10.90.0.2/32" in c for c in commands))
         self.assertFalse(any(c[0] in ["dhclient", "sysctl", "nimbo-red"] for c in commands))
         self.assertFalse(any("default" in c or "ruleset" in c for c in commands))
+
+    def test_fallo_set_alias_no_deja_interfaz(self):
+        self.sys.fail = ["ip", "link", "set", "dev", "wg-nimbo", "alias"]
+        self.assertEqual(self.main(), 1)
+        self.assertIsNone(self.sys.link)
+        self.assertFalse((self.runtime / "estado.json").exists())
+
+    def test_fallo_lectura_tras_add_no_deja_interfaz(self):
+        original = Sistema.__call__
+        def execute(system, argv):
+            if argv[:3] == ["ip", "-j", "link"] and system.link:
+                raise subprocess.CalledProcessError(1, argv)
+            return original(system, argv)
+        from unittest.mock import patch
+        with patch.object(Sistema, "__call__", execute):
+            self.assertEqual(self.main(), 1)
+        self.assertIsNone(self.sys.link)
+        self.assertFalse((self.runtime / "estado.json").exists())
+
+    def test_add_eexist_no_borra_interfaz_surgida_en_carrera(self):
+        original = Sistema.__call__
+        def execute(system, argv):
+            if argv[:3] == ["ip", "link", "add"]:
+                system.link = {"ifname": "wg-nimbo", "ifindex": 30, "ifalias": "ajena"}
+            return original(system, argv)
+        from unittest.mock import patch
+        with patch.object(Sistema, "__call__", execute):
+            self.assertEqual(self.main(), 1)
+        self.assertEqual(self.sys.link["ifalias"], "ajena")
+        self.assertFalse(any(c[:3] == ["ip", "link", "delete"] for c in self.sys.calls))
 
     def test_leave_solo_elimina_interfaz_propia(self):
         self.assertEqual(self.main(), 0)

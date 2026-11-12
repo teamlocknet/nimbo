@@ -8,7 +8,9 @@ alcance. Solo se consulta si existe `inet nimbo_tor`; nunca se vacia el ruleset.
 
 Estado: 32 pruebas simuladas aprobadas en bookworm; .deb construido e instalado
 en contenedor con nimbo-red. Ayuda, status y rechazo de join sin perfil correctos.
-Pendientes lintian, dos VMs, rp_filter=1, coexistencia/concurrencia con Tor,
+Primer paquete sin errores de lintian y con dos avisos. Se agrega manual,
+pendiente reconstruir y repetir instalacion/lintian. Pendientes dos VMs,
+rp_filter=1, coexistencia/concurrencia con Tor,
 captura, hermetismo y posterior integracion ISO con checkpoint. No entregar
 como VPN validada antes de completar esas mediciones. ADR-011: PR #65.
 Detalle de evidencia y limites: VALIDACION.md.

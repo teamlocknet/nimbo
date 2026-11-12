@@ -1,112 +1,131 @@
-# Validacion de nimbo-net ? 11-nov-2026
+# Validación de nimbo-net — 11-nov-2026
 
-Estado: implementacion local inicial; no publicada, no integrada en la ISO.
-Rama alejandro/nimbo-net, base main 8d01002. ADR-011 en PR #65 (pendiente de review).
-Alcance aprobado por Juan Jose: WireGuard directo, dos pares preparados,
-wg-nimbo, red fisica a cargo de nimbo-red, Tor excluyente, rp_filter=1.
+Estado: corrección local del PR #66 tras la revisión de Juan José.
+La implementación no está integrada en la ISO ni validada entre dos VMs.
+Base: main 8d01002; contrato ADR-011 en PR #65.
 
-## Ejecutado en esta sesion
+## Resultado actual y bloqueo corregido
 
-- Rojo inicial: unittest no puede importar nimbo_net, aun inexistente.
-- Implementacion inicial: 22 pruebas aprobadas con ejecutor de sistema simulado.
-- Diez casos adicionales: rojo en endpoint JSON entero y directorio de estado
-  de nimbo-red escribible por otros; ambos corregidos antes del verde final.
-- Verde final: 32 pruebas, 0 fallos, Python 3.13 del anfitrion WSL.
-- git diff --check correcto. Metadatos pyproject y control preparados.
-- No se modificaron interfaces, rutas, nftables, sysctl o servicios del host.
-- Los tests usan identidades sinteticas generadas en memoria/temporales por
-  prueba; no hay claves privadas de ejemplo guardadas en el repositorio.
+Juan José reprodujo con iproute2 6.1.0 y kernel 7.2 que ip link add no
+aplica el alias. El simulador anterior aplicaba el alias y ocultaba el fallo:
+join dejaba wg-nimbo creada sin estado, bloqueando nuevos join, leave y Tor.
 
-Los registros inicial y final estan en /tmp/nimbo-net-rojo.log y
-/tmp/nimbo-net-verde.log (temporales del host, no artifacts permanentes).
+Rojo: simulador corregido para ignorar alias en add. Resultado observado:
+35 tests, 13 fallos y 1 error. Registro local /tmp/nimbo-net-alias-rojo.log.
 
-## Contrato simulado cubierto
+Arreglo: add sin alias; set alias inmediatamente después; leer ifindex y
+registrar estado. Si set o lectura inicial fallan, borrar por nombre la interfaz
+recién creada. Add con EEXIST no autoriza limpiar una interfaz ajena.
+Después de identificarla, la limpieza exige ifindex y alias; si falla,
+no se anuncia silencio y se conserva el estado cuando existe.
 
-Activacion con /32 del peer, espera de handshake y ping, ausencia de DHCP y
-rutas por defecto; rechazo de Tor activo, transiciones, tabla residual y errores
-de consulta; Tor que comienza despues de crear interfaz; bloqueo de operaciones
-simultaneas del modulo; limpieza tras fallo de wg o timeout; interfaz ajena,
-ifalias/ifindex distintos y estado corrupto; limpieza fallida conserva estado;
-status sin privilegios y sin activacion; permisos debiles, symlink, hardlink,
-JSON duplicado, campos extra, datos invalidos y secretos ausentes de salida.
+Verde local: **35 tests aprobados**, Python 3.13 del anfitrión WSL, red
+simulada. Casos nuevos: fallo de set alias, fallo de lectura inicial y carrera
+con EEXIST. Registro /tmp/nimbo-net-alias-verde.log.
+Falta repetir bookworm y comprobarlo en kernel 6.1 de la VM. Estos registros
+son temporales del host; no sustituyen evidencia de un kernel real.
 
-## Bookworm pendiente
+## Resultados anteriores al arreglo
 
-Desde la raiz del repo, sin ejecutar join en el host:
+| Prueba | Resultado observado |
+|---|---|
+| Rojo inicial | Módulo nimbo_net ausente |
+| Primer verde local | 22 tests; luego 32 tras corregir dos validaciones |
+| Bookworm, script genérico | 32 passed in 0.15s, Python 3.11.2-1+b1 y pytest 7.2.1-2 |
+| Primer build | 32 passed in 0.17s; paquete 0.1.0-1 all |
+| Instalación en contenedor | nimbo-red construido con 16 tests; ambos paquetes instalados; ayuda y status correctos; join sin perfil devuelve 1 sin crear interfaz |
+| Lintian 2.116.3+deb12u1 | Sin etiquetas E; initial-upload-closes-no-bugs y no-manual-page |
+| Build con manual | 32 passed in 0.16s; manual gzip de 1199 bytes incluido |
+
+Imagen anclada:
+`docker.io/library/debian@sha256:88200866dfff7ea7f5cbcb6ec7c8a701889efe6fe859fe64d6990e4b07ea4171`.
+Snapshot: `20260901T000000Z`.
+
+Primer artifact: `/tmp/nimbo-net-deb.6gl7Qd`, SHA-256
+`0c262fcbce04371ef73af0336c5f87a9be2510a3b5a1809e2280114470048e20`.
+Build con manual: `/tmp/nimbo-net-deb.lqK2AZ`, SHA-256
+`7042584603fc2011550865a04828e630b09ce23b24396ff187f90994ef56d0e8`.
+**Ambos contienen el fallo de alias. Ninguno acredita la corrección actual.**
+Los resultados proceden de las salidas ejecutadas por Alejandro; el primer
+artifact no pudo releerse como usuario sin privilegios por su directorio root 0700.
+
+Dependencias observadas: iproute2 6.1.0-3; iputils-ping 3:20221126-1+deb12u1;
+nftables 1.0.6-2+deb12u2; systemd 252.39-1~deb12u2;
+wireguard-tools 1.0.20210914-1+b1; nimbo-red 0.1.0-1.
+
+El manual y su comprobación se agregan para resolver no-manual-page.
+No existe bug de Debian asociado: no se inventa un Closes para silenciar el
+aviso del empaquetado inicial. Instalación y lintian del manual pendientes.
+
+## Comandos para validar el arreglo
+
+Desde la raíz del repositorio, sin activar la VPN en WSL:
 
 ```bash
 sudo env CONTAINER_ENGINE=docker ./ci/test-modulo-en-bookworm.sh packages/nimbo-net
+sudo env CONTAINER_ENGINE=docker ./packages/nimbo-net/build-deb.sh
+# Usar el directorio NUEVO mostrado por el build:
+sudo env CONTAINER_ENGINE=docker ./packages/nimbo-net/test-deb.sh <directorio-nuevo>
+sudo env CONTAINER_ENGINE=docker ./packages/nimbo-net/lint-deb.sh <directorio-nuevo>
 ```
 
-El runner existente instala python3 y python3-pytest, y pytest descubre las
-pruebas unittest. No necesita instalar wg/ip/nft para estos tests simulados.
-No afirmar equivalencia con bookworm hasta observar la ejecucion.
-El .deb tambien requiere build e instalacion separados, con nimbo-red disponible;
-no se heredan resultados de nimbo-audit. Fuente quilt y reproducibilidad pendientes.
+## Aceptación real pendiente
 
-## Aceptacion real pendiente, dos VMs/equipos
+- Dos VMs/equipos: cada equipo genera su clave localmente y prepara su perfil;
+  un join por equipo, handshake y tráfico bidireccional.
+- Kernel 6.1: confirmar la creación, asignación del alias y limpieza real.
+- Hardening aplicado: medir rp_filter=1 efectivo en all, default, interfaz
+  física y wg-nimbo con el túnel arriba. No cambiar sysctl.
+- Capturas en NIC y túnel, rutas y DNS antes/después; no publicar claves.
+- Tor primero, VPN primero e intentos concurrentes con Emmanuel. El bloqueo
+  local de nimbo-net no acredita exclusión atómica con Tor.
+- Leave y fallos retiran solo lo propio; tras nimbo-red off medir silencio
+  global. Reinicio no restaura la VPN.
+- pruebas/recoger-evidencia.py y su guía están preparados; solo sintaxis y
+  ayuda comprobadas, no ejecutados en VMs reales.
 
-1. Preparar herramientas y perfiles protegidos, cada equipo genera su clave local.
-   Configurar red de laboratorio con endpoints alcanzables, sin CGNAT prometido.
-2. Aplicar hardening vigente y registrar rp_filter efectivo en all, default,
-   interfaz fisica y wg-nimbo cuando exista. Mantener 1: no cambiar sysctl.
-3. Antes de join, comprobar ausencia de wg-nimbo y sockets VPN; medir 0/0 global
-   en el arranque de la ISO integrada, no inferirlo de estos tests.
-4. Activar NIC con nimbo-red on, y ejecutar un join en cada VM dentro de la ventana
-   de espera. Comprobar handshake y trafico bidireccional. Registrar rutas y DNS
-   antes/despues para comprobar que nimbo-net no los cambia fuera del peer.
-5. Capturar en NIC y tunel por separado: marcador de prueba solo en el tunel,
-   transporte WireGuard en la NIC. No versionar claves ni capturas con secretos.
-6. Tor primero: join se niega. VPN primero: nimbo-tor on se niega por wg-nimbo.
-   Probar tambien intentos concurrentes con Emmanuel; las comprobaciones actuales
-   no garantizan exclusion atomica. Si hay carrera, resolver mediante checkpoint.
-7. Leave retira solo recursos propios, preserva NIC y recursos Tor/ajenos.
-   Tras nimbo-red off medir silencio global. Reinicio no restaura la VPN.
-8. Probar peer inaccesible, fallo de configuracion y errores de limpieza. Si la
-   identidad del enlace cambio, se conserva por seguridad y se informa fallo.
-9. Integracion ISO y job CI en un checkpoint separado; MATCH, QEMU, RAM y
-   hermetismo del commit integrado con Juan Jose antes de cerrar RF-RED-01.
+## Checkpoints separados
 
-Ninguna prueba de handshake real, cifrado por captura, rp_filter, Tor real,
-QEMU, hermetismo o instalacion de paquete ha sido ejecutada en esta sesion.
+wireguard-tools **no está en la ISO actual**. Su incorporación requiere
+checkpoint de Juan José: hermetismo, comprobar que wg-quick@ no queda
+habilitado, MATCH x2 y QEMU. No se modifica CI, ISO, Tor ni hardening aquí.
+Juan José agregará nimbo-net a tests-modulos-bookworm en ci.yml en otro PR.
+Fuente quilt y reproducibilidad del .deb siguen sin validar.
 
-## Bookworm ejecutado por Alejandro
+## Bookworm después de corregir el alias
 
-Comando: sudo env CONTAINER_ENGINE=docker
-./ci/test-modulo-en-bookworm.sh packages/nimbo-net.
-Imagen: docker.io/library/debian@sha256:88200866dfff7ea7f5cbcb6ec7c8a701889efe6fe859fe64d6990e4b07ea4171.
-Snapshot: 20260901T000000Z. Python 3.11.2-1+b1, pytest 7.2.1-2.
-Resultado observado: 32 passed in 0.15s. No paquetes APT adicionales.
-Sigue siendo red simulada: no acredita handshake real ni rp_filter medido.
-Build, instalacion y lint del .deb siguen pendientes.
+Alejandro ejecutó ci/test-modulo-en-bookworm.sh packages/nimbo-net con Docker,
+imagen por digest y snapshot indicados arriba. Python 3.11.2-1+b1 y
+python3-pytest 7.2.1-2. Resultado: **35 passed in 0.14s**, sin APT adicional.
+Incluye simulación de alias ignorado en add, limpieza ante fallo de set/lectura
+y protección de EEXIST. No es una prueba del kernel real: sigue pendiente
+la confirmación en kernel 6.1 y las dos VMs. Falta reconstruir el paquete
+corregido, instalarlo y repetir lintian.
 
-## Build binario bookworm observado en la salida de Alejandro
+## Paquete con el arreglo del alias construido
 
-Comando: sudo env CONTAINER_ENGINE=docker ./packages/nimbo-net/build-deb.sh.
-Salida /tmp/nimbo-net-deb.6gl7Qd; nimbo-net_0.1.0-1_all.deb.
-Pybuild: 32 passed in 0.17s. SHA-256 mostrado por el constructor:
-0c262fcbce04371ef73af0336c5f87a9be2510a3b5a1809e2280114470048e20.
-Dependencias mostradas: python3:any, wireguard-tools, iproute2, iputils-ping,
-nftables, systemd y nimbo-red. No se pudo releer el artifact como usuario sin
-privilegios porque su directorio temporal, creado con sudo, es root 0700.
-Pendientes instalacion, lintian y VPN real. El paquete no incluye pagina man.
-Fuente quilt y reproducibilidad siguen sin validar.
+Alejandro ejecutó build-deb.sh; pybuild aprobó 35 tests en 0.17s.
+Artifact: `/tmp/nimbo-net-deb.urG0zL/nimbo-net_0.1.0-1_all.deb`.
+SHA-256: `34421c814b8c0dd6e327fe3ca08ffee246087d9e5aaa1ce0deed459ee8be5533`.
+Hash y metadatos releídos desde WSL. Manual gzip incluido (1199 bytes).
+Pendientes instalación y lintian de ESTE paquete, y kernel/VMs reales.
 
-## Instalacion observada en bookworm
+## Instalación del paquete corregido
 
-Alejandro ejecuto test-deb.sh /tmp/nimbo-net-deb.6gl7Qd. El contenedor construyo
-nimbo-red con 16 tests aprobados e instalo nimbo-red y nimbo-net 0.1.0-1 junto
-con dependencias APT reales. /usr/bin/nimbo-net --help funciona; status muestra
-inactivo; join sin perfil devuelve 1. La comparacion ip -j link antes/despues
-no encuentra cambios y wg-nimbo no existe. Resultado final OK.
-El hash del paquete servido sigue siendo
-0c262fcbce04371ef73af0336c5f87a9be2510a3b5a1809e2280114470048e20.
+Alejandro ejecutó test-deb.sh sobre /tmp/nimbo-net-deb.urG0zL.
+Resultado: nimbo-net y nimbo-red 0.1.0-1 instalados; ayuda correcta; manual
+presente e íntegro (gzip); status inactivo; join sin perfil devuelve fallo
+sin crear interfaz ni cambiar los enlaces. El constructor de nimbo-red
+aprobó 16 tests en 0.08s. SHA-256 mostrado por el contenedor:
+34421c814b8c0dd6e327fe3ca08ffee246087d9e5aaa1ce0deed459ee8be5533.
+No se activó una VPN real: kernel 6.1 y dos VMs siguen pendientes.
 
-Versiones observadas: iproute2 6.1.0-3; iputils-ping 3:20221126-1+deb12u1;
-nftables 1.0.6-2+deb12u2; systemd 252.39-1~deb12u2;
-wireguard-tools 1.0.20210914-1+b1. Log esperado en el directorio de artifacts:
-test.log. Este resultado acredita instalacion y operaciones pasivas, no un
-handshake, cifrado, rp_filter ni hermetismo global.
+## Lintian del paquete corregido
 
-Pendientes actuales: lintian; dos VMs y exclusividad con Tor, incluida
-concurrencia; rp_filter=1 medido; integracion ISO/CI con checkpoint; MATCH y QEMU.
+Alejandro ejecutó lint-deb.sh /tmp/nimbo-net-deb.urG0zL.
+Lintian 2.116.3+deb12u1: sin etiquetas E y sin no-manual-page.
+Único aviso de paquete: initial-upload-closes-no-bugs, justificado porque
+no existe bug Debian asociado. El proceso avisa de privilegios root dentro
+del contenedor. Con esto quedan comprobados build (35 tests), instalación,
+manual y lintian del artifact 34421c814b8c0dd6e327fe3ca08ffee246087d9e5aaa1ce0deed459ee8be5533.
+No cambia el pendiente de kernel 6.1, dos VMs, Tor, captura y rp_filter=1.
