@@ -1,7 +1,8 @@
 # ADR-011 — Red privada del equipo con WireGuard a demanda
 
-**Estado:** Propuesto para revisión del contrato; alcance aprobado por Juan José el
-10-nov. Implementación y pruebas de aceptación pendientes.
+**Estado:** Aceptado por Juan José tras revisar las pruebas de dos VMs y las
+aclaraciones de #71 (commit 8e121e4). La aceptación del diseño no cierra
+la validación pendiente sobre la ISO integrada.
 **Responsable:** Alejandro. **Requisitos:** RF-RED-01 / HU-09; RNF-01 y RNF-03.
 
 ## Contexto
@@ -91,8 +92,8 @@ Se mantiene **rp_filter=1**: no se cambian sysctl automáticamente. Con el túne
 arriba se registran los valores efectivos de all, default, interfaz física y
 wg-nimbo, las rutas y el resultado bidireccional. Se aplica el hardening vigente
 `99-zz-nimbo-hardening.conf`. Si hay un fallo atribuible al filtrado inverso,
-se entrega evidencia y se solicita un checkpoint para valorar 2. No se declara
-compatibilidad medida hasta ejecutar esa prueba. Túnel completo fuera de v1.
+se entrega evidencia y se solicita un checkpoint para valorar 2. La prueba de laboratorio registró modo estricto efectivo (1) en ens3 y
+wg-nimbo con ese archivo aplicado; debe repetirse en la ISO integrada. Túnel completo fuera de v1.
 
 ## Verificación y criterios de aceptación
 
@@ -110,7 +111,13 @@ compatibilidad medida hasta ejecutar esa prueba. Túnel completo fuera de v1.
 Se registran comandos, códigos de salida y evidencia sin credenciales. Tests con
 un ejecutor simulado no sustituyen dos VMs, handshake ni captura real. La
 integración en la ISO exige checkpoint y MATCH x2; QEMU y hardware se coordinan
-con Juan José. No hay pruebas de VPN ejecutadas al redactar este ADR.
+con Juan José. Las pruebas de laboratorio y sus límites están en
+[RESULTADOS.md](../../packages/nimbo-net/pruebas/laboratorio/RESULTADOS.md).
+
+**Pendiente obligatorio:** repetir RF-RED-01 sobre la ISO integrada, registrando
+su propio SHA-256 completo. Las evidencias de la ISO local de laboratorio no
+se heredan como aceptación de la imagen integrada. La integración y sus
+compuertas requieren el checkpoint de Juan José.
 
 ## Consecuencias
 
