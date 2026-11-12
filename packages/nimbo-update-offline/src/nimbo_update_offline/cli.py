@@ -54,8 +54,18 @@ def cmd_instalar(lote: Path, anillo: Path, ejecutar: Callable[[list[str]], None]
             print(f"RECHAZADO: {v.motivo}. No se instaló nada.")
             return 1
         print(f"ACEPTADO: {v.motivo}. Instalando sin red...")
+        # apt SIN ninguna fuente remota: no puede descargar nada (lo que no venga en el lote o
+        # no esté ya instalado, falla) y conserva su negativa a bajar de versión sin
+        # --allow-downgrades. No se usa --no-download: con .deb locales, el apt de bookworm
+        # falla con "Internal Error, Pathname to install is not absolute" (medido en VM, 11-nov).
+        fuentes = Path(tmp) / "apt"
+        (fuentes / "sources.list.d").mkdir(parents=True)
+        (fuentes / "sources.list").write_text("", encoding="utf-8")
         try:
-            ejecutar(["apt-get", "install", "--no-download", "-y", *[str(p) for p in v.paquetes]])
+            ejecutar(["apt-get", "install", "-y",
+                      "-o", f"Dir::Etc::sourcelist={fuentes / 'sources.list'}",
+                      "-o", f"Dir::Etc::sourceparts={fuentes / 'sources.list.d'}",
+                      *[str(p) for p in v.paquetes]])
         except subprocess.CalledProcessError as e:
             print(f"nimbo-update-offline: apt-get falló (código {e.returncode}).")
             return 1
