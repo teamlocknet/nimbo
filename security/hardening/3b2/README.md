@@ -23,5 +23,7 @@ sudo bash security/hardening/3b2/verify-hardening.sh           # en la ISO live 
 ⚠ **PAM puede dejar a un usuario sin poder entrar.** En la VM: snapshot antes, una terminal
 de root abierta hasta comprobar el inicio de sesión, y la prueba de bloqueo hecha a mano.
 
-La integración en la ISO (receta de `iso/live-build/`) va en un PR aparte, con checkpoint
-de Juan José.
+**En la ISO desde el 12-nov ([ADR-020](../../../docs/adr/ADR-020-modulos-en-la-iso.md), opción A):**
+`iso/live-build/build-in-container.sh` copia estos ficheros al compilar (esta carpeta es la
+única fuente) y el hook `0170-nimbo-hardening-3b2` activa los perfiles PAM. Un cambio aquí
+recompila la ISO (filtros de `build-iso.yml` y `repro-verify.yml`).
