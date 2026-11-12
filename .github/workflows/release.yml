@@ -1,0 +1,130 @@
+name: release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag candidato aprobado
+        required: true
+        default: v1.0.0-rc1
+        type: string
+      commit:
+        description: SHA completo del candidato (no la punta de main)
+        required: true
+        default: 03ff84cd1804908cbd1fd7cdb90c0e8c1734a5fa
+        type: string
+      build_run:
+        description: Run build-iso.yml, push a main y en verde
+        required: true
+        default: '42850483095'
+        type: string
+      repro_run:
+        description: Run repro-verify.yml con ambas piernas
+        required: true
+        default: '42850482997'
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  validar:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Comprobar procedencia, MATCH y QEMU sin secretos
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+          COMMIT: ${{ inputs.commit }}
+          BUILD_RUN: ${{ inputs.build_run }}
+          REPRO_RUN: ${{ inputs.repro_run }}
+        run: >-
+          python3 release/promover.py validar --tag "$TAG" --commit "$COMMIT"
+          --build "$BUILD_RUN" --repro "$REPRO_RUN"
+          --salida "$RUNNER_TEMP/candidato"
+
+  firmar:
+    needs: validar
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: release
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      artifact_id: ${{ steps.artifact.outputs.artifact-id }}
+      fingerprint_sha256: ${{ steps.firma.outputs.fingerprint_sha256 }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Revalidar candidato despues de la aprobacion humana
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+          COMMIT: ${{ inputs.commit }}
+          BUILD_RUN: ${{ inputs.build_run }}
+          REPRO_RUN: ${{ inputs.repro_run }}
+        run: >-
+          python3 release/promover.py validar --tag "$TAG" --commit "$COMMIT"
+          --build "$BUILD_RUN" --repro "$REPRO_RUN"
+          --salida "$RUNNER_TEMP/candidato"
+      - name: Firmar con subclave vigente y verificar
+        id: firma
+        env:
+          RELEASE_GPG_SUBKEY: ${{ secrets.RELEASE_GPG_SUBKEY }}
+          RELEASE_GPG_PASSPHRASE: ${{ secrets.RELEASE_GPG_PASSPHRASE }}
+          RELEASE_GPG_FINGERPRINT: ${{ secrets.RELEASE_GPG_FINGERPRINT }}
+        run: >-
+          python3 release/firmar.py "$RUNNER_TEMP/candidato" "$RUNNER_TEMP/distribucion"
+          --adr docs/adr/ADR-015-custodia-y-release-firmado.md
+      - name: Conservar exclusivamente la distribucion publica firmada
+        id: artifact
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: release-firmado-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/distribucion/*
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+
+  borrador:
+    needs: firmar
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          artifact-ids: ${{ needs.firmar.outputs.artifact_id }}
+          path: ${{ runner.temp }}/distribucion
+          merge-multiple: true
+      - name: Crear tag exacto y borrador, descargar y verificar cinco assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FINGERPRINT_SHA256: ${{ needs.firmar.outputs.fingerprint_sha256 }}
+        run: >-
+          python3 release/promover.py borrador "$RUNNER_TEMP/distribucion"
+          --huella-sha256 "$FINGERPRINT_SHA256"
+      - name: Pendiente de publicacion manual
+        run: echo 'Borrador verificado. Juan Jose revisa y publica manualmente como prerelease.' >> "$GITHUB_STEP_SUMMARY"

@@ -1,7 +1,8 @@
-# Checkpoint pendiente: workflow del release firmado
+# Workflow del release firmado: implementacion para revision
 
-Este documento concreta el diseño aprobado el 10-nov. No se ha creado ni
-modificado .github/workflows/release.yml. Juan José revisa los cambios en CI.
+Este documento concreta el diseño y las condiciones aprobadas por Juan José.
+.github/workflows/release.yml está implementado en una rama para su revisión;
+no se ha ejecutado, mergeado ni publicado ningún release.
 
 ## Entrada y compuertas
 
@@ -48,14 +49,16 @@ por tag sin cancel-in-progress para evitar firmas o subidas interrumpidas.
 Ni pull_request_target ni secretos en jobs de PR; sin permisos de administración,
 Pages u OIDC. Un rollback no borra evidencias ni reemplaza assets.
 
-## Antes de implementar release.yml
+## Compuertas antes de operar con la clave real
 
 El desglose está aprobado con las condiciones de Juan José. Primero se revisa
-y cierra ADR-015 (Propuesto); después se prepara release.yml en un PR aparte.
+y cierra ADR-015 (Propuesto). El workflow se entrega en un PR aparte y la firma
+rechaza la ejecución mientras el ADR no figure como Aceptado.
 Faltan la huella pública real y su configuración de environment/secretos.
 La evidencia QEMU de #73 ya está versionada; el workflow comprobará su bloque
-NIMBO_APROBACION_QEMU contra el hash, SHA y runs indicados. R11-R14 de procedencia, publicación incompleta y reejecución
-se implementan y prueban con el workflow después del checkpoint.
+NIMBO_APROBACION_QEMU contra el hash, SHA y runs indicados. R11-R14 se cubren con pruebas locales de compuertas: procedencia incorrecta,
+QEMU ausente/ambiguo, colisiones de tag/release y subida o publicación incompleta.
+Esto no sustituye una ejecución de Actions con environment y permisos reales.
 
 ## Cinco assets de rc1 y plan B
 
@@ -66,3 +69,47 @@ Si caduca el artifact, recompilar 03ff84c en CI y exigir de nuevo el mismo hash
 28760694ba8e20d13b98d04435d97937ae4e33ece521d62324c0ed33c484ae90.
 Promover el nuevo run explícito con las mismas compuertas. La copia local
 conservada no se presenta como un nuevo artifact de CI.
+
+## Implementacion entregada
+
+- validar: lee los runs y la evidencia de main; descarga cada artifact ZIP,
+  exige el digest de la API y extrae solo nombres fijos, sin enlaces ni rutas
+  externas. Exige SHA de la ISO igual al adjunto y a A/B, con boot_id distintos.
+- firmar: requiere aprobación del environment y repite la validación completa
+  después de aprobar. Los secretos se exponen solo al paso de firma. Rechaza
+  clave primaria secreta utilizable, subclave sin caducidad vigente, revocada,
+  ausente o ambigua. Selecciona por huella exacta de subclave y vuelve a verificar.
+- borrador: recibe por ID el artifact publico del mismo run, verifica la firma,
+  crea el tag exacto y prerelease draft sin sobrescribir, descarga sus cinco
+  assets y vuelve a verificar. No hay paso de publicacion automatica.
+
+La huella guardada como secreto no se pasa literalmente entre jobs: GitHub
+puede bloquear outputs que coincidan con secretos. Se transmite su SHA-256 y
+el job del borrador exige que la huella del certificado publico tenga ese hash;
+ademas verifica la firma contra esa identidad completa. No se exportan claves
+privadas a los artifacts. Todas las acciones estan fijadas por SHA completo.
+
+Alcance inicial deliberado: solo v1.0.0-rc1 y 03ff84c con hash 28760694….
+Otro candidato requiere revisar las constantes y su evidencia. Si caduca el
+artifact, reejecutar el build original que conserva evento push/main y SHA,
+y promover los runs/attempts aprobados con el mismo hash; un build disparado
+por workflow_dispatch no cumple la compuerta de evento push aprobada.
+
+Si una operacion de escritura falla despues de crear el tag o el borrador,
+se conserva ese estado incompleto para revision. Reejecutar falla por colision;
+no borra ni reemplaza assets. Juan Jose decide como retirarlo o usar rc2.
+
+## Validacion de esta entrega
+
+36 pruebas locales pasan en Python 3.13/GnuPG 2.4.7, con identidades efimeras.
+Incluyen una firma real con exportacion solo de subclave y rechazo de una
+exportacion que contiene la primaria secreta. actionlint 1.7.12 acepta el YAML
+(shellcheck no ejecutado). La bateria ampliada tambien paso en bookworm: 36 passed, 1 warning en 1.59 s
+(ejecucion de Alejandro), Python 3.11.2-1+b1, pytest 7.2.1-2 y
+GnuPG 2.2.40-1.1+deb12u2. El warning corresponde al ZIP con nombre duplicado
+creado deliberadamente por una prueba negativa. Falta revisar el workflow en Actions. No se han usado claves reales ni creado tags.
+
+Comprobacion real de solo lectura: promover.py validar paso con build
+42850483095 y repro 42850482997. Se comprobaron digests ZIP de la API,
+procedencia push/main, SHA, MATCH y bloque QEMU en main. El resultado validado
+se conserva en ~/.cache/nimbo-release/candidato-validado-03ff84c/.
