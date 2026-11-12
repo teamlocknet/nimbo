@@ -186,7 +186,34 @@ else
     ko "manual del CLI ausente o corrupto"
 fi
 
-sec "9. Lista de paquetes del sistema instalado"
+sec "9. Modulos propios y hardening 3B.2 (ADR-020)"
+LISTA=/usr/share/nimbo/modulos.list
+if [ -s "$LISTA" ]; then
+    for m in $(grep -v '^[[:space:]]*#' "$LISTA" | grep -v '^[[:space:]]*$'); do
+        if [ "$(dpkg-query -W -f='${db:Status-Status}' "$m" 2>/dev/null)" = installed ]; then
+            ok "$m instalado: $(dpkg-query -W -f='${Version}' "$m")"
+        else
+            ko "$m no instalado"; continue
+        fi
+        for b in $(dpkg -L "$m" | grep '^/usr/bin/'); do
+            "$b" --help >/dev/null 2>&1 && ok "$b --help" || ko "falla $b --help"
+        done
+        for u in $(dpkg -L "$m" | grep -E '/systemd/system/[^/]+\.(service|socket|timer|path)$' | xargs -r -n1 basename); do
+            e=$(systemctl is-enabled "$u" 2>/dev/null); a=$(systemctl is-active "$u" 2>/dev/null)
+            case "$e" in enabled*|alias|linked) ko "$u habilitada ($e): nada debe arrancar solo" ;; *) ok "$u no arranca sola ($e, $a)" ;; esac
+        done
+    done
+else
+    ko "falta $LISTA"
+fi
+if [ -x /usr/lib/nimbo/verify-hardening ]; then
+    vh=$(/usr/lib/nimbo/verify-hardening 2>&1 | grep '^VEREDICTO' | tail -1)
+    case "$vh" in "VEREDICTO: OK"*) ok "verify-hardening: $vh" ;; *) ko "verify-hardening: ${vh:-sin veredicto}" ;; esac
+else
+    ko "falta /usr/lib/nimbo/verify-hardening"
+fi
+
+sec "10. Lista de paquetes del sistema instalado"
 p "NIMBO_PKGS_BEGIN"
 dpkg-query -W -f='${Package}\t${Version}\n' | LC_ALL=C sort | while read -r l; do p "$l"; done
 p "NIMBO_PKGS_END"

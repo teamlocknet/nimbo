@@ -41,12 +41,12 @@ for deb in "$POOL"/*.deb; do
     [ -f "$deb" ] || continue
     paquete="$(dpkg-deb -f "$deb" Package)"
     version="$(dpkg-deb -f "$deb" Version)"
-    [ "$paquete" != nimbo-audit ] || fallar "nimbo-audit entro en el pool local"
+    case "$paquete" in nimbo-*) fallar "modulo propio en el pool local: $paquete" ;; esac
     case "$version" in *~bpo*) fallar "backports en pool: $paquete $version" ;; esac
     cantidad=$((cantidad+1))
 done
 [ "$cantidad" -gt 0 ] || fallar "pool local vacio"
-echo "P: [PR-B] pool local: $cantidad paquetes, sin nimbo-audit ni backports"
+echo "P: [PR-B] pool local: $cantidad paquetes, sin modulos nimbo-* ni backports"
 
 bpo="$(dpkg-query --admindir="$ROOT/var/lib/dpkg" -W -f='${Package} ${Version}
 ' | grep '~bpo' || true)"
@@ -67,3 +67,25 @@ printf '%s\n' "$manuales" | grep -qx nimbo-audit || fallar "nimbo-audit no esta 
 chroot "$ROOT" nimbo-audit --help
 chroot "$ROOT" nimbo-audit verify --help
 echo "P: [PR-B] OK: CLI y verify utilizables en squashfs limpio"
+
+# ADR-020: el resto de módulos de la lista, manuales y con sus órdenes utilizables.
+LISTA="$ROOT/usr/share/nimbo/modulos.list"
+[ -s "$LISTA" ] || fallar "falta /usr/share/nimbo/modulos.list"
+for m in $(grep -v '^[[:space:]]*#' "$LISTA" | grep -v '^[[:space:]]*$'); do
+    estado="$(dpkg-query --admindir="$ROOT/var/lib/dpkg" -W -f='${db:Status-Status}' "$m" 2>/dev/null || true)"
+    [ "$estado" = installed ] || fallar "$m no instalado en el squashfs (estado: ${estado:-ausente})"
+    printf '%s\n' "$manuales" | grep -qx "$m" || fallar "$m no esta marcado manual"
+    for b in $(chroot "$ROOT" dpkg -L "$m" | grep '^/usr/bin/'); do
+        chroot "$ROOT" "$b" --help >/dev/null || fallar "$b --help falla"
+    done
+    echo "P: [ADR-020] $m $(dpkg-query --admindir="$ROOT/var/lib/dpkg" -W -f='${Version}' "$m"): manual y utilizable"
+done
+
+# ADR-020: hardening 3B.2 en el squashfs (los valores en vivo los mide verify-hardening).
+for f in etc/sysctl.d/99-zz-nimbo-hardening.conf usr/share/nimbo/hardening/99-zz-nimbo-hardening.conf \
+         etc/security/faillock.conf usr/lib/nimbo/verify-hardening; do
+    [ -s "$ROOT/$f" ] || fallar "3B.2: falta /$f"
+done
+grep -q 'pam_faillock.so preauth' "$ROOT/etc/pam.d/common-auth" || fallar "3B.2: common-auth sin faillock"
+grep -q 'pam_faillock.so' "$ROOT/etc/pam.d/common-account" || fallar "3B.2: common-account sin faillock"
+echo "P: [ADR-020] OK: hardening 3B.2 en el squashfs (sysctl 99-zz-, faillock en auth y account)"
