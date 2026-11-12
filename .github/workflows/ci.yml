@@ -90,6 +90,20 @@ jobs:
           CONTAINER_ENGINE: docker
         run: ./ci/test-modulo-en-bookworm.sh packages/${{ matrix.modulo }} ${{ matrix.apt }}
 
+  tests-release-bookworm:
+    # Tests de las herramientas del release firmado (ADR-015): manifiesto y verificación de
+    # firma con claves efímeras. Va aparte de la matriz porque release/ no está en packages/.
+    name: tests-release-bookworm
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Tests de release/ en bookworm (contenedor anclado)
+        env:
+          CONTAINER_ENGINE: docker
+        run: ./ci/test-modulo-en-bookworm.sh release gnupg   # gpg y gpgv para las claves efímeras
+
   tests-build-scripts:
     # Tests de los scripts que envuelven live-build, sin contenedor ni red (segundos).
     # Existe porque auto/build terminaba con 0 aunque una etapa de lb fallara (5-nov).
