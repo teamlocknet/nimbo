@@ -6,5 +6,6 @@
   "iso_bytes": 478150656,
   "match": true,
   "distinct_boot_ids": true,
-  "qemu": "informado por Juan Jose; pendiente enlace concreto de aprobacion"
+  "qemu": "Evidencia versionada en main (#73), bloque NIMBO_APROBACION_QEMU; verificar-instalado OK, 0 fallos, Secure Boot exigido",
+  "qemu_evidence_url": "https://github.com/teamlocknet/nimbo/blob/b4d41e4c965c7c33b9871a314359164e96ea9e23/repro/evidencia/2026-11-10-qemu-instalado-03ff84c.md"
 }

@@ -66,3 +66,39 @@ Para repetir en bookworm con el script existente del repositorio:
 ```sh
 sudo env CONTAINER_ENGINE=docker ./ci/test-modulo-en-bookworm.sh release gnupg
 ```
+
+## Revisión de estados, revocación y certificado externo
+
+Solo se acepta exactamente un GOODSIG y un VALIDSIG con la huella primaria
+autorizada. Se rechazan REVKEYSIG, EXPKEYSIG, EXPSIG, BADSIG, ERRSIG y NO_PUBKEY,
+así como avisos KEYEXPIRED, SIGEXPIRED o KEYREVOKED. Un código 0 de gpgv no basta.
+El certificado debe contener una sola clave primaria autorizada y un solo UID.
+
+Política provisional: rechazar también una subclave que haya caducado después
+de firmar. Esto hace que una distribución antigua deje de verificar al caducar;
+Juan José decide en ADR-015 si se mantiene o si se diseña una política histórica.
+
+La revocación solo se conoce si se dispone de un certificado actualizado.
+Un atacante con una subclave robada puede adjuntar un certificado anterior.
+Obtén el certificado vigente por el canal independiente y usa:
+
+```sh
+python3 release/release.py verificar /ruta/distribucion \
+  --huella HUELLA_PRIMARIA_COMPLETA --clave /ruta/certificado-actualizado.asc
+```
+
+Se valida la huella tanto del certificado incluido como del externo y se importan
+ambos al llavero aislado: no se descarta una revocación conocida en ninguno de
+ellos. No se descargan claves automáticamente. Sin --clave se usa solo el adjunto;
+ese modo no garantiza conocer revocaciones posteriores. Mantener la subclave
+con caducidad corta limita esa ventana, sin sustituir la actualización.
+
+Revisión local: dos reproducciones en rojo (revocación y caducidad) con el
+verificador anterior; tras el arreglo, 21 pruebas aprobadas en trixie.
+La batería ampliada también pasó en el contenedor bookworm anclado, ejecutada
+por Alejandro: 21 passed en 1.40 s, Python 3.11.2-1+b1, pytest 7.2.1-2 y
+GnuPG 2.2.40-1.1+deb12u2. Comando: ci/test-modulo-en-bookworm.sh release gnupg.
+
+La evidencia QEMU ya está versionada en repro/evidencia/2026-11-10-qemu-instalado-03ff84c.md,
+con bloque NIMBO_APROBACION_QEMU. CANDIDATO-VERIFICADO.json contiene el enlace
+blob fijado al commit que la incorpora; no depende del texto mutable de un PR.

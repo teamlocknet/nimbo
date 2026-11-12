@@ -65,8 +65,8 @@ def metadata(path):
     if not isinstance(obj["base_image_digest"], str) or not re.fullmatch(r"sha256:[0-9a-f]{64}", obj["base_image_digest"]):
         raise ValueError("digest de imagen invalido")
     if not isinstance(obj["qemu_evidence_url"], str) or not re.fullmatch(
-            r"https://github\.com/teamlocknet/nimbo/(?:pull|issues)/[1-9][0-9]*(?:#[A-Za-z0-9-]+)?", obj["qemu_evidence_url"]):
-        raise ValueError("evidencia QEMU requiere enlace concreto del repositorio")
+            r"https://github\.com/teamlocknet/nimbo/blob/[0-9a-f]{40}/repro/evidencia/[A-Za-z0-9_-][A-Za-z0-9._-]*\.md", obj["qemu_evidence_url"]):
+        raise ValueError("evidencia QEMU requiere enlace blob fijado a un commit completo")
     return obj
 
 
@@ -87,15 +87,20 @@ def keyring(home, public, expected):
     # El llavero aislado no hereda identidades ni confianza del equipo del usuario.
     rows = gpg(home, "--with-colons", "--show-keys", str(public)).stdout.decode().splitlines()
     primary = []
+    uid_count = 0
     pending = False
     for row in rows:
         fields = row.split(":")
+        if fields[0] == "uid":
+            uid_count += 1
         if fields[0] in ["sec", "ssb"]:
             raise ValueError("solo se permite material publico")
         if fields[0] == "pub":
             pending = True
         elif fields[0] == "fpr" and pending:
             primary.append(fields[9]); pending = False
+    if uid_count != 1:
+        raise ValueError("se requiere exactamente una identidad UID")
     if primary != [fingerprint(expected)]:
         raise ValueError("la clave publica no corresponde a la identidad autorizada")
     gpg(home, "--import", str(public))
@@ -134,7 +139,7 @@ def prepare(iso, candidate, public, output, expected):
         shutil.rmtree(staging)
 
 
-def verify(directory, expected):
+def verify(directory, expected, public=None):
     directory = Path(directory)
     if directory.is_symlink() or not directory.is_dir():
         raise ValueError("directorio de distribucion invalido")
@@ -142,13 +147,24 @@ def verify(directory, expected):
     signature = regular(directory / "SHA256SUMS.asc", 1024 * 1024)
     with tempfile.TemporaryDirectory(prefix="nimbo-verify-") as temp:
         home = Path(temp)
+        # El certificado externo actualizado aporta revocaciones que el adjunto
+        # antiguo podria omitir; su identidad se contrasta con la misma huella.
         ring = keyring(home, directory / "release-key.asc", expected)
+        if public is not None:
+            # Importar ambos conserva cualquier revocacion conocida en uno de ellos.
+            ring = keyring(home, Path(public), expected)
         check = subprocess.run(["gpgv", "--homedir", str(home), "--keyring", str(ring),
             "--status-fd", "1", str(signature), str(manifest)],
             capture_output=True, check=True, timeout=30)
-        valid = [line.split() for line in check.stdout.decode().splitlines()
-                 if line.startswith("[GNUPG:] VALIDSIG ")]
-        if len(valid) != 1 or valid[0][-1] != fingerprint(expected):
+        statuses = [line.split()[1:] for line in check.stdout.decode().splitlines()
+                    if line.startswith("[GNUPG:] ")]
+        forbidden = {"REVKEYSIG", "EXPKEYSIG", "EXPSIG", "BADSIG", "ERRSIG",
+                     "NO_PUBKEY", "KEYEXPIRED", "SIGEXPIRED", "KEYREVOKED"}
+        if any(row and row[0] in forbidden for row in statuses):
+            raise ValueError("firma revocada, caducada o no valida")
+        good = [row for row in statuses if row and row[0] == "GOODSIG"]
+        valid = [row for row in statuses if row and row[0] == "VALIDSIG"]
+        if len(good) != 1 or len(valid) != 1 or valid[0][-1] != fingerprint(expected):
             raise ValueError("firma de identidad no autorizada o ambigua")
     entries = {}
     for line in manifest.read_text(encoding="ascii").splitlines():
@@ -180,13 +196,14 @@ def main():
     ver = sub.add_parser("verificar")
     ver.add_argument("directorio", type=Path)
     ver.add_argument("--huella", required=True)
+    ver.add_argument("--clave", type=Path, help="certificado publico actualizado obtenido por canal independiente")
     args = parser.parse_args()
     try:
         if args.action == "preparar":
             prepare(args.iso, args.candidato, args.clave_publica, args.salida, args.huella)
             print("Preparado sin firma; no publicar todavia")
         else:
-            info = verify(args.directorio, args.huella)
+            info = verify(args.directorio, args.huella, public=args.clave)
             print("OK: firma, identidad y hashes de " + info["tag"])
         return 0
     except (ValueError, OSError, subprocess.SubprocessError) as error:

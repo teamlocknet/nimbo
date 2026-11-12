@@ -21,7 +21,8 @@ Antes de firmar, consultar la API del repositorio fijo teamlocknet/nimbo:
 3. SHA de la ISO igual al archivo adjunto y a ambas piernas A/B de repro-verify;
    registrar intentos y boot_id, sin tratar un success aislado como MATCH.
 4. Evidencia QEMU versionada en main: comprobar que el fichero existe y nombra
-   el SHA-256 completo de la ISO. Juan José la sube redactada. Su aprobación del
+   el SHA-256 completo de la ISO. Ya está versionada por #73 en repro/evidencia/2026-11-10-qemu-instalado-03ff84c.md
+   (bloque NIMBO_APROBACION_QEMU). Su aprobación del
    environment es además la puerta humana; el fichero no la sustituye.
 5. Tag y release inexistentes: cualquier colisión aborta, nunca sobrescribe.
 
@@ -51,8 +52,9 @@ Pages u OIDC. Un rollback no borra evidencias ni reemplaza assets.
 
 El desglose está aprobado con las condiciones de Juan José. Primero se revisa
 y cierra ADR-015 (Propuesto); después se prepara release.yml en un PR aparte.
-Faltan la huella pública real, su configuración de environment/secretos y la
-evidencia QEMU versionada por Juan José. R11-R14 de procedencia, publicación incompleta y reejecución
+Faltan la huella pública real y su configuración de environment/secretos.
+La evidencia QEMU de #73 ya está versionada; el workflow comprobará su bloque
+NIMBO_APROBACION_QEMU contra el hash, SHA y runs indicados. R11-R14 de procedencia, publicación incompleta y reejecución
 se implementan y prueban con el workflow después del checkpoint.
 
 ## Cinco assets de rc1 y plan B
