@@ -1,0 +1,17 @@
+Source: nimbo-net
+Section: net
+Priority: optional
+Maintainer: Juan José Duque <jd1020157@gmail.com>
+Build-Depends: debhelper-compat (= 13), dh-python, pybuild-plugin-pyproject,
+ python3-all, python3-setuptools, python3-pytest
+Standards-Version: 4.6.2
+Homepage: https://github.com/teamlocknet/nimbo
+Rules-Requires-Root: no
+
+Package: nimbo-net
+Architecture: all
+Depends: ${python3:Depends}, ${misc:Depends}, wireguard-tools, iproute2,
+ iputils-ping, nftables, systemd, nimbo-red
+Description: red privada WireGuard entre dos pares preparados
+ Activa un tunel dividido solo a demanda. Usa la conectividad previamente
+ activada con nimbo-red y se niega cuando el modo Tor esta activo.
