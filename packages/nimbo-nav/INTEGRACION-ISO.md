@@ -1,9 +1,9 @@
 # Plan de integración a la ISO — nimbo-nav y hardening 3B.2 (checkpoint, E8)
 
-**Estado (12-nov):** el mecanismo general y el hardening 3B.2 ya están integrados por
-[ADR-020](../../docs/adr/ADR-020-modulos-en-la-iso.md) (lista única `modulos.list`, hooks
-0170 y 0185; 3B.2 por la opción A, copia al compilar). `nimbo-nav` entra en el segundo PR
-de integración, con `nimbo-net`. Lo que sigue es la propuesta original, que queda como
+**Estado (12-nov):** integrado en la ISO por el segundo PR de
+[ADR-020](../../docs/adr/ADR-020-modulos-en-la-iso.md) (sección PR-2), junto con
+`nimbo-net`: una línea en `modulos.list`, y el hook 0185 exige `tor`, `nimbo-modo-tor` y
+`nimbo-leakcheck` sin arrancar solos. Lo que sigue es la propuesta original, que queda como
 referencia de las comprobaciones de `nimbo-nav`. Todos los
 cambios tocan ficheros del núcleo (`iso/live-build/`, `.github/workflows/`) y cambian el
 SHA de la ISO; por eso los aplica o aprueba Juan José, siguiendo el mismo camino que el

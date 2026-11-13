@@ -9,7 +9,7 @@
 # Además, nimbo-update-offline no compilaba como .deb en el contenedor anclado: sus tests
 # generan claves y gpg sin gpg-agent (con --no-install-recommends) falla.
 #
-# PR-2 (13-nov): entran nimbo-nav y nimbo-net; tor, el modo Tor, el vigilante de fugas y
+# PR-2 (12-nov): entran nimbo-nav y nimbo-net; tor, el modo Tor, el vigilante de fugas y
 # wg-nimbo deben quedar sin arrancar solos, también en los verificadores.
 #
 # Uso: ./iso/live-build/tests/test-modulos-en-receta.sh   (sale con 0 solo si pasa)
