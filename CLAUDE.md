@@ -42,7 +42,7 @@ Decisión registrada en `docs/adr/ADR-000-codename-y-nombre.md` (Aceptado).
 
 | Cosa | Ruta |
 |---|---|
-| **Este repo (todo el trabajo)** | `~/Projects/nimbo` (clon local; en Windows, dentro de WSL2, no en `/mnt/c`) |
+| **Este repo (todo el trabajo)** | `~/Projects/nimbo_repo` en la máquina de Juan José (cada cual tiene su clon; en Windows, dentro de WSL2, no en `/mnt/c`) |
 | Documento maestro vivo (fuente de verdad, **fuera del repo**) | `~/Projects/EcosistemaCiberseguridad/OS_Ciberseguridad/documento_maestro_v2_4.md` |
 | Plan de trabajo por persona (fuera del repo) | `plan_de_trabajo_equipo.md`, junto al maestro |
 | Documento maestro histórico (desactualizado, no usar) | `docs/documento-maestro/documento_maestro_v2_0.md` |
@@ -109,7 +109,7 @@ nimbo/
 ├── README.md
 ├── .gitignore
 ├── docs/
-│   ├── adr/                 # decisiones de arquitectura (ADR-000…019) — compartido
+│   ├── adr/                 # decisiones de arquitectura (ADR-000…020) — compartido
 │   ├── documento-maestro/   # solo el v2.0 histórico (el vivo está fuera del repo)
 │   ├── hallazgos/           # H-001, H-004… (material de sustentación)
 │   └── manuales/            # usuario + ingeniería — compartido
@@ -135,9 +135,11 @@ nimbo/
 └── .github/
     ├── CODEOWNERS
     └── workflows/
-        ├── ci.yml           # jobs `estructura`, `tests-cli-bookworm`, `tests-build-scripts`
+        ├── ci.yml           # jobs `estructura`, `tests-cli-bookworm`, `tests-modulos-bookworm` (×4),
+        │                    #   `tests-release-bookworm`, `tests-build-scripts`
         ├── build-iso.yml    # compila la ISO en contenedor y la sube como artifact (caduca a los 7 días)
-        └── repro-verify.yml # compuerta MATCH ×2 (dos compilaciones, mismo SHA-256) + run semanal
+        ├── repro-verify.yml # compuerta MATCH ×2 (dos compilaciones, mismo SHA-256) + run semanal
+        └── release.yml      # release firmado a mano (environment `release`, ADR-015)
 ```
 
 **Arquitectura (DAS v2.0, 3 capas):** Capa 1 Debian bookworm (LTS) + systemd (endurecido) · Capa 2
@@ -180,27 +182,33 @@ evalúan en ADR-011, sin decidir) · **Calamares 3.3.8** (única excepción de b
 ## 9. Estado actual y plan de fases
 
 El estado detallado y el calendario viven en el **maestro v2.4** (§0 y §8). Este resumen
-es del 9-nov-2026; si choca con el maestro, gana el maestro.
+es del 13-nov-2026; si choca con el maestro, gana el maestro.
 
 - ✅ **Core OS:** ISO live + instalable (Calamares, LUKS2 argon2id, Secure Boot verificado),
   hermética (0 sospechosos, 0 listeners), <500 MB en reposo; 3C.2 idioma/zona/swap (#40).
 - ✅ **Reproducibilidad:** MATCH ×2 en CI y entre máquinas físicas (H-001, H-004);
-  espejo propio del snapshot (ADR-016).
+  espejo propio del snapshot (ADR-016). Cada commit cambia el SHA de la ISO (epoch del
+  commit): "lo verificado sigue valiendo" se comprueba comparando contenido (squashfs + initrd).
 - ✅ **LUKS + TPM:** `nimbo-tpm-setup` validado V2–V8 en QEMU (ADR-008); H-002 cerrado en
-  QEMU con RAM mínima de 1 GiB (ADR-009). Falta hardware real (semana del 17-nov).
+  QEMU con RAM mínima de 1 GiB (ADR-009). Falta hardware real (17-nov).
 - ✅ **CLI `nimbo-audit`:** `init`/`capture`/`report`/`verify`, `.deb` (ADR-010) y dentro de
   la ISO (#42).
-- ⏭️ **Siguiente (prioridad Alta, D15 = B):** navegación segura RF-NAV-01/02 (Emmanuel,
-  ADR-012), red privada RF-RED-01 (Alejandro, ADR-011), actualización sin conexión
-  RF-UPD-01 y RNF-03 (dueño por decidir). Prioridad Media, si da el tiempo: RF-DIST-01,
-  RNF-06.
+- ✅ **ISO integrada (ADR-020, #81 y #83):** `nimbo-nav` (Firefox ESR endurecido + modo Tor
+  con `nimbo-leakcheck`), `nimbo-net` (WireGuard), `nimbo-red` (red por cable a demanda,
+  ADR-019) y `nimbo-update-offline` dentro de la ISO; Tor y WireGuard no arrancan solos.
+  ISO de la demo: `30b5958f…` (546 MiB), verificada en QEMU live e instalada.
+- 🟡 **Validación por requisito sobre esa ISO:** RF-RED-01 en dos instalaciones (#84);
+  RF-NAV-01/02 (Emmanuel) pendiente.
+- 🟡 **Release firmado (ADR-015 Aceptado, `release.yml` en #78):** falta la clave de release y
+  el environment `release`; candidato `03ff84c`, límite 17-nov 16:11:04 UTC.
+- ⏭️ **Prioridad Media, si da el tiempo (D15 = B):** RF-DIST-01, RNF-06.
 
 **Requisitos vigentes:** el `.docx` "Requisitos de sistema" (15 RF + 7 RNF) y sus historias
 de usuario. El criterio de aceptación lo manda ese documento; en fechas manda el plan de
 trabajo. Los comentarios de `cli.py` aún usan la numeración antigua (RF-01, RF-03…).
 
-**Números de ADR reservados:** 011 red privada · 012 navegación y Tor · 013 air-gapped ·
-014 hardening 3B.2 · 015 repo APT y custodia de claves.
+**ADR 011–020 ya escritos.** Siguen en Propuesto: ADR-013 (air-gapped) y ADR-014
+(hardening 3B.2, #69 abierto). El siguiente número libre es el 021.
 
 **Jefes de nivel:** reproducibilidad (🏁) · Design Partner (🔴 sin cerrar) · LUKS + TPM
 (✅ en QEMU; falta hardware real).
@@ -213,9 +221,9 @@ Lista completa en el maestro v2.4 §12. Las que más afectan al trabajo diario:
 - **D2 — Design Partner:** 🔴 abierto.
 - **D4 — Confirmar integrantes/autores en los docs SENA:** 🟠 antes de la entrega.
 - **D16 — Fecha de sustentación:** 🔴 sin confirmar (plan a ~30-nov).
-- **Dueño de RF-UPD-01 y RNF-03:** 🔴 sin decidir.
 - (Resueltas: D7 codename = `nimbo` · D9 bookworm · D14 autologin solo live · D15 alcance
-  por prioridad · D17 LUKS por contraseña + TPM opcional · D18 reparto en tres frentes.)
+  por prioridad · D17 LUKS por contraseña + TPM opcional · D18 reparto en tres frentes ·
+  dueño de RF-UPD-01 y RNF-03 = Juan José + IA, 10-nov.)
 
 ## 11. Anti-desborde — qué NO hacer sin que te lo pidan
 
