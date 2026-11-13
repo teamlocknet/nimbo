@@ -35,3 +35,31 @@ for m in $MODULOS; do
     done
     echo "P: [hook 0185] $m $(dpkg-query -W -f='${Version}' "$m"): manual, $ordenes orden(es) con --help OK"
 done
+
+# Lo que traen nimbo-nav y nimbo-net no siempre es una unidad del propio módulo: tor.service
+# y tor@default.service son del paquete tor (Debian los deja habilitados; los apaga el
+# postinst de nimbo-nav) y wg-nimbo la crea `nimbo-net join` a mano. Se exigen por nombre:
+# que existan y que no arranquen solos (ADR-012 C1, ADR-011; RNF-01).
+apagada() {
+    [ -e "/usr/lib/systemd/system/$1" ] || [ -e "/lib/systemd/system/$1" ] \
+        || { echo "E: [hook 0185] falta la unidad $1" >&2; exit 1; }
+    estado=$(systemctl --root=/ is-enabled "$1" 2>/dev/null || true)
+    case "$estado" in
+        enabled|enabled-runtime|alias|linked)
+            echo "E: [hook 0185] $1 está '$estado': nada debe arrancar solo" >&2; exit 1 ;;
+    esac
+    echo "P: [hook 0185]   $1: ${estado:-sin estado} (no arranca solo)"
+}
+if printf '%s\n' "$MODULOS" | grep -qx nimbo-nav; then
+    for u in tor.service tor@default.service nimbo-modo-tor.service nimbo-leakcheck.service; do
+        apagada "$u"
+    done
+fi
+if printf '%s\n' "$MODULOS" | grep -qx nimbo-net; then
+    # wg-nimbo: sin configuración persistente ni ningún wg-quick habilitado.
+    [ ! -e /etc/wireguard/wg-nimbo.conf ] \
+        || { echo "E: [hook 0185] existe /etc/wireguard/wg-nimbo.conf: wg-nimbo solo con join" >&2; exit 1; }
+    wq=$(find /etc/systemd/system -name 'wg-quick*' 2>/dev/null | LC_ALL=C sort)
+    [ -z "$wq" ] || { echo "E: [hook 0185] wg-quick habilitado (wg-nimbo debe nacer apagado): $wq" >&2; exit 1; }
+    echo "P: [hook 0185]   wg-nimbo: sin configuración ni wg-quick habilitado (solo nimbo-net join)"
+fi
