@@ -9,6 +9,9 @@
 # Además, nimbo-update-offline no compilaba como .deb en el contenedor anclado: sus tests
 # generan claves y gpg sin gpg-agent (con --no-install-recommends) falla.
 #
+# PR-2 (13-nov): entran nimbo-nav y nimbo-net; tor, el modo Tor, el vigilante de fugas y
+# wg-nimbo deben quedar sin arrancar solos, también en los verificadores.
+#
 # Uso: ./iso/live-build/tests/test-modulos-en-receta.sh   (sale con 0 solo si pasa)
 set -euo pipefail
 
@@ -31,7 +34,7 @@ if [ -f "$LISTA" ]; then
 else
     falla "falta $LISTA"
 fi
-for m in nimbo-audit nimbo-red nimbo-update-offline; do
+for m in nimbo-audit nimbo-red nimbo-update-offline nimbo-nav nimbo-net; do
     printf '%s\n' "$MODULOS" | grep -qx "$m" && ok "lista $m" || falla "la lista no incluye $m"
 done
 for m in $MODULOS; do
@@ -66,6 +69,17 @@ for h in 0170-nimbo-hardening-3b2.hook.chroot 0185-nimbo-modulos.hook.chroot; do
 done
 [ -f "$HOOKS/0185-nimbo-modulos.hook.chroot" ] && grep -q '/usr/share/nimbo/modulos.list' "$HOOKS/0185-nimbo-modulos.hook.chroot" \
     && ok "0185 recorre la misma lista" || falla "0185 no lee modulos.list"
+# PR-2: lo que traen nimbo-nav y nimbo-net (tor, el modo Tor, el vigilante, WireGuard) no lo
+# instala el módulo sino Debian o su postinst: el recorrido genérico de 0185 no lo vería.
+for u in tor.service tor@default.service nimbo-modo-tor.service nimbo-leakcheck.service wg-nimbo; do
+    [ -f "$HOOKS/0185-nimbo-modulos.hook.chroot" ] && grep -qF "$u" "$HOOKS/0185-nimbo-modulos.hook.chroot" \
+        && ok "0185 exige $u sin arrancar solo" || falla "0185 no comprueba $u"
+done
+for v in "$LB/verificar-cli-rootfs.sh" "$LB/verificar-instalado.sh"; do
+    for u in tor@default.service nimbo-modo-tor.service wg-nimbo 140.14.0esr-1~deb12u1; do
+        grep -qF "$u" "$v" && ok "$(basename "$v") comprueba $u" || falla "$(basename "$v") no comprueba $u"
+    done
+done
 [ -f "$HOOKS/0170-nimbo-hardening-3b2.hook.chroot" ] && grep -q 'pam-auth-update --package --enable nimbo-faillock nimbo-faillock-preauth' "$HOOKS/0170-nimbo-hardening-3b2.hook.chroot" \
     && ok "0170 activa los perfiles PAM" || falla "0170 no activa nimbo-faillock"
 
