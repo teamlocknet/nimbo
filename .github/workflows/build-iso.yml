@@ -11,10 +11,10 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ["iso/live-build/**", "packages/nimbo-audit/**", "packages/nimbo-red/**", "packages/nimbo-update-offline/**", "security/hardening/3b2/**", "repro/espejo/**", ".github/workflows/build-iso.yml"]
+    paths: ["iso/live-build/**", "packages/nimbo-audit/**", "packages/nimbo-red/**", "packages/nimbo-update-offline/**", "packages/nimbo-nav/**", "packages/nimbo-net/**", "security/hardening/3b2/**", "repro/espejo/**", ".github/workflows/build-iso.yml"]
   pull_request:
     branches: [main]
-    paths: ["iso/live-build/**", "packages/nimbo-audit/**", "packages/nimbo-red/**", "packages/nimbo-update-offline/**", "security/hardening/3b2/**", "repro/espejo/**", ".github/workflows/build-iso.yml"]
+    paths: ["iso/live-build/**", "packages/nimbo-audit/**", "packages/nimbo-red/**", "packages/nimbo-update-offline/**", "packages/nimbo-nav/**", "packages/nimbo-net/**", "security/hardening/3b2/**", "repro/espejo/**", ".github/workflows/build-iso.yml"]
 
 # Cancela runs viejos de la misma rama: no encolar builds pesados en pushes seguidos.
 concurrency:

@@ -57,7 +57,36 @@ peso, y (2) `nimbo-nav` y `nimbo-net`, que añaden `firefox-esr`, `tor` y `wireg
   dicen; un acierto pone el contador a cero; `nimbo-red on/off` funciona con `rp_filter=1`;
   `verify-hardening` 0 fallos en live e instalado.
 - Hallazgo al verificar: en el live, `nimbo-red estado` dice "sin red" aunque `live-boot` ya
-  levantó la interfaz por DHCP (mensaje engañoso; en el instalado no pasa). Arreglo aparte.
+  levantó la interfaz por DHCP (mensaje engañoso; en el instalado no pasa). Arreglo aparte
+  (#82).
+
+## PR-2 — `nimbo-nav` y `nimbo-net` (12-nov)
+
+Verificado en QEMU por Juan José el 12-nov sobre la ISO de CI `7e405746…` (MATCH ×2):
+[evidencia](../../repro/evidencia/2026-11-12-qemu-pr83.md).
+
+- `modulos.list` suma `nimbo-nav` y `nimbo-net`. Por dependencias entran del snapshot
+  `firefox-esr` **140.14.0esr-1~deb12u1** (de `debian-security`; la versión que deben medir
+  RF-NAV-01/02), `tor` 0.4.9.11-0+deb12u1 y `wireguard-tools` 1.0.20210914-1+b1.
+- El recorrido genérico de 0185 solo ve las unidades del propio módulo. `tor.service` y
+  `tor@default.service` son del paquete `tor` (Debian los deja habilitados; los apaga el
+  postinst de `nimbo-nav`) y `wg-nimbo` la crea `nimbo-net join` a mano. Por eso 0185 los
+  exige **por nombre**: `tor.service`, `tor@default.service`, `nimbo-modo-tor.service` y
+  `nimbo-leakcheck.service` presentes y sin arrancar solos; `wg-nimbo` sin
+  `/etc/wireguard/wg-nimbo.conf` ni ningún `wg-quick` habilitado. Los dos verificadores
+  comprueban lo mismo, más la versión de `firefox-esr` (si el snapshot cambia, avisa de que
+  hay que repetir RF-NAV-01/02).
+- **Tamaño:** la ISO pasa de 456 MiB (`main` `4bf30b1`) a **546 MiB** (+90 MiB, casi todo
+  `firefox-esr`). Compilación local del 12-nov, `ba4f6fc9…`: hook 0185 OK (`tor.service`
+  `disabled`; `tor@default`, `nimbo-modo-tor` y `nimbo-leakcheck` `static`, sin `[Install]`),
+  `verificar-cli-en-iso.sh` OK, hermetismo live 0 sospechosos / 0 listeners, RAM live 374 MiB.
+- **Hallazgo en el live (12-nov, Juan José):** `tor@default.service` sale `enabled-runtime`
+  aunque en el chroot era `static`. Lo enlaza en cada arranque `tor-generator` (del paquete
+  `tor`) bajo `/run/systemd/generator/tor.service.wants/` porque existe `/etc/tor/torrc`; en el
+  chroot los generadores no corren. Solo arranca si arranca `tor.service`, que está `disabled`:
+  en el live, `is-active` = `inactive`. Lo que garantiza que Tor no arranca solo es
+  `tor.service` deshabilitado. `verificar-instalado.sh` acepta ese único enlace solo con
+  `tor.service` sin habilitar y la unidad inactiva (rojo → verde).
 
 ## Fecha
 
