@@ -81,6 +81,25 @@ for m in $(grep -v '^[[:space:]]*#' "$LISTA" | grep -v '^[[:space:]]*$'); do
     echo "P: [ADR-020] $m $(dpkg-query --admindir="$ROOT/var/lib/dpkg" -W -f='${Version}' "$m"): manual y utilizable"
 done
 
+# ADR-020 (PR-2): navegador y Tor de nimbo-nav, WireGuard de nimbo-net; nada arranca solo.
+if grep -qx nimbo-nav "$LISTA"; then
+    v="$(dpkg-query --admindir="$ROOT/var/lib/dpkg" -W -f='${Version}' firefox-esr 2>/dev/null || true)"
+    [ "$v" = "140.14.0esr-1~deb12u1" ] || fallar "firefox-esr ${v:-ausente}; se midio con 140.14.0esr-1~deb12u1 (repetir RF-NAV-01/02)"
+    [ -s "$ROOT/usr/lib/firefox-esr/distribution/policies.json" ] || fallar "falta policies.json de nimbo-nav"
+    [ -s "$ROOT/usr/share/nimbo-nav/nimbo-tor.nft" ] || fallar "falta la tabla nimbo-tor.nft"
+    for u in tor.service tor@default.service nimbo-modo-tor.service nimbo-leakcheck.service; do
+        e="$(chroot "$ROOT" systemctl --root=/ is-enabled "$u" 2>/dev/null || true)"
+        case "$e" in enabled*|alias|linked|"") fallar "$u: '${e:-ausente}' (debe existir y no arrancar solo)" ;; esac
+    done
+    echo "P: [ADR-020] nimbo-nav: firefox-esr $v, politicas y tabla Tor; tor@default.service y nimbo-modo-tor.service no arrancan solos"
+fi
+if grep -qx nimbo-net "$LISTA"; then
+    [ -x "$ROOT/usr/bin/wg" ] || fallar "falta wg (wireguard-tools)"
+    [ ! -e "$ROOT/etc/wireguard/wg-nimbo.conf" ] || fallar "wg-nimbo con configuracion persistente"
+    [ -z "$(find "$ROOT/etc/systemd/system" -name 'wg-quick*')" ] || fallar "wg-quick habilitado"
+    echo "P: [ADR-020] nimbo-net: wireguard-tools; wg-nimbo sin configuracion ni wg-quick (solo join)"
+fi
+
 # ADR-020: hardening 3B.2 en el squashfs (los valores en vivo los mide verify-hardening).
 for f in etc/sysctl.d/99-zz-nimbo-hardening.conf usr/share/nimbo/hardening/99-zz-nimbo-hardening.conf \
          etc/security/faillock.conf usr/lib/nimbo/verify-hardening; do
