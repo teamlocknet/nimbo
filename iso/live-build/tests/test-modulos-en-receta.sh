@@ -80,6 +80,12 @@ for v in "$LB/verificar-cli-rootfs.sh" "$LB/verificar-instalado.sh"; do
         grep -qF "$u" "$v" && ok "$(basename "$v") comprueba $u" || falla "$(basename "$v") no comprueba $u"
     done
 done
+# tor-generator (paquete tor) enlaza en cada arranque tor@default en
+# /run/systemd/generator/tor.service.wants: enabled-runtime en el instalado aunque no arranque
+# (tor.service disabled). Visto en el live de #83; en el chroot no corren generadores.
+grep -qF 'generator/tor.service.wants/tor@default.service' "$LB/verificar-instalado.sh" \
+    && ok "verificar-instalado.sh distingue el enlace de tor-generator" \
+    || falla "verificar-instalado.sh daría falso positivo con tor@default (tor-generator)"
 [ -f "$HOOKS/0170-nimbo-hardening-3b2.hook.chroot" ] && grep -q 'pam-auth-update --package --enable nimbo-faillock nimbo-faillock-preauth' "$HOOKS/0170-nimbo-hardening-3b2.hook.chroot" \
     && ok "0170 activa los perfiles PAM" || falla "0170 no activa nimbo-faillock"
 
