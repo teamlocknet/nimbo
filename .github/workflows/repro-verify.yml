@@ -30,6 +30,11 @@ on:
     paths:
       - "iso/live-build/**"
       - "packages/nimbo-audit/**"
+      - "packages/nimbo-red/**"
+      - "packages/nimbo-update-offline/**"
+      - "packages/nimbo-nav/**"
+      - "packages/nimbo-net/**"
+      - "security/hardening/3b2/**"
       - "repro/espejo/**"
       - ".github/workflows/repro-verify.yml"
   pull_request:
@@ -37,6 +42,11 @@ on:
     paths:
       - "iso/live-build/**"
       - "packages/nimbo-audit/**"
+      - "packages/nimbo-red/**"
+      - "packages/nimbo-update-offline/**"
+      - "packages/nimbo-nav/**"
+      - "packages/nimbo-net/**"
+      - "security/hardening/3b2/**"
       - "repro/espejo/**"
       - ".github/workflows/repro-verify.yml"
 

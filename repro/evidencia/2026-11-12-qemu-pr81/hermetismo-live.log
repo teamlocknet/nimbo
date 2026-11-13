@@ -1,0 +1,27 @@
+# nimbo — evidencia de HERMETISMO en idle (Paso 3B.1, RNF-01)
+# ISO   : live-image-amd64.hybrid.iso  (478150656 bytes)
+# Red   : QEMU user-mode SLIRP (10.0.2.0/24 cautiva; NO toca Internet)
+# Idle  : 120s de captura sin interacción  ·  guest=10.0.2.15
+# pcap  : hermetismo.pcap  (2799 bytes)
+#======================================================================
+## 1) TRÁFICO SALIENTE DEL GUEST (análisis tcpdump)
+Paquetes totales capturados : 12
+  DNS   (port 53)  : 0   [sospechoso si > 0]
+  NTP   (port 123) : 0   [sospechoso si > 0]
+  HTTP/S(80/443)   : 0   [sospechoso si > 0]
+  SYN TCP saliente : 0   [sospechoso si > 0]
+
+Paquetes NO-locales (ni ARP, DHCP o multicast IPv6 link-local) — deben ser CERO:
+    (ninguno)
+#----------------------------------------------------------------------
+## 2) SOCKETS DEL GUEST (leídos por serie)
+    Netid  State   Recv-Q  Send-Q   Local Address:Port   Peer Address:Port Process  
+    udp    UNCONN  0       0              0.0.0.0:68          0.0.0.0:*             
+    --- /proc/net LISTEN (st=0A) ---
+
+Listeners de red expuestos (excl. loopback y cliente DHCP udp/68,546): 0
+#======================================================================
+## VEREDICTO
+  Paquetes sospechosos (DNS+NTP+web+SYN) : 0
+  Listeners de red no-loopback           : 0
+  HERMETISMO : OK ✅  (sin salientes no solicitadas ni listeners de red en idle)

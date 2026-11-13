@@ -133,3 +133,9 @@ jobs:
 
       - name: La ISO no instala firmware deducido de Contents (ADR-018)
         run: ./iso/live-build/tests/test-sin-firmware-deducido.sh
+
+      - name: Módulos propios y 3B.2 en la receta, con una sola lista (ADR-020)
+        run: ./iso/live-build/tests/test-modulos-en-receta.sh
+
+      - name: Verificador de hardening 3B.2 con raíz falsa (ADR-014)
+        run: bash security/hardening/3b2/pruebas/test-verify-hardening.sh

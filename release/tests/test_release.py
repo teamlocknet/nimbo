@@ -7,9 +7,12 @@ import shutil
 import subprocess
 import tempfile
 import time
+import sys
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0,str(ROOT))
+import firmar
 
 class ReleaseTests(unittest.TestCase):
     @classmethod
@@ -200,6 +203,29 @@ class ReleaseTests(unittest.TestCase):
         old=self.base/"old.asc";old.write_bytes(self.gpg("--armor","--export",primary).stdout)
         with self.assertRaises((ValueError,subprocess.SubprocessError)):
             self.tool.verify(self.out,primary,public=old)
+
+    def test_firma_real_con_exportacion_solo_subclave(self):
+        primary,_=self.subkey_identity()
+        secret=self.gpg("--batch","--pinentry-mode","loopback","--passphrase","",
+                        "--armor","--export-secret-subkeys",primary).stdout
+        bundle=self.base/"bundle";bundle.mkdir()
+        shutil.copyfile(self.iso,bundle/"candidate.iso")
+        shutil.copyfile(self.metadata,bundle/"candidate.json")
+        adr=self.base/"ADR.md";adr.write_text("**Estado:** Aceptado.")
+        signer=firmar.sign(bundle,self.out,primary,secret,b"",adr)
+        self.assertNotEqual(primary,signer)
+        self.tool.verify(self.out,primary)
+
+    def test_firma_rechaza_primaria_secreta_real(self):
+        primary,_=self.subkey_identity()
+        secret=self.gpg("--batch","--pinentry-mode","loopback","--passphrase","",
+                        "--armor","--export-secret-keys",primary).stdout
+        bundle=self.base/"bundle";bundle.mkdir()
+        shutil.copyfile(self.iso,bundle/"candidate.iso")
+        shutil.copyfile(self.metadata,bundle/"candidate.json")
+        adr=self.base/"ADR.md";adr.write_text("**Estado:** Aceptado.")
+        with self.assertRaises(ValueError):firmar.sign(bundle,self.out,primary,secret,b"",adr)
+        self.assertFalse(self.out.exists())
 
     def test_uid_adicional(self):
         self.gpg("--batch", "--pinentry-mode", "loopback", "--passphrase", "",

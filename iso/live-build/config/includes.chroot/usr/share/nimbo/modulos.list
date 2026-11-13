@@ -1,0 +1,13 @@
+# /usr/share/nimbo/modulos.list — módulos propios de nimbo que lleva la ISO (ADR-020).
+#
+# Lista ÚNICA: de aquí leen build-in-container.sh (qué .deb construir), el hook
+# 0185-nimbo-modulos (instalados, manuales, sin unidades activas) y los verificadores.
+# Viaja al live y al instalado para que verificar-instalado.sh compruebe lo mismo.
+# Una línea por paquete de packages/<nombre>/. Añadir un módulo = una línea aquí +
+# su ruta en los filtros de build-iso.yml y repro-verify.yml (lo vigila
+# tests/test-modulos-en-receta.sh).
+nimbo-audit
+nimbo-red
+nimbo-update-offline
+nimbo-nav
+nimbo-net

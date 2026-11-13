@@ -186,7 +186,68 @@ else
     ko "manual del CLI ausente o corrupto"
 fi
 
-sec "9. Lista de paquetes del sistema instalado"
+sec "9. Modulos propios y hardening 3B.2 (ADR-020)"
+LISTA=/usr/share/nimbo/modulos.list
+if [ -s "$LISTA" ]; then
+    for m in $(grep -v '^[[:space:]]*#' "$LISTA" | grep -v '^[[:space:]]*$'); do
+        if [ "$(dpkg-query -W -f='${db:Status-Status}' "$m" 2>/dev/null)" = installed ]; then
+            ok "$m instalado: $(dpkg-query -W -f='${Version}' "$m")"
+        else
+            ko "$m no instalado"; continue
+        fi
+        for b in $(dpkg -L "$m" | grep '^/usr/bin/'); do
+            "$b" --help >/dev/null 2>&1 && ok "$b --help" || ko "falla $b --help"
+        done
+        for u in $(dpkg -L "$m" | grep -E '/systemd/system/[^/]+\.(service|socket|timer|path)$' | xargs -r -n1 basename); do
+            e=$(systemctl is-enabled "$u" 2>/dev/null); a=$(systemctl is-active "$u" 2>/dev/null)
+            case "$e" in enabled*|alias|linked) ko "$u habilitada ($e): nada debe arrancar solo" ;; *) ok "$u no arranca sola ($e, $a)" ;; esac
+        done
+    done
+    # PR-2: lo que traen nimbo-nav (tor, de Debian) y nimbo-net (wg-nimbo, la crea join).
+    if grep -qx nimbo-nav "$LISTA"; then
+        v=$(dpkg-query -W -f='${Version}' firefox-esr 2>/dev/null)
+        [ "$v" = "140.14.0esr-1~deb12u1" ] && ok "firefox-esr $v (la medida en RF-NAV-01/02)" \
+            || ko "firefox-esr ${v:-ausente}; se midio con 140.14.0esr-1~deb12u1"
+        for u in tor.service tor@default.service nimbo-modo-tor.service nimbo-leakcheck.service; do
+            e=$(systemctl is-enabled "$u" 2>/dev/null); a=$(systemctl is-active "$u" 2>/dev/null)
+            # tor-generator (paquete tor) enlaza tor@default bajo tor.service.wants en cada
+            # arranque: enabled-runtime, pero solo arranca si arranca tor.service (disabled).
+            if [ "$u" = tor@default.service ] && [ "$e" = enabled-runtime ]; then
+                enlaces=$(find /etc/systemd/system /run/systemd/system /run/systemd/generator \
+                    /run/systemd/generator.early /run/systemd/generator.late \
+                    -name tor@default.service 2>/dev/null | LC_ALL=C sort | tr '\n' ' ')
+                case "$(systemctl is-enabled tor.service 2>/dev/null)" in enabled*|alias|linked) te=si ;; *) te=no ;; esac
+                if [ "$enlaces" = "/run/systemd/generator/tor.service.wants/tor@default.service " ] \
+                   && [ "$te" = no ] && [ "$a" != active ]; then
+                    ok "$u no arranca sola (enlace de tor-generator bajo tor.service, que esta disabled; $a)"
+                else
+                    ko "$u: enabled-runtime fuera del caso de tor-generator (enlaces: ${enlaces:-ninguno}; tor.service habilitado: $te; $a)"
+                fi
+                continue
+            fi
+            case "$e" in
+                enabled*|alias|linked|"") ko "$u: '${e:-ausente}' (debe existir y no arrancar sola)" ;;
+                *) [ "$a" = active ] && ko "$u activa en reposo" || ok "$u no arranca sola ($e, $a)" ;;
+            esac
+        done
+    fi
+    if grep -qx nimbo-net "$LISTA"; then
+        command -v wg >/dev/null && ok "wireguard-tools: $(dpkg-query -W -f='${Version}' wireguard-tools)" || ko "falta wg"
+        ip link show wg-nimbo >/dev/null 2>&1 && ko "wg-nimbo existe en reposo" || ok "wg-nimbo no existe en reposo (solo join)"
+        [ -e /etc/wireguard/wg-nimbo.conf ] && ko "wg-nimbo con configuracion persistente" || ok "wg-nimbo sin configuracion persistente"
+        [ -z "$(find /etc/systemd/system -name 'wg-quick*' 2>/dev/null)" ] && ok "ningun wg-quick habilitado" || ko "wg-quick habilitado"
+    fi
+else
+    ko "falta $LISTA"
+fi
+if [ -x /usr/lib/nimbo/verify-hardening ]; then
+    vh=$(/usr/lib/nimbo/verify-hardening 2>&1 | grep '^VEREDICTO' | tail -1)
+    case "$vh" in "VEREDICTO: OK"*) ok "verify-hardening: $vh" ;; *) ko "verify-hardening: ${vh:-sin veredicto}" ;; esac
+else
+    ko "falta /usr/lib/nimbo/verify-hardening"
+fi
+
+sec "10. Lista de paquetes del sistema instalado"
 p "NIMBO_PKGS_BEGIN"
 dpkg-query -W -f='${Package}\t${Version}\n' | LC_ALL=C sort | while read -r l; do p "$l"; done
 p "NIMBO_PKGS_END"

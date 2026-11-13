@@ -9,15 +9,16 @@ from nimbo_red import cli
 class Registro:
     """Ejecutor falso: guarda cada orden y puede fallar en una concreta."""
 
-    def __init__(self, falla_en=None):
+    def __init__(self, falla_en=None, salidas=None):
         self.llamadas = []
         self.falla_en = falla_en
+        self.salidas = salidas or {}
 
     def __call__(self, argv):
         self.llamadas.append(list(argv))
         if self.falla_en and argv[: len(self.falla_en)] == self.falla_en:
             raise subprocess.CalledProcessError(1, argv, "", "fallo simulado")
-        return ""
+        return self.salidas.get(tuple(argv), "")
 
 
 def sysfs(tmp_path, *ifaces):
@@ -111,6 +112,7 @@ def test_off_suelta_la_concesion_y_baja_la_interfaz(tmp_path):
     assert r.llamadas == [
         ["dhclient", "-r", "-pf", f"{run}/dhclient.enp0s3.pid",
          "-lf", f"{run}/dhclient.enp0s3.leases", "enp0s3"],
+        ["ifquery", "--state", "enp0s3"],
         ["ip", "addr", "flush", "dev", "enp0s3"],
         ["ip", "link", "set", "dev", "enp0s3", "down"],
     ]
@@ -148,3 +150,70 @@ def test_estado_con_red_activa(tmp_path, capsys):
     capsys.readouterr()
     rc, _ = correr(tmp_path, ["estado"], root=False)
     assert rc == 0 and "activa en enp0s3" in capsys.readouterr().out
+
+
+# --- red levantada fuera de nimbo-red (live-boot / ifupdown) ------------------------
+# En el live, live-config deja la interfaz en ifupdown (ifup@ens3.service) y su dhclient
+# pide la concesión al arrancar: hay red aunque nimbo-red no la haya encendido (12-nov).
+
+IP_BR_LIVE = (
+    "lo               UNKNOWN        127.0.0.1/8 ::1/128 \n"
+    "ens3             UP             10.0.2.15/24 fe80::5054:ff:fe12:3456/64 \n"
+)
+
+
+def test_estado_ve_la_red_levantada_por_live_boot(tmp_path, capsys):
+    r = Registro(salidas={("ip", "-br", "addr"): IP_BR_LIVE})
+    rc, _ = correr(tmp_path, ["estado"], ifaces=("lo", "ens3"), ejecutar=r, root=False)
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert "sin red" not in out
+    assert "red activa en ens3" in out and "fuera de nimbo-red" in out
+
+
+def test_estado_con_solo_link_local_sigue_sin_red(tmp_path, capsys):
+    br = "lo UNKNOWN 127.0.0.1/8 ::1/128\nens3 UP fe80::5054:ff:fe12:3456/64\n"
+    r = Registro(salidas={("ip", "-br", "addr"): br})
+    rc, _ = correr(tmp_path, ["estado"], ifaces=("lo", "ens3"), ejecutar=r, root=False)
+    assert rc == 0 and "sin red" in capsys.readouterr().out
+
+
+def test_estado_ignora_direcciones_de_interfaces_que_no_son_cable(tmp_path, capsys):
+    br = "wg-nimbo UNKNOWN 10.77.0.2/24\nwlan0 UP 192.168.1.5/24\n"
+    r = Registro(salidas={("ip", "-br", "addr"): br})
+    correr(tmp_path, ["estado"], ifaces=("wg-nimbo", "wlan0:wifi"), ejecutar=r, root=False)
+    assert "sin red" in capsys.readouterr().out
+
+
+def test_off_hace_ifdown_si_la_interfaz_es_de_ifupdown(tmp_path, capsys):
+    r = Registro(salidas={("ifquery", "--state", "ens3"): "ens3=ens3\n"})
+    rc, _ = correr(tmp_path, ["off"], ifaces=("lo", "ens3"), ejecutar=r)
+    assert rc == 0
+    assert ["ifdown", "ens3"] in r.llamadas
+    assert r.llamadas.index(["ifdown", "ens3"]) < r.llamadas.index(["ip", "addr", "flush", "dev", "ens3"])
+    assert r.llamadas[-1] == ["ip", "link", "set", "dev", "ens3", "down"]
+    assert "sin red" in capsys.readouterr().out
+
+
+def test_off_no_hace_ifdown_si_ifupdown_no_la_gestiona(tmp_path):
+    rc, r = correr(tmp_path, ["off"], ejecutar=Registro(falla_en=["ifquery"]))
+    assert rc == 0 and not any(c[0] == "ifdown" for c in r.llamadas)
+
+
+def test_off_sin_ifupdown_instalado_baja_igual(tmp_path):
+    class SinIfquery(Registro):
+        def __call__(self, argv):
+            if argv[0] == "ifquery":
+                self.llamadas.append(list(argv))
+                raise FileNotFoundError(argv[0])
+            return super().__call__(argv)
+    rc, r = correr(tmp_path, ["off"], ejecutar=SinIfquery())
+    assert rc == 0 and r.llamadas[-1] == ["ip", "link", "set", "dev", "enp0s3", "down"]
+
+
+def test_off_avisa_si_ifdown_falla(tmp_path, capsys):
+    r = Registro(falla_en=["ifdown"], salidas={("ifquery", "--state", "ens3"): "ens3=ens3\n"})
+    rc, _ = correr(tmp_path, ["off"], ifaces=("lo", "ens3"), ejecutar=r)
+    assert rc == 1
+    assert r.llamadas[-1] == ["ip", "link", "set", "dev", "ens3", "down"]
+    assert "no se pudo bajar ens3 del todo" in capsys.readouterr().out

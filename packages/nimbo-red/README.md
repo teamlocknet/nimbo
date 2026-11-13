@@ -17,6 +17,10 @@ la red privada del equipo— se pide a mano:
   `/run/nimbo-red/`. **Al reiniciar, el equipo vuelve a quedar sin red.**
 - **Solo cable.** Con una interfaz Wi-Fi se niega: Wi-Fi está fuera de v1 (no hay
   `wpasupplicant`).
+- **En el live** la red sí arranca levantada: `live-boot` deja la interfaz en `ifupdown`
+  (`ifup@<interfaz>`) con su propio `dhclient`. `estado` mira las direcciones reales del
+  kernel y lo dice ("levantada fuera de nimbo-red"); `off` hace `ifdown` cuando la interfaz
+  es de `ifupdown`, para que ese `dhclient` suelte la concesión y se pare.
 - Códigos de salida: `0` OK · `1` error · `2` sin privilegios.
 
 ## Tests
@@ -26,5 +30,4 @@ PYTHONPATH=src python3 -m pytest          # local
 CONTAINER_ENGINE=docker ci/test-modulo-en-bookworm.sh packages/nimbo-red   # como en CI
 ```
 
-Pendiente: integrarlo en la ISO (checkpoint de receta) y medir en QEMU con captura de red
-que `on` solo produce DHCP y que tras `off` vuelve el silencio.
+En la ISO desde #81 ([ADR-020](../../docs/adr/ADR-020-modulos-en-la-iso.md)).

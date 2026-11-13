@@ -1,0 +1,41 @@
+#!/bin/sh
+# 0170-nimbo-hardening-3b2.hook.chroot — activa el hardening fino 3B.2 (ADR-014, ADR-020).
+#
+# Los ficheros los copia build-in-container.sh desde security/hardening/3b2/ (una sola
+# fuente) a config/includes.chroot/, que live-build aplica DESPUÉS de instalar paquetes y
+# ANTES de los hooks:
+#   /etc/sysctl.d/99-zz-nimbo-hardening.conf     (99-zz-: después de 99-protect-links de procps, #63)
+#   /usr/share/nimbo/hardening/99-zz-…           (referencia del verificador)
+#   /etc/security/faillock.conf                  (5 fallos / 15 min → 10 min; root no se bloquea)
+#   /usr/share/pam-configs/nimbo-faillock{,-preauth}
+#   /usr/lib/nimbo/verify-hardening
+# Aquí solo se activan los perfiles PAM y se comprueba el resultado. Determinista: el
+# contenido de /etc/pam.d/common-* depende solo de los perfiles. Va al live y, por el
+# squashfs, al instalado. El sysctl no se aplica aquí (no hay kernel propio en el chroot):
+# lo carga systemd-sysctl al arrancar; lo mide verify-hardening en live e instalado.
+set -e
+
+for f in /etc/sysctl.d/99-zz-nimbo-hardening.conf /usr/share/nimbo/hardening/99-zz-nimbo-hardening.conf \
+         /etc/security/faillock.conf /usr/share/pam-configs/nimbo-faillock \
+         /usr/share/pam-configs/nimbo-faillock-preauth /usr/lib/nimbo/verify-hardening; do
+    [ -s "$f" ] || { echo "E: [hook 0170] falta $f (¿build-in-container.sh no copió 3B.2?)" >&2; exit 1; }
+done
+[ -x /usr/lib/nimbo/verify-hardening ] || { echo "E: [hook 0170] verify-hardening no es ejecutable" >&2; exit 1; }
+cmp -s /etc/sysctl.d/99-zz-nimbo-hardening.conf /usr/share/nimbo/hardening/99-zz-nimbo-hardening.conf \
+    || { echo "E: [hook 0170] el sysctl aplicado y la referencia difieren" >&2; exit 1; }
+
+pam-auth-update --package --enable nimbo-faillock nimbo-faillock-preauth
+
+# El orden importa: preauth antes de pam_unix y authfail justo después (ADR-014, #60).
+grep -Eq '^auth[[:space:]]+requisite[[:space:]]+pam_faillock\.so[[:space:]]+preauth' /etc/pam.d/common-auth \
+    || { echo "E: [hook 0170] common-auth sin pam_faillock preauth" >&2; exit 1; }
+grep -Eq '^auth[[:space:]]+\[default=die\][[:space:]]+pam_faillock\.so[[:space:]]+authfail' /etc/pam.d/common-auth \
+    || { echo "E: [hook 0170] common-auth sin pam_faillock authfail" >&2; exit 1; }
+grep -Eq '^account[[:space:]]+required[[:space:]]+pam_faillock\.so' /etc/pam.d/common-account \
+    || { echo "E: [hook 0170] common-account sin pam_faillock (el contador no volvería a cero)" >&2; exit 1; }
+awk '/pam_faillock\.so preauth/{p=NR} /pam_unix\.so/{u=NR} /pam_faillock\.so authfail/{f=NR}
+     END{exit !(p && u && f && p < u && u < f)}' /etc/pam.d/common-auth \
+    || { echo "E: [hook 0170] orden de common-auth incorrecto (preauth < pam_unix < authfail)" >&2; exit 1; }
+
+echo "P: [hook 0170] hardening 3B.2: sysctl 99-zz- en sitio, pam_faillock activo (auth + account)"
+grep -v '^#' /etc/pam.d/common-auth | sed '/^$/d; s/^/P: [hook 0170]   /'

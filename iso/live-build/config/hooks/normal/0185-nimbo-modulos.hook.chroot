@@ -1,0 +1,65 @@
+#!/bin/sh
+# 0185-nimbo-modulos.hook.chroot — los módulos propios están instalados y se quedan (ADR-020).
+#
+# Recorre /usr/share/nimbo/modulos.list (la misma lista con la que build-in-container.sh
+# los compila). Por cada módulo:
+#   - instalado y marcado MANUAL: nimbo-final.sh hace autoremove al purgar el instalador y
+#     el hook 0200 simula esa purga; un módulo automático desaparecería del instalado.
+#   - cada orden de /usr/bin que trae responde a --help (Python y dependencias completas).
+#   - NINGUNA unidad systemd que trae queda habilitada: nada arranca solo (RNF-01,
+#     hermetismo; Tor, WireGuard y la red son a demanda).
+# Va ANTES de 0200 (pool local). No descarga nada ni depende del reloj.
+set -e
+
+LISTA=/usr/share/nimbo/modulos.list
+[ -s "$LISTA" ] || { echo "E: [hook 0185] falta $LISTA" >&2; exit 1; }
+MODULOS=$(grep -v '^[[:space:]]*#' "$LISTA" | grep -v '^[[:space:]]*$')
+
+for m in $MODULOS; do
+    [ "$(dpkg-query -W -f='${db:Status-Status}' "$m" 2>/dev/null)" = installed ] \
+        || { echo "E: [hook 0185] $m no está instalado" >&2; exit 1; }
+    apt-mark manual "$m" >/dev/null
+    ordenes=0
+    for b in $(dpkg -L "$m" | grep '^/usr/bin/' | LC_ALL=C sort); do
+        "$b" --help >/dev/null || { echo "E: [hook 0185] $b --help falla" >&2; exit 1; }
+        ordenes=$((ordenes + 1))
+    done
+    [ "$ordenes" -gt 0 ] || { echo "E: [hook 0185] $m no instala ninguna orden en /usr/bin" >&2; exit 1; }
+    for u in $(dpkg -L "$m" | grep -E '/systemd/system/[^/]+\.(service|socket|timer|path)$' | xargs -r -n1 basename | LC_ALL=C sort); do
+        estado=$(systemctl --root=/ is-enabled "$u" 2>/dev/null || true)
+        case "$estado" in
+            enabled|enabled-runtime|alias|linked)
+                echo "E: [hook 0185] $u ($m) está '$estado': nada debe arrancar solo" >&2; exit 1 ;;
+        esac
+        echo "P: [hook 0185]   $u: ${estado:-sin estado} (no arranca solo)"
+    done
+    echo "P: [hook 0185] $m $(dpkg-query -W -f='${Version}' "$m"): manual, $ordenes orden(es) con --help OK"
+done
+
+# Lo que traen nimbo-nav y nimbo-net no siempre es una unidad del propio módulo: tor.service
+# y tor@default.service son del paquete tor (Debian los deja habilitados; los apaga el
+# postinst de nimbo-nav) y wg-nimbo la crea `nimbo-net join` a mano. Se exigen por nombre:
+# que existan y que no arranquen solos (ADR-012 C1, ADR-011; RNF-01).
+apagada() {
+    [ -e "/usr/lib/systemd/system/$1" ] || [ -e "/lib/systemd/system/$1" ] \
+        || { echo "E: [hook 0185] falta la unidad $1" >&2; exit 1; }
+    estado=$(systemctl --root=/ is-enabled "$1" 2>/dev/null || true)
+    case "$estado" in
+        enabled|enabled-runtime|alias|linked)
+            echo "E: [hook 0185] $1 está '$estado': nada debe arrancar solo" >&2; exit 1 ;;
+    esac
+    echo "P: [hook 0185]   $1: ${estado:-sin estado} (no arranca solo)"
+}
+if printf '%s\n' "$MODULOS" | grep -qx nimbo-nav; then
+    for u in tor.service tor@default.service nimbo-modo-tor.service nimbo-leakcheck.service; do
+        apagada "$u"
+    done
+fi
+if printf '%s\n' "$MODULOS" | grep -qx nimbo-net; then
+    # wg-nimbo: sin configuración persistente ni ningún wg-quick habilitado.
+    [ ! -e /etc/wireguard/wg-nimbo.conf ] \
+        || { echo "E: [hook 0185] existe /etc/wireguard/wg-nimbo.conf: wg-nimbo solo con join" >&2; exit 1; }
+    wq=$(find /etc/systemd/system -name 'wg-quick*' 2>/dev/null | LC_ALL=C sort)
+    [ -z "$wq" ] || { echo "E: [hook 0185] wg-quick habilitado (wg-nimbo debe nacer apagado): $wq" >&2; exit 1; }
+    echo "P: [hook 0185]   wg-nimbo: sin configuración ni wg-quick habilitado (solo nimbo-net join)"
+fi

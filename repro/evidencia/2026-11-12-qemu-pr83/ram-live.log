@@ -1,0 +1,20 @@
+# nimbo — medición de RAM idle con Xfce4 (Paso 3A)
+# ISO    : live-image-amd64.hybrid.iso  (572522496 bytes)
+# VM     : 2048 MiB RAM, 2 vCPU  ·  settle=90s  ·  KVM
+# Fórmula: used = MemTotal - MemAvailable (idéntica a `free`)
+#------------------------------------------------------------------
+MemTotal:        2014152 kB
+MemFree:         1415000 kB
+MemAvailable:    1630128 kB
+Buffers:            2100 kB
+Cached:           358916 kB
+---
+               total        used        free      shared  buff/cache   available
+Mem:            1966         374        1381          24         373        1592
+Swap:              0           0           0
+#------------------------------------------------------------------
+MemTotal     : 2014152 kB
+MemAvailable : 1630128 kB
+USED (idle)  : 375 MiB   [= (Total - Available)]
+TECHO        : 500 MB (RNF-04)
+VEREDICTO    : OK ✅  (375 MiB < 500 MB)

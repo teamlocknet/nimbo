@@ -72,6 +72,33 @@ def elegir(pedida: str | None, sys_net: Path) -> str | None:
     return cable[0]
 
 
+def con_direccion(ip_br: str, sys_net: Path) -> list[str]:
+    """Interfaces por cable con una dirección global en la salida de `ip -br addr`.
+
+    Es el estado real del kernel: en el live, live-boot levanta la red sin nimbo-red.
+    No cuentan las de enlace local (fe80::/10, 169.254/16): no dan salida a ninguna red.
+    """
+    activas = []
+    for linea in ip_br.splitlines():
+        campos = linea.split()
+        if len(campos) < 3:
+            continue
+        nombre = campos[0].split("@", 1)[0]
+        if not CABLE.match(nombre) or es_wifi(sys_net, nombre):
+            continue
+        if any(not d.startswith(("fe80:", "169.254.")) for d in campos[2:]):
+            activas.append(nombre)
+    return sorted(activas)
+
+
+def de_ifupdown(iface: str, ejecutar: Ejecutor) -> bool:
+    """¿La interfaz la tiene levantada ifupdown (ifup@<iface>, como en el live)?"""
+    try:
+        return f"{iface}=" in ejecutar(["ifquery", "--state", iface])
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return False   # no la gestiona, o ifupdown no está instalado
+
+
 def _ficheros(run_dir: Path, iface: str) -> list[str]:
     return ["-pf", str(run_dir / f"dhclient.{iface}.pid"),
             "-lf", str(run_dir / f"dhclient.{iface}.leases")]
@@ -101,6 +128,11 @@ def apagar(iface: str, ejecutar: Ejecutor, run_dir: Path) -> int:
     except subprocess.CalledProcessError:
         pass   # sin concesión que soltar: se baja igual
     rc = 0
+    if de_ifupdown(iface, ejecutar):
+        try:
+            ejecutar(["ifdown", iface])   # suelta la concesión de su dhclient y lo para
+        except subprocess.CalledProcessError:
+            rc = 1
     for argv in (["ip", "addr", "flush", "dev", iface], ["ip", "link", "set", "dev", iface, "down"]):
         try:
             ejecutar(argv)
@@ -127,11 +159,19 @@ def main(argv: list[str] | None = None, ejecutar: Ejecutor = ejecutar_sistema,
 
     if args.accion == "estado":
         try:
-            print(ejecutar(["ip", "-br", "addr"]), end="")
+            ip_br = ejecutar(["ip", "-br", "addr"])
         except subprocess.CalledProcessError:
-            pass
+            ip_br = ""
+        print(ip_br, end="")
         iface = activa(run_dir)
-        print(f"nimbo-red: red activa en {iface}" if iface else "nimbo-red: sin red (apagada)")
+        fuera = [i for i in con_direccion(ip_br, sys_net) if i != iface]
+        if iface:
+            print(f"nimbo-red: red activa en {iface}")
+        for i in fuera:
+            print(f"nimbo-red: red activa en {i}, levantada fuera de nimbo-red "
+                  f"(en el live, por live-boot). Para apagarla: sudo nimbo-red off {i}")
+        if not iface and not fuera:
+            print("nimbo-red: sin red (apagada)")
         return 0
 
     if not es_root():

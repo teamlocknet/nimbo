@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nimbo-red"
-version = "0.1.0"
+version = "0.1.1"
 description = "Red por cable de nimbo solo a demanda: el sistema arranca sin red (ADR-019)."
 readme = "README.md"
 requires-python = ">=3.11"
