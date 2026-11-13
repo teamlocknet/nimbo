@@ -77,6 +77,13 @@ peso, y (2) `nimbo-nav` y `nimbo-net`, que añaden `firefox-esr`, `tor` y `wireg
   `firefox-esr`). Compilación local del 12-nov, `ba4f6fc9…`: hook 0185 OK (`tor.service`
   `disabled`; `tor@default`, `nimbo-modo-tor` y `nimbo-leakcheck` `static`, sin `[Install]`),
   `verificar-cli-en-iso.sh` OK, hermetismo live 0 sospechosos / 0 listeners, RAM live 374 MiB.
+- **Hallazgo en el live (12-nov, Juan José):** `tor@default.service` sale `enabled-runtime`
+  aunque en el chroot era `static`. Lo enlaza en cada arranque `tor-generator` (del paquete
+  `tor`) bajo `/run/systemd/generator/tor.service.wants/` porque existe `/etc/tor/torrc`; en el
+  chroot los generadores no corren. Solo arranca si arranca `tor.service`, que está `disabled`:
+  en el live, `is-active` = `inactive`. Lo que garantiza que Tor no arranca solo es
+  `tor.service` deshabilitado. `verificar-instalado.sh` acepta ese único enlace solo con
+  `tor.service` sin habilitar y la unidad inactiva (rojo → verde).
 
 ## Fecha
 

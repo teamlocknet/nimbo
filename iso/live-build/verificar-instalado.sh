@@ -210,6 +210,21 @@ if [ -s "$LISTA" ]; then
             || ko "firefox-esr ${v:-ausente}; se midio con 140.14.0esr-1~deb12u1"
         for u in tor.service tor@default.service nimbo-modo-tor.service nimbo-leakcheck.service; do
             e=$(systemctl is-enabled "$u" 2>/dev/null); a=$(systemctl is-active "$u" 2>/dev/null)
+            # tor-generator (paquete tor) enlaza tor@default bajo tor.service.wants en cada
+            # arranque: enabled-runtime, pero solo arranca si arranca tor.service (disabled).
+            if [ "$u" = tor@default.service ] && [ "$e" = enabled-runtime ]; then
+                enlaces=$(find /etc/systemd/system /run/systemd/system /run/systemd/generator \
+                    /run/systemd/generator.early /run/systemd/generator.late \
+                    -name tor@default.service 2>/dev/null | LC_ALL=C sort | tr '\n' ' ')
+                case "$(systemctl is-enabled tor.service 2>/dev/null)" in enabled*|alias|linked) te=si ;; *) te=no ;; esac
+                if [ "$enlaces" = "/run/systemd/generator/tor.service.wants/tor@default.service " ] \
+                   && [ "$te" = no ] && [ "$a" != active ]; then
+                    ok "$u no arranca sola (enlace de tor-generator bajo tor.service, que esta disabled; $a)"
+                else
+                    ko "$u: enabled-runtime fuera del caso de tor-generator (enlaces: ${enlaces:-ninguno}; tor.service habilitado: $te; $a)"
+                fi
+                continue
+            fi
             case "$e" in
                 enabled*|alias|linked|"") ko "$u: '${e:-ausente}' (debe existir y no arrancar sola)" ;;
                 *) [ "$a" = active ] && ko "$u activa en reposo" || ok "$u no arranca sola ($e, $a)" ;;
