@@ -1,3 +1,10 @@
+nimbo-red (0.1.1-1) unstable; urgency=medium
+
+  * estado: ve la red levantada fuera de nimbo-red (live-boot en el live).
+  * off: hace ifdown si la interfaz es de ifupdown, para parar su dhclient.
+
+ -- Juan José Duque <jd1020157@gmail.com>  Thu, 12 Nov 2026 12:00:00 -0500
+
 nimbo-red (0.1.0-1) unstable; urgency=medium
 
   * Paquete inicial: red por cable solo a demanda (ADR-019).
