@@ -62,6 +62,9 @@ peso, y (2) `nimbo-nav` y `nimbo-net`, que añaden `firefox-esr`, `tor` y `wireg
 
 ## PR-2 — `nimbo-nav` y `nimbo-net` (12-nov)
 
+Verificado en QEMU por Juan José el 12-nov sobre la ISO de CI `7e405746…` (MATCH ×2):
+[evidencia](../../repro/evidencia/2026-11-12-qemu-pr83.md).
+
 - `modulos.list` suma `nimbo-nav` y `nimbo-net`. Por dependencias entran del snapshot
   `firefox-esr` **140.14.0esr-1~deb12u1** (de `debian-security`; la versión que deben medir
   RF-NAV-01/02), `tor` 0.4.9.11-0+deb12u1 y `wireguard-tools` 1.0.20210914-1+b1.
