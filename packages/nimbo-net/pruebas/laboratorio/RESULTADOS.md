@@ -1,5 +1,9 @@
 # Resultado del laboratorio de red privada
 
+La repetición sobre la ISO integrada instalada está en
+[RESULTADOS-INTEGRADA.md](RESULTADOS-INTEGRADA.md). Este documento conserva
+el ensayo live anterior y su alcance.
+
 Base del código: main `6821936`. Debian bookworm, kernel `6.1.0-52-amd64`,
 dos VMs QEMU/TCG con 1536 MiB cada una. ISO live instrumentada temporalmente;
 no es una validación de la integración final ni de Secure Boot.

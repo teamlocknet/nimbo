@@ -1,0 +1,2685 @@
+[
+  {
+    "node": "A",
+    "cmd": "baseline",
+    "response": {
+      "ok": true,
+      "result": {
+        "versions": "firefox-esr 140.14.0esr-1~deb12u1\nnimbo-audit 0.1.0-1\nnimbo-nav 0.1.0-1\nnimbo-net 0.1.0-1\nnimbo-red 0.1.1-1\nnimbo-update-offline 0.1.0-1\ntor 0.4.9.11-0+deb12u1\nwireguard-tools 1.0.20210914-1+b1\n",
+        "units": {
+          "tor.service": "LoadState=loaded\nActiveState=inactive\nUnitFileState=disabled\n",
+          "tor@default.service": "LoadState=loaded\nActiveState=inactive\nUnitFileState=enabled-runtime\n",
+          "nimbo-modo-tor.service": "LoadState=loaded\nActiveState=inactive\nUnitFileState=static\n",
+          "nimbo-leakcheck.service": "LoadState=loaded\nActiveState=inactive\nUnitFileState=static\n",
+          "wg-quick@wg-nimbo.service": "LoadState=loaded\nActiveState=inactive\nUnitFileState=disabled\n"
+        },
+        "sysctl_files": {
+          "/etc/sysctl.d/99-zz-nimbo-hardening.conf": "1f9bb1492d11b306946da5b988ef6c21c3331299f9b1cda7fb19a007146e5e48"
+        },
+        "hardening_rc": 0,
+        "hardening_output": "== Actualizaciones autom\u00e1ticas (HU-04 CA-3)\nOK     actualizaciones apt-daily.timer enmascarado\nOK     actualizaciones apt-daily-upgrade.timer enmascarado\nOK     actualizaciones APT::Periodic::Enable \"0\"\n== Par\u00e1metros del kernel (sysctl)\nOK     sysctl persistente /etc/sysctl.d/99-zz-nimbo-hardening.conf\nOK     sysctl kernel.kptr_restrict = 2\nOK     sysctl kernel.dmesg_restrict = 1\nOK     sysctl kernel.perf_event_paranoid = 3\nOK     sysctl kernel.unprivileged_bpf_disabled = 1\nOK     sysctl net.core.bpf_jit_harden = 2\nOK     sysctl kernel.kexec_load_disabled = 1\nOK     sysctl kernel.yama.ptrace_scope = 1\nOK     sysctl fs.suid_dumpable = 0\nOK     sysctl dev.tty.ldisc_autoload = 0\nOK     sysctl fs.protected_symlinks = 1\nOK     sysctl fs.protected_hardlinks = 1\nOK     sysctl fs.protected_fifos = 2\nOK     sysctl fs.protected_regular = 2\nOK     sysctl net.ipv4.conf.all.rp_filter = 1\nOK     sysctl net.ipv4.conf.default.rp_filter = 1\nOK     sysctl net.ipv4.conf.all.accept_redirects = 0\nOK     sysctl net.ipv4.conf.default.accept_redirects = 0\nOK     sysctl net.ipv4.conf.all.secure_redirects = 0\nOK     sysctl net.ipv4.conf.default.secure_redirects = 0\nOK     sysctl net.ipv4.conf.all.send_redirects = 0\nOK     sysctl net.ipv4.conf.default.send_redirects = 0\nOK     sysctl net.ipv4.conf.all.accept_source_route = 0\nOK     sysctl net.ipv4.conf.default.accept_source_route = 0\nOK     sysctl net.ipv4.conf.all.log_martians = 1\nOK     sysctl net.ipv4.conf.default.log_martians = 1\nOK     sysctl net.ipv4.icmp_echo_ignore_broadcasts = 1\nOK     sysctl net.ipv4.icmp_ignore_bogus_error_responses = 1\nOK     sysctl net.ipv4.tcp_syncookies = 1\nOK     sysctl net.ipv4.tcp_rfc1337 = 1\nOK     sysctl net.ipv6.conf.all.accept_redirects = 0\nOK     sysctl net.ipv6.conf.default.accept_redirects = 0\nOK     sysctl net.ipv6.conf.all.accept_source_route = 0\nOK     sysctl net.ipv6.conf.default.accept_source_route = 0\n== Autenticaci\u00f3n (PAM)\nOK     pam faillock preauth antes de pam_unix\nOK     pam faillock authfail\nOK     pam faillock authsucc ausente (el contador lo limpia account)\nOK     pam faillock account (required, despu\u00e9s de pam_unix: pone a cero el contador)\nOK     pam faillock.conf deny = 5\nOK     pam faillock.conf sin silent (la persona ve que la cuenta est\u00e1 bloqueada)\nOK     pam pwquality no obliga (RF-CORE-03)\n\nVEREDICTO: OK \u2014 0 fallos (44 comprobaciones)\n",
+        "red_estado": "lo               UNKNOWN        127.0.0.1/8 ::1/128 \nenp0s3           DOWN           \nnimbo-red: sin red (apagada)\n",
+        "wg_present": false,
+        "wg_config_exists": false,
+        "kernel": "6.1.0-52-amd64",
+        "secure_boot": true,
+        "luks2_mapping_active": true,
+        "root_fstype": "ext4",
+        "live_medium_present": false,
+        "physical_global_ipv4": []
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "alias_probe",
+    "response": {
+      "ok": true,
+      "result": {
+        "alias_en_add": null,
+        "alias_en_set": "nimbo-lab:probe",
+        "kernel": "6.1.0-52-amd64"
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "prepare_integrated",
+    "response": {
+      "ok": true,
+      "result": {
+        "prepared": true,
+        "private_key_exported": false
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "network_off",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-red: enp0s3 apagada. El equipo queda sin red.\n",
+        "status": "nimbo-net: inactivo\n"
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "network_snapshot",
+    "response": {
+      "ok": true,
+      "result": {
+        "routes": [
+          {
+            "type": "local",
+            "dst": "127.0.0.0/8",
+            "dev": "lo",
+            "table": "local",
+            "protocol": "kernel",
+            "scope": "host",
+            "prefsrc": "127.0.0.1",
+            "flags": []
+          },
+          {
+            "type": "local",
+            "dst": "127.0.0.1",
+            "dev": "lo",
+            "table": "local",
+            "protocol": "kernel",
+            "scope": "host",
+            "prefsrc": "127.0.0.1",
+            "flags": []
+          },
+          {
+            "type": "broadcast",
+            "dst": "127.255.255.255",
+            "dev": "lo",
+            "table": "local",
+            "protocol": "kernel",
+            "scope": "link",
+            "prefsrc": "127.0.0.1",
+            "flags": []
+          },
+          {
+            "type": "local",
+            "dst": "::1",
+            "dev": "lo",
+            "table": "local",
+            "protocol": "kernel",
+            "metric": 0,
+            "flags": [],
+            "pref": "medium"
+          }
+        ],
+        "resolv_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "links": [
+          {
+            "ifindex": 1,
+            "ifname": "lo",
+            "flags": [
+              "LOOPBACK",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 65536,
+            "qdisc": "noqueue",
+            "operstate": "UNKNOWN",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "loopback",
+            "address": "00:00:00:00:00:00",
+            "broadcast": "00:00:00:00:00:00"
+          },
+          {
+            "ifindex": 2,
+            "ifname": "enp0s3",
+            "flags": [
+              "BROADCAST",
+              "MULTICAST"
+            ],
+            "mtu": 1500,
+            "qdisc": "noop",
+            "operstate": "DOWN",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "ether",
+            "address": "52:54:00:22:00:01",
+            "broadcast": "ff:ff:ff:ff:ff:ff"
+          }
+        ],
+        "dhclient": "",
+        "leaks": {
+          "counter": null,
+          "leakcheck": null
+        },
+        "red_estado": "lo               UNKNOWN        127.0.0.1/8 ::1/128 \nenp0s3           DOWN           \nnimbo-red: sin red (apagada)\n"
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "baseline",
+    "response": {
+      "ok": true,
+      "result": {
+        "versions": "firefox-esr 140.14.0esr-1~deb12u1\nnimbo-audit 0.1.0-1\nnimbo-nav 0.1.0-1\nnimbo-net 0.1.0-1\nnimbo-red 0.1.1-1\nnimbo-update-offline 0.1.0-1\ntor 0.4.9.11-0+deb12u1\nwireguard-tools 1.0.20210914-1+b1\n",
+        "units": {
+          "tor.service": "LoadState=loaded\nActiveState=inactive\nUnitFileState=disabled\n",
+          "tor@default.service": "LoadState=loaded\nActiveState=inactive\nUnitFileState=enabled-runtime\n",
+          "nimbo-modo-tor.service": "LoadState=loaded\nActiveState=inactive\nUnitFileState=static\n",
+          "nimbo-leakcheck.service": "LoadState=loaded\nActiveState=inactive\nUnitFileState=static\n",
+          "wg-quick@wg-nimbo.service": "LoadState=loaded\nActiveState=inactive\nUnitFileState=disabled\n"
+        },
+        "sysctl_files": {
+          "/etc/sysctl.d/99-zz-nimbo-hardening.conf": "1f9bb1492d11b306946da5b988ef6c21c3331299f9b1cda7fb19a007146e5e48"
+        },
+        "hardening_rc": 0,
+        "hardening_output": "== Actualizaciones autom\u00e1ticas (HU-04 CA-3)\nOK     actualizaciones apt-daily.timer enmascarado\nOK     actualizaciones apt-daily-upgrade.timer enmascarado\nOK     actualizaciones APT::Periodic::Enable \"0\"\n== Par\u00e1metros del kernel (sysctl)\nOK     sysctl persistente /etc/sysctl.d/99-zz-nimbo-hardening.conf\nOK     sysctl kernel.kptr_restrict = 2\nOK     sysctl kernel.dmesg_restrict = 1\nOK     sysctl kernel.perf_event_paranoid = 3\nOK     sysctl kernel.unprivileged_bpf_disabled = 1\nOK     sysctl net.core.bpf_jit_harden = 2\nOK     sysctl kernel.kexec_load_disabled = 1\nOK     sysctl kernel.yama.ptrace_scope = 1\nOK     sysctl fs.suid_dumpable = 0\nOK     sysctl dev.tty.ldisc_autoload = 0\nOK     sysctl fs.protected_symlinks = 1\nOK     sysctl fs.protected_hardlinks = 1\nOK     sysctl fs.protected_fifos = 2\nOK     sysctl fs.protected_regular = 2\nOK     sysctl net.ipv4.conf.all.rp_filter = 1\nOK     sysctl net.ipv4.conf.default.rp_filter = 1\nOK     sysctl net.ipv4.conf.all.accept_redirects = 0\nOK     sysctl net.ipv4.conf.default.accept_redirects = 0\nOK     sysctl net.ipv4.conf.all.secure_redirects = 0\nOK     sysctl net.ipv4.conf.default.secure_redirects = 0\nOK     sysctl net.ipv4.conf.all.send_redirects = 0\nOK     sysctl net.ipv4.conf.default.send_redirects = 0\nOK     sysctl net.ipv4.conf.all.accept_source_route = 0\nOK     sysctl net.ipv4.conf.default.accept_source_route = 0\nOK     sysctl net.ipv4.conf.all.log_martians = 1\nOK     sysctl net.ipv4.conf.default.log_martians = 1\nOK     sysctl net.ipv4.icmp_echo_ignore_broadcasts = 1\nOK     sysctl net.ipv4.icmp_ignore_bogus_error_responses = 1\nOK     sysctl net.ipv4.tcp_syncookies = 1\nOK     sysctl net.ipv4.tcp_rfc1337 = 1\nOK     sysctl net.ipv6.conf.all.accept_redirects = 0\nOK     sysctl net.ipv6.conf.default.accept_redirects = 0\nOK     sysctl net.ipv6.conf.all.accept_source_route = 0\nOK     sysctl net.ipv6.conf.default.accept_source_route = 0\n== Autenticaci\u00f3n (PAM)\nOK     pam faillock preauth antes de pam_unix\nOK     pam faillock authfail\nOK     pam faillock authsucc ausente (el contador lo limpia account)\nOK     pam faillock account (required, despu\u00e9s de pam_unix: pone a cero el contador)\nOK     pam faillock.conf deny = 5\nOK     pam faillock.conf sin silent (la persona ve que la cuenta est\u00e1 bloqueada)\nOK     pam pwquality no obliga (RF-CORE-03)\n\nVEREDICTO: OK \u2014 0 fallos (44 comprobaciones)\n",
+        "red_estado": "lo               UNKNOWN        127.0.0.1/8 ::1/128 \nenp0s3           DOWN           \nnimbo-red: sin red (apagada)\n",
+        "wg_present": false,
+        "wg_config_exists": false,
+        "kernel": "6.1.0-52-amd64",
+        "secure_boot": true,
+        "luks2_mapping_active": true,
+        "root_fstype": "ext4",
+        "live_medium_present": false,
+        "physical_global_ipv4": []
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "alias_probe",
+    "response": {
+      "ok": true,
+      "result": {
+        "alias_en_add": null,
+        "alias_en_set": "nimbo-lab:probe",
+        "kernel": "6.1.0-52-amd64"
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "prepare_integrated",
+    "response": {
+      "ok": true,
+      "result": {
+        "prepared": true,
+        "private_key_exported": false
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "network_off",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-red: enp0s3 apagada. El equipo queda sin red.\n",
+        "status": "nimbo-net: inactivo\n"
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "network_snapshot",
+    "response": {
+      "ok": true,
+      "result": {
+        "routes": [
+          {
+            "type": "local",
+            "dst": "127.0.0.0/8",
+            "dev": "lo",
+            "table": "local",
+            "protocol": "kernel",
+            "scope": "host",
+            "prefsrc": "127.0.0.1",
+            "flags": []
+          },
+          {
+            "type": "local",
+            "dst": "127.0.0.1",
+            "dev": "lo",
+            "table": "local",
+            "protocol": "kernel",
+            "scope": "host",
+            "prefsrc": "127.0.0.1",
+            "flags": []
+          },
+          {
+            "type": "broadcast",
+            "dst": "127.255.255.255",
+            "dev": "lo",
+            "table": "local",
+            "protocol": "kernel",
+            "scope": "link",
+            "prefsrc": "127.0.0.1",
+            "flags": []
+          },
+          {
+            "type": "local",
+            "dst": "::1",
+            "dev": "lo",
+            "table": "local",
+            "protocol": "kernel",
+            "metric": 0,
+            "flags": [],
+            "pref": "medium"
+          }
+        ],
+        "resolv_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "links": [
+          {
+            "ifindex": 1,
+            "ifname": "lo",
+            "flags": [
+              "LOOPBACK",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 65536,
+            "qdisc": "noqueue",
+            "operstate": "UNKNOWN",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "loopback",
+            "address": "00:00:00:00:00:00",
+            "broadcast": "00:00:00:00:00:00"
+          },
+          {
+            "ifindex": 2,
+            "ifname": "enp0s3",
+            "flags": [
+              "BROADCAST",
+              "MULTICAST"
+            ],
+            "mtu": 1500,
+            "qdisc": "noop",
+            "operstate": "DOWN",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "ether",
+            "address": "52:54:00:22:00:02",
+            "broadcast": "ff:ff:ff:ff:ff:ff"
+          }
+        ],
+        "dhclient": "",
+        "leaks": {
+          "counter": null,
+          "leakcheck": null
+        },
+        "red_estado": "lo               UNKNOWN        127.0.0.1/8 ::1/128 \nenp0s3           DOWN           \nnimbo-red: sin red (apagada)\n"
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "network_on",
+    "response": {
+      "ok": true,
+      "result": {
+        "output": "nimbo-red: red activa en enp0s3. Para apagarla: sudo nimbo-red off\n",
+        "interfaz": "enp0s3",
+        "ip": "10.0.2.15",
+        "public_key": "gC9B+d9tYEBsnmAKqmb+B0+VH712YL6wI98ek6AtSQw="
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "network_on",
+    "response": {
+      "ok": true,
+      "result": {
+        "output": "nimbo-red: red activa en enp0s3. Para apagarla: sudo nimbo-red off\n",
+        "interfaz": "enp0s3",
+        "ip": "10.0.2.16",
+        "public_key": "+TcO/4avHJqk02wxWmQBcjInQPpT0vO6HKQ+wu4MTGo="
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "profile",
+    "response": {
+      "ok": true,
+      "result": {
+        "perfil_preparado": true
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "network_snapshot",
+    "response": {
+      "ok": true,
+      "result": {
+        "routes": [
+          {
+            "dst": "10.0.2.0/24",
+            "dev": "enp0s3",
+            "protocol": "kernel",
+            "scope": "link",
+            "prefsrc": "10.0.2.15",
+            "flags": []
+          },
+          {
+            "type": "local",
+            "dst": "10.0.2.15",
+            "dev": "enp0s3",
+            "table": "local",
+            "protocol": "kernel",
+            "scope": "host",
+            "prefsrc": "10.0.2.15",
+            "flags": []
+          },
+          {
+            "type": "broadcast",
+            "dst": "10.0.2.255",
+            "dev": "enp0s3",
+            "table": "local",
+            "protocol": "kernel",
+            "scope": "link",
+            "prefsrc": "10.0.2.15",
+            "flags": []
+          },
+          {
+            "type": "local",
+            "dst": "127.0.0.0/8",
+            "dev": "lo",
+            "table": "local",
+            "protocol": "kernel",
+            "scope": "host",
+            "prefsrc": "127.0.0.1",
+            "flags": []
+          },
+          {
+            "type": "local",
+            "dst": "127.0.0.1",
+            "dev": "lo",
+            "table": "local",
+            "protocol": "kernel",
+            "scope": "host",
+            "prefsrc": "127.0.0.1",
+            "flags": []
+          },
+          {
+            "type": "broadcast",
+            "dst": "127.255.255.255",
+            "dev": "lo",
+            "table": "local",
+            "protocol": "kernel",
+            "scope": "link",
+            "prefsrc": "127.0.0.1",
+            "flags": []
+          },
+          {
+            "dst": "fe80::/64",
+            "dev": "enp0s3",
+            "protocol": "kernel",
+            "metric": 256,
+            "flags": [],
+            "pref": "medium"
+          },
+          {
+            "type": "local",
+            "dst": "::1",
+            "dev": "lo",
+            "table": "local",
+            "protocol": "kernel",
+            "metric": 0,
+            "flags": [],
+            "pref": "medium"
+          },
+          {
+            "type": "multicast",
+            "dst": "ff00::/8",
+            "dev": "enp0s3",
+            "table": "local",
+            "protocol": "kernel",
+            "metric": 256,
+            "flags": [],
+            "pref": "medium"
+          }
+        ],
+        "resolv_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "links": [
+          {
+            "ifindex": 1,
+            "ifname": "lo",
+            "flags": [
+              "LOOPBACK",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 65536,
+            "qdisc": "noqueue",
+            "operstate": "UNKNOWN",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "loopback",
+            "address": "00:00:00:00:00:00",
+            "broadcast": "00:00:00:00:00:00"
+          },
+          {
+            "ifindex": 2,
+            "ifname": "enp0s3",
+            "flags": [
+              "BROADCAST",
+              "MULTICAST",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 1500,
+            "qdisc": "fq_codel",
+            "operstate": "UP",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "ether",
+            "address": "52:54:00:22:00:01",
+            "broadcast": "ff:ff:ff:ff:ff:ff"
+          }
+        ],
+        "dhclient": "1582 dhclient -1 -pf /run/nimbo-red/dhclient.enp0s3.pid -lf /run/nimbo-red/dhclient.enp0s3.leases enp0s3\n",
+        "leaks": {
+          "counter": null,
+          "leakcheck": null
+        },
+        "red_estado": "lo               UNKNOWN        127.0.0.1/8 ::1/128 \nenp0s3           UP             10.0.2.15/24 fe80::5054:ff:fe22:1/64 \nnimbo-red: red activa en enp0s3\n"
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "capture_start",
+    "response": {
+      "ok": true,
+      "result": {
+        "capturando": "enp0s3",
+        "instrumento": "AF_PACKET pasivo de Python; sin instalar tcpdump"
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "profile",
+    "response": {
+      "ok": true,
+      "result": {
+        "perfil_preparado": true
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "network_snapshot",
+    "response": {
+      "ok": true,
+      "result": {
+        "routes": [
+          {
+            "dst": "10.0.2.0/24",
+            "dev": "enp0s3",
+            "protocol": "kernel",
+            "scope": "link",
+            "prefsrc": "10.0.2.16",
+            "flags": []
+          },
+          {
+            "type": "local",
+            "dst": "10.0.2.16",
+            "dev": "enp0s3",
+            "table": "local",
+            "protocol": "kernel",
+            "scope": "host",
+            "prefsrc": "10.0.2.16",
+            "flags": []
+          },
+          {
+            "type": "broadcast",
+            "dst": "10.0.2.255",
+            "dev": "enp0s3",
+            "table": "local",
+            "protocol": "kernel",
+            "scope": "link",
+            "prefsrc": "10.0.2.16",
+            "flags": []
+          },
+          {
+            "type": "local",
+            "dst": "127.0.0.0/8",
+            "dev": "lo",
+            "table": "local",
+            "protocol": "kernel",
+            "scope": "host",
+            "prefsrc": "127.0.0.1",
+            "flags": []
+          },
+          {
+            "type": "local",
+            "dst": "127.0.0.1",
+            "dev": "lo",
+            "table": "local",
+            "protocol": "kernel",
+            "scope": "host",
+            "prefsrc": "127.0.0.1",
+            "flags": []
+          },
+          {
+            "type": "broadcast",
+            "dst": "127.255.255.255",
+            "dev": "lo",
+            "table": "local",
+            "protocol": "kernel",
+            "scope": "link",
+            "prefsrc": "127.0.0.1",
+            "flags": []
+          },
+          {
+            "dst": "fe80::/64",
+            "dev": "enp0s3",
+            "protocol": "kernel",
+            "metric": 256,
+            "flags": [],
+            "pref": "medium"
+          },
+          {
+            "type": "local",
+            "dst": "::1",
+            "dev": "lo",
+            "table": "local",
+            "protocol": "kernel",
+            "metric": 0,
+            "flags": [],
+            "pref": "medium"
+          },
+          {
+            "type": "multicast",
+            "dst": "ff00::/8",
+            "dev": "enp0s3",
+            "table": "local",
+            "protocol": "kernel",
+            "metric": 256,
+            "flags": [],
+            "pref": "medium"
+          }
+        ],
+        "resolv_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "links": [
+          {
+            "ifindex": 1,
+            "ifname": "lo",
+            "flags": [
+              "LOOPBACK",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 65536,
+            "qdisc": "noqueue",
+            "operstate": "UNKNOWN",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "loopback",
+            "address": "00:00:00:00:00:00",
+            "broadcast": "00:00:00:00:00:00"
+          },
+          {
+            "ifindex": 2,
+            "ifname": "enp0s3",
+            "flags": [
+              "BROADCAST",
+              "MULTICAST",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 1500,
+            "qdisc": "fq_codel",
+            "operstate": "UP",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "ether",
+            "address": "52:54:00:22:00:02",
+            "broadcast": "ff:ff:ff:ff:ff:ff"
+          }
+        ],
+        "dhclient": "1141 dhclient -1 -pf /run/nimbo-red/dhclient.enp0s3.pid -lf /run/nimbo-red/dhclient.enp0s3.leases enp0s3\n",
+        "leaks": {
+          "counter": null,
+          "leakcheck": null
+        },
+        "red_estado": "lo               UNKNOWN        127.0.0.1/8 ::1/128 \nenp0s3           UP             10.0.2.16/24 fe80::5054:ff:fe22:2/64 \nnimbo-red: red activa en enp0s3\n"
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "capture_start",
+    "response": {
+      "ok": true,
+      "result": {
+        "capturando": "enp0s3",
+        "instrumento": "AF_PACKET pasivo de Python; sin instalar tcpdump"
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "join",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-net: esperando al par; ejecuta join en ambos equipos\nnimbo-net: conectado; handshake y trafico al par comprobados\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "join",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-net: esperando al par; ejecuta join en ambos equipos\nnimbo-net: conectado; handshake y trafico al par comprobados\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "report",
+    "response": {
+      "ok": true,
+      "result": {
+        "rp_filter": {
+          "all": "1",
+          "default": "1",
+          "enp0s3": "1",
+          "wg-nimbo": "1"
+        },
+        "link": [
+          {
+            "ifindex": 4,
+            "ifname": "wg-nimbo",
+            "flags": [
+              "POINTOPOINT",
+              "NOARP",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 1420,
+            "qdisc": "noqueue",
+            "operstate": "UNKNOWN",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "none",
+            "promiscuity": 0,
+            "allmulti": 0,
+            "min_mtu": 0,
+            "max_mtu": 2147483552,
+            "linkinfo": {
+              "info_kind": "wireguard"
+            },
+            "inet6_addr_gen_mode": "none",
+            "num_tx_queues": 1,
+            "num_rx_queues": 1,
+            "gso_max_size": 65536,
+            "gso_max_segs": 65535,
+            "tso_max_size": 65536,
+            "tso_max_segs": 65535,
+            "gro_max_size": 65536,
+            "ifalias": "nimbo-net:24c714b3ea8c1cf9bf18f73a9f43b6f0"
+          }
+        ],
+        "handshakes": [
+          1794542271
+        ],
+        "routes": [
+          {
+            "dst": "10.0.2.0/24",
+            "dev": "enp0s3",
+            "protocol": "kernel",
+            "scope": "link",
+            "prefsrc": "10.0.2.15",
+            "flags": []
+          },
+          {
+            "dst": "10.90.0.2",
+            "dev": "wg-nimbo",
+            "scope": "link",
+            "prefsrc": "10.90.0.1",
+            "flags": []
+          }
+        ]
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "capture_start",
+    "response": {
+      "ok": true,
+      "result": {
+        "capturando": "wg-nimbo",
+        "instrumento": "AF_PACKET pasivo de Python; sin instalar tcpdump"
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "report",
+    "response": {
+      "ok": true,
+      "result": {
+        "rp_filter": {
+          "all": "1",
+          "default": "1",
+          "enp0s3": "1",
+          "wg-nimbo": "1"
+        },
+        "link": [
+          {
+            "ifindex": 4,
+            "ifname": "wg-nimbo",
+            "flags": [
+              "POINTOPOINT",
+              "NOARP",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 1420,
+            "qdisc": "noqueue",
+            "operstate": "UNKNOWN",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "none",
+            "promiscuity": 0,
+            "allmulti": 0,
+            "min_mtu": 0,
+            "max_mtu": 2147483552,
+            "linkinfo": {
+              "info_kind": "wireguard"
+            },
+            "inet6_addr_gen_mode": "none",
+            "num_tx_queues": 1,
+            "num_rx_queues": 1,
+            "gso_max_size": 65536,
+            "gso_max_segs": 65535,
+            "tso_max_size": 65536,
+            "tso_max_segs": 65535,
+            "gro_max_size": 65536,
+            "ifalias": "nimbo-net:5df0d87f1ae4bd2f98cd54809a11082c"
+          }
+        ],
+        "handshakes": [
+          1794542270
+        ],
+        "routes": [
+          {
+            "dst": "10.0.2.0/24",
+            "dev": "enp0s3",
+            "protocol": "kernel",
+            "scope": "link",
+            "prefsrc": "10.0.2.16",
+            "flags": []
+          },
+          {
+            "dst": "10.90.0.1",
+            "dev": "wg-nimbo",
+            "scope": "link",
+            "prefsrc": "10.90.0.2",
+            "flags": []
+          }
+        ]
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "capture_start",
+    "response": {
+      "ok": true,
+      "result": {
+        "capturando": "wg-nimbo",
+        "instrumento": "AF_PACKET pasivo de Python; sin instalar tcpdump"
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "ping",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "PATTERN: 0x6e696d626f2d6c61622d313233343536\nPING 10.90.0.1 (10.90.0.1) from 10.90.0.2 wg-nimbo: 56(84) bytes of data.\n64 bytes from 10.90.0.1: icmp_seq=1 ttl=64 time=4.02 ms\n64 bytes from 10.90.0.1: icmp_seq=2 ttl=64 time=3.33 ms\n64 bytes from 10.90.0.1: icmp_seq=3 ttl=64 time=3.61 ms\n\n--- 10.90.0.1 ping statistics ---\n3 packets transmitted, 3 received, 0% packet loss, time 2003ms\nrtt min/avg/max/mdev = 3.331/3.654/4.022/0.283 ms\n"
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "ping",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "PATTERN: 0x6e696d626f2d6c61622d313233343536\nPING 10.90.0.2 (10.90.0.2) from 10.90.0.1 wg-nimbo: 56(84) bytes of data.\n64 bytes from 10.90.0.2: icmp_seq=1 ttl=64 time=41.8 ms\n64 bytes from 10.90.0.2: icmp_seq=2 ttl=64 time=40.4 ms\n64 bytes from 10.90.0.2: icmp_seq=3 ttl=64 time=2.00 ms\n\n--- 10.90.0.2 ping statistics ---\n3 packets transmitted, 3 received, 0% packet loss, time 2003ms\nrtt min/avg/max/mdev = 1.996/28.076/41.823/18.450 ms\n"
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "capture_stop",
+    "response": {
+      "ok": true,
+      "result": {
+        "enp0s3": {
+          "bytes": 3856,
+          "archivo": "capturas/A.enp0s3.pcap",
+          "marcador_visible": false
+        },
+        "wg-nimbo": {
+          "bytes": 1224,
+          "archivo": "capturas/A.wg-nimbo.pcap",
+          "marcador_visible": true
+        }
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "tor_on",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 2,
+        "output": "nimbo-tor: la red del equipo (nimbo-net) est\u00e1 activa. El modo Tor y nimbo-net no pueden estar activos a la vez en v1. Primero: nimbo-net leave\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "coexistence",
+    "response": {
+      "ok": true,
+      "result": {
+        "tor": "inactive",
+        "links": [
+          {
+            "ifindex": 1,
+            "ifname": "lo",
+            "flags": [
+              "LOOPBACK",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 65536,
+            "qdisc": "noqueue",
+            "operstate": "UNKNOWN",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "loopback",
+            "address": "00:00:00:00:00:00",
+            "broadcast": "00:00:00:00:00:00"
+          },
+          {
+            "ifindex": 2,
+            "ifname": "enp0s3",
+            "flags": [
+              "BROADCAST",
+              "MULTICAST",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 1500,
+            "qdisc": "fq_codel",
+            "operstate": "UP",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "ether",
+            "address": "52:54:00:22:00:01",
+            "broadcast": "ff:ff:ff:ff:ff:ff"
+          },
+          {
+            "ifindex": 4,
+            "ifname": "wg-nimbo",
+            "flags": [
+              "POINTOPOINT",
+              "NOARP",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 1420,
+            "qdisc": "noqueue",
+            "operstate": "UNKNOWN",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "none",
+            "ifalias": "nimbo-net:24c714b3ea8c1cf9bf18f73a9f43b6f0"
+          }
+        ],
+        "tables": {
+          "nftables": [
+            {
+              "metainfo": {
+                "version": "1.0.6",
+                "release_name": "Lester Gooch #5",
+                "json_schema_version": 1
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "capture_stop",
+    "response": {
+      "ok": true,
+      "result": {
+        "enp0s3": {
+          "bytes": 3856,
+          "archivo": "capturas/B.enp0s3.pcap",
+          "marcador_visible": false
+        },
+        "wg-nimbo": {
+          "bytes": 1224,
+          "archivo": "capturas/B.wg-nimbo.pcap",
+          "marcador_visible": true
+        }
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "tor_on",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 2,
+        "output": "nimbo-tor: la red del equipo (nimbo-net) est\u00e1 activa. El modo Tor y nimbo-net no pueden estar activos a la vez en v1. Primero: nimbo-net leave\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "coexistence",
+    "response": {
+      "ok": true,
+      "result": {
+        "tor": "inactive",
+        "links": [
+          {
+            "ifindex": 1,
+            "ifname": "lo",
+            "flags": [
+              "LOOPBACK",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 65536,
+            "qdisc": "noqueue",
+            "operstate": "UNKNOWN",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "loopback",
+            "address": "00:00:00:00:00:00",
+            "broadcast": "00:00:00:00:00:00"
+          },
+          {
+            "ifindex": 2,
+            "ifname": "enp0s3",
+            "flags": [
+              "BROADCAST",
+              "MULTICAST",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 1500,
+            "qdisc": "fq_codel",
+            "operstate": "UP",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "ether",
+            "address": "52:54:00:22:00:02",
+            "broadcast": "ff:ff:ff:ff:ff:ff"
+          },
+          {
+            "ifindex": 4,
+            "ifname": "wg-nimbo",
+            "flags": [
+              "POINTOPOINT",
+              "NOARP",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 1420,
+            "qdisc": "noqueue",
+            "operstate": "UNKNOWN",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "none",
+            "ifalias": "nimbo-net:5df0d87f1ae4bd2f98cd54809a11082c"
+          }
+        ],
+        "tables": {
+          "nftables": [
+            {
+              "metainfo": {
+                "version": "1.0.6",
+                "release_name": "Lester Gooch #5",
+                "json_schema_version": 1
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "leave",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-net: tunel retirado; red fisica sin cambios\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "leave",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-net: tunel retirado; red fisica sin cambios\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "network_snapshot",
+    "response": {
+      "ok": true,
+      "result": {
+        "routes": [
+          {
+            "dst": "10.0.2.0/24",
+            "dev": "enp0s3",
+            "protocol": "kernel",
+            "scope": "link",
+            "prefsrc": "10.0.2.15",
+            "flags": []
+          },
+          {
+            "type": "local",
+            "dst": "10.0.2.15",
+            "dev": "enp0s3",
+            "table": "local",
+            "protocol": "kernel",
+            "scope": "host",
+            "prefsrc": "10.0.2.15",
+            "flags": []
+          },
+          {
+            "type": "broadcast",
+            "dst": "10.0.2.255",
+            "dev": "enp0s3",
+            "table": "local",
+            "protocol": "kernel",
+            "scope": "link",
+            "prefsrc": "10.0.2.15",
+            "flags": []
+          },
+          {
+            "type": "local",
+            "dst": "127.0.0.0/8",
+            "dev": "lo",
+            "table": "local",
+            "protocol": "kernel",
+            "scope": "host",
+            "prefsrc": "127.0.0.1",
+            "flags": []
+          },
+          {
+            "type": "local",
+            "dst": "127.0.0.1",
+            "dev": "lo",
+            "table": "local",
+            "protocol": "kernel",
+            "scope": "host",
+            "prefsrc": "127.0.0.1",
+            "flags": []
+          },
+          {
+            "type": "broadcast",
+            "dst": "127.255.255.255",
+            "dev": "lo",
+            "table": "local",
+            "protocol": "kernel",
+            "scope": "link",
+            "prefsrc": "127.0.0.1",
+            "flags": []
+          },
+          {
+            "dst": "fe80::/64",
+            "dev": "enp0s3",
+            "protocol": "kernel",
+            "metric": 256,
+            "flags": [],
+            "pref": "medium"
+          },
+          {
+            "type": "local",
+            "dst": "::1",
+            "dev": "lo",
+            "table": "local",
+            "protocol": "kernel",
+            "metric": 0,
+            "flags": [],
+            "pref": "medium"
+          },
+          {
+            "type": "local",
+            "dst": "fe80::5054:ff:fe22:1",
+            "dev": "enp0s3",
+            "table": "local",
+            "protocol": "kernel",
+            "metric": 0,
+            "flags": [],
+            "pref": "medium"
+          },
+          {
+            "type": "multicast",
+            "dst": "ff00::/8",
+            "dev": "enp0s3",
+            "table": "local",
+            "protocol": "kernel",
+            "metric": 256,
+            "flags": [],
+            "pref": "medium"
+          }
+        ],
+        "resolv_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "links": [
+          {
+            "ifindex": 1,
+            "ifname": "lo",
+            "flags": [
+              "LOOPBACK",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 65536,
+            "qdisc": "noqueue",
+            "operstate": "UNKNOWN",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "loopback",
+            "address": "00:00:00:00:00:00",
+            "broadcast": "00:00:00:00:00:00"
+          },
+          {
+            "ifindex": 2,
+            "ifname": "enp0s3",
+            "flags": [
+              "BROADCAST",
+              "MULTICAST",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 1500,
+            "qdisc": "fq_codel",
+            "operstate": "UP",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "ether",
+            "address": "52:54:00:22:00:01",
+            "broadcast": "ff:ff:ff:ff:ff:ff"
+          }
+        ],
+        "dhclient": "1582 dhclient -1 -pf /run/nimbo-red/dhclient.enp0s3.pid -lf /run/nimbo-red/dhclient.enp0s3.leases enp0s3\n",
+        "leaks": {
+          "counter": null,
+          "leakcheck": null
+        },
+        "red_estado": "lo               UNKNOWN        127.0.0.1/8 ::1/128 \nenp0s3           UP             10.0.2.15/24 fe80::5054:ff:fe22:1/64 \nnimbo-red: red activa en enp0s3\n"
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "tor_on",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-tor: modo Tor ACTIVO. Abre \"Navegar por Tor\" o ejecuta: nimbo-navegar-tor\nMientras est\u00e9 activo, solo tor puede salir a la red.\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "leaks",
+    "response": {
+      "ok": true,
+      "result": {
+        "counter": {
+          "nftables": [
+            {
+              "metainfo": {
+                "version": "1.0.6",
+                "release_name": "Lester Gooch #5",
+                "json_schema_version": 1
+              }
+            },
+            {
+              "counter": {
+                "family": "inet",
+                "name": "fugas",
+                "table": "nimbo_tor",
+                "handle": 2,
+                "packets": 0,
+                "bytes": 0
+              }
+            }
+          ]
+        },
+        "leakcheck": null
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "join",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 1,
+        "output": "nimbo-net: Tor activo, en transicion o sin estado fiable; apaga nimbo-tor antes de join\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "coexistence",
+    "response": {
+      "ok": true,
+      "result": {
+        "tor": "active",
+        "links": [
+          {
+            "ifindex": 1,
+            "ifname": "lo",
+            "flags": [
+              "LOOPBACK",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 65536,
+            "qdisc": "noqueue",
+            "operstate": "UNKNOWN",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "loopback",
+            "address": "00:00:00:00:00:00",
+            "broadcast": "00:00:00:00:00:00"
+          },
+          {
+            "ifindex": 2,
+            "ifname": "enp0s3",
+            "flags": [
+              "BROADCAST",
+              "MULTICAST",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 1500,
+            "qdisc": "fq_codel",
+            "operstate": "UP",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "ether",
+            "address": "52:54:00:22:00:01",
+            "broadcast": "ff:ff:ff:ff:ff:ff"
+          }
+        ],
+        "tables": {
+          "nftables": [
+            {
+              "metainfo": {
+                "version": "1.0.6",
+                "release_name": "Lester Gooch #5",
+                "json_schema_version": 1
+              }
+            },
+            {
+              "table": {
+                "family": "inet",
+                "name": "nimbo_tor",
+                "handle": 12
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "leaks",
+    "response": {
+      "ok": true,
+      "result": {
+        "counter": {
+          "nftables": [
+            {
+              "metainfo": {
+                "version": "1.0.6",
+                "release_name": "Lester Gooch #5",
+                "json_schema_version": 1
+              }
+            },
+            {
+              "counter": {
+                "family": "inet",
+                "name": "fugas",
+                "table": "nimbo_tor",
+                "handle": 2,
+                "packets": 0,
+                "bytes": 0
+              }
+            }
+          ]
+        },
+        "leakcheck": null
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "leak_log",
+    "response": {
+      "ok": true,
+      "result": {
+        "kernel_log": "-- No entries --\n"
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "tor_off",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-tor: modo Tor APAGADO. Red normal restaurada.\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "network_snapshot",
+    "response": {
+      "ok": true,
+      "result": {
+        "routes": [
+          {
+            "dst": "10.0.2.0/24",
+            "dev": "enp0s3",
+            "protocol": "kernel",
+            "scope": "link",
+            "prefsrc": "10.0.2.16",
+            "flags": []
+          },
+          {
+            "type": "local",
+            "dst": "10.0.2.16",
+            "dev": "enp0s3",
+            "table": "local",
+            "protocol": "kernel",
+            "scope": "host",
+            "prefsrc": "10.0.2.16",
+            "flags": []
+          },
+          {
+            "type": "broadcast",
+            "dst": "10.0.2.255",
+            "dev": "enp0s3",
+            "table": "local",
+            "protocol": "kernel",
+            "scope": "link",
+            "prefsrc": "10.0.2.16",
+            "flags": []
+          },
+          {
+            "type": "local",
+            "dst": "127.0.0.0/8",
+            "dev": "lo",
+            "table": "local",
+            "protocol": "kernel",
+            "scope": "host",
+            "prefsrc": "127.0.0.1",
+            "flags": []
+          },
+          {
+            "type": "local",
+            "dst": "127.0.0.1",
+            "dev": "lo",
+            "table": "local",
+            "protocol": "kernel",
+            "scope": "host",
+            "prefsrc": "127.0.0.1",
+            "flags": []
+          },
+          {
+            "type": "broadcast",
+            "dst": "127.255.255.255",
+            "dev": "lo",
+            "table": "local",
+            "protocol": "kernel",
+            "scope": "link",
+            "prefsrc": "127.0.0.1",
+            "flags": []
+          },
+          {
+            "dst": "fe80::/64",
+            "dev": "enp0s3",
+            "protocol": "kernel",
+            "metric": 256,
+            "flags": [],
+            "pref": "medium"
+          },
+          {
+            "type": "local",
+            "dst": "::1",
+            "dev": "lo",
+            "table": "local",
+            "protocol": "kernel",
+            "metric": 0,
+            "flags": [],
+            "pref": "medium"
+          },
+          {
+            "type": "local",
+            "dst": "fe80::5054:ff:fe22:2",
+            "dev": "enp0s3",
+            "table": "local",
+            "protocol": "kernel",
+            "metric": 0,
+            "flags": [],
+            "pref": "medium"
+          },
+          {
+            "type": "multicast",
+            "dst": "ff00::/8",
+            "dev": "enp0s3",
+            "table": "local",
+            "protocol": "kernel",
+            "metric": 256,
+            "flags": [],
+            "pref": "medium"
+          }
+        ],
+        "resolv_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "links": [
+          {
+            "ifindex": 1,
+            "ifname": "lo",
+            "flags": [
+              "LOOPBACK",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 65536,
+            "qdisc": "noqueue",
+            "operstate": "UNKNOWN",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "loopback",
+            "address": "00:00:00:00:00:00",
+            "broadcast": "00:00:00:00:00:00"
+          },
+          {
+            "ifindex": 2,
+            "ifname": "enp0s3",
+            "flags": [
+              "BROADCAST",
+              "MULTICAST",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 1500,
+            "qdisc": "fq_codel",
+            "operstate": "UP",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "ether",
+            "address": "52:54:00:22:00:02",
+            "broadcast": "ff:ff:ff:ff:ff:ff"
+          }
+        ],
+        "dhclient": "1141 dhclient -1 -pf /run/nimbo-red/dhclient.enp0s3.pid -lf /run/nimbo-red/dhclient.enp0s3.leases enp0s3\n",
+        "leaks": {
+          "counter": null,
+          "leakcheck": null
+        },
+        "red_estado": "lo               UNKNOWN        127.0.0.1/8 ::1/128 \nenp0s3           UP             10.0.2.16/24 fe80::5054:ff:fe22:2/64 \nnimbo-red: red activa en enp0s3\n"
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "tor_on",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-tor: modo Tor ACTIVO. Abre \"Navegar por Tor\" o ejecuta: nimbo-navegar-tor\nMientras est\u00e9 activo, solo tor puede salir a la red.\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "leaks",
+    "response": {
+      "ok": true,
+      "result": {
+        "counter": {
+          "nftables": [
+            {
+              "metainfo": {
+                "version": "1.0.6",
+                "release_name": "Lester Gooch #5",
+                "json_schema_version": 1
+              }
+            },
+            {
+              "counter": {
+                "family": "inet",
+                "name": "fugas",
+                "table": "nimbo_tor",
+                "handle": 2,
+                "packets": 0,
+                "bytes": 0
+              }
+            }
+          ]
+        },
+        "leakcheck": null
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "join",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 1,
+        "output": "nimbo-net: Tor activo, en transicion o sin estado fiable; apaga nimbo-tor antes de join\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "coexistence",
+    "response": {
+      "ok": true,
+      "result": {
+        "tor": "active",
+        "links": [
+          {
+            "ifindex": 1,
+            "ifname": "lo",
+            "flags": [
+              "LOOPBACK",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 65536,
+            "qdisc": "noqueue",
+            "operstate": "UNKNOWN",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "loopback",
+            "address": "00:00:00:00:00:00",
+            "broadcast": "00:00:00:00:00:00"
+          },
+          {
+            "ifindex": 2,
+            "ifname": "enp0s3",
+            "flags": [
+              "BROADCAST",
+              "MULTICAST",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 1500,
+            "qdisc": "fq_codel",
+            "operstate": "UP",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "ether",
+            "address": "52:54:00:22:00:02",
+            "broadcast": "ff:ff:ff:ff:ff:ff"
+          }
+        ],
+        "tables": {
+          "nftables": [
+            {
+              "metainfo": {
+                "version": "1.0.6",
+                "release_name": "Lester Gooch #5",
+                "json_schema_version": 1
+              }
+            },
+            {
+              "table": {
+                "family": "inet",
+                "name": "nimbo_tor",
+                "handle": 12
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "leaks",
+    "response": {
+      "ok": true,
+      "result": {
+        "counter": {
+          "nftables": [
+            {
+              "metainfo": {
+                "version": "1.0.6",
+                "release_name": "Lester Gooch #5",
+                "json_schema_version": 1
+              }
+            },
+            {
+              "counter": {
+                "family": "inet",
+                "name": "fugas",
+                "table": "nimbo_tor",
+                "handle": 2,
+                "packets": 0,
+                "bytes": 0
+              }
+            }
+          ]
+        },
+        "leakcheck": null
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "leak_log",
+    "response": {
+      "ok": true,
+      "result": {
+        "kernel_log": "-- No entries --\n"
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "tor_off",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-tor: modo Tor APAGADO. Red normal restaurada.\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "race",
+    "response": {
+      "ok": true,
+      "result": {
+        "join": {
+          "rc": 1,
+          "output": "nimbo-net: Tor activo, en transicion o sin estado fiable; apaga nimbo-tor antes de join\n",
+          "error": ""
+        },
+        "tor": {
+          "rc": 0,
+          "output": "nimbo-tor: modo Tor ACTIVO. Abre \"Navegar por Tor\" o ejecuta: nimbo-navegar-tor\nMientras est\u00e9 activo, solo tor puede salir a la red.\n",
+          "error": ""
+        }
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "join",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 1,
+        "output": "nimbo-net: esperando al par; ejecuta join en ambos equipos\nnimbo-net: timeout sin handshake y trafico; activa join en ambos equipos y revisa perfiles\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "coexistence",
+    "response": {
+      "ok": true,
+      "result": {
+        "tor": "active",
+        "links": [
+          {
+            "ifindex": 1,
+            "ifname": "lo",
+            "flags": [
+              "LOOPBACK",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 65536,
+            "qdisc": "noqueue",
+            "operstate": "UNKNOWN",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "loopback",
+            "address": "00:00:00:00:00:00",
+            "broadcast": "00:00:00:00:00:00"
+          },
+          {
+            "ifindex": 2,
+            "ifname": "enp0s3",
+            "flags": [
+              "BROADCAST",
+              "MULTICAST",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 1500,
+            "qdisc": "fq_codel",
+            "operstate": "UP",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "ether",
+            "address": "52:54:00:22:00:01",
+            "broadcast": "ff:ff:ff:ff:ff:ff"
+          }
+        ],
+        "tables": {
+          "nftables": [
+            {
+              "metainfo": {
+                "version": "1.0.6",
+                "release_name": "Lester Gooch #5",
+                "json_schema_version": 1
+              }
+            },
+            {
+              "table": {
+                "family": "inet",
+                "name": "nimbo_tor",
+                "handle": 14
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "leaks",
+    "response": {
+      "ok": true,
+      "result": {
+        "counter": {
+          "nftables": [
+            {
+              "metainfo": {
+                "version": "1.0.6",
+                "release_name": "Lester Gooch #5",
+                "json_schema_version": 1
+              }
+            },
+            {
+              "counter": {
+                "family": "inet",
+                "name": "fugas",
+                "table": "nimbo_tor",
+                "handle": 2,
+                "packets": 4,
+                "bytes": 816
+              }
+            }
+          ]
+        },
+        "leakcheck": {
+          "modo_tor": true,
+          "vigilante": "ok",
+          "limpio": false,
+          "paquetes_descartados": 4,
+          "actualizado": 1794542310.3544698
+        }
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "leak_log",
+    "response": {
+      "ok": true,
+      "result": {
+        "kernel_log": "nov 12 22:58:30 nimboa kernel: nimbo-fuga IN= OUT=enp0s3 SRC=10.0.2.15 DST=10.0.2.16 LEN=204 TOS=0x08 PREC=0xC0 TTL=64 ID=59272 PROTO=ICMP TYPE=3 CODE=3 [SRC=10.0.2.16 DST=10.0.2.15 LEN=176 TOS=0x08 PREC=0x80 TTL=64 ID=42805 PROTO=UDP SPT=51820 DPT=51820 LEN=156 ] \nnov 12 22:58:25 nimboa kernel: nimbo-fuga IN= OUT=enp0s3 SRC=10.0.2.15 DST=10.0.2.16 LEN=204 TOS=0x08 PREC=0xC0 TTL=64 ID=59188 PROTO=ICMP TYPE=3 CODE=3 [SRC=10.0.2.16 DST=10.0.2.15 LEN=176 TOS=0x08 PREC=0x80 TTL=64 ID=42082 PROTO=UDP SPT=51820 DPT=51820 LEN=156 ] \nnov 12 22:58:19 nimboa kernel: nimbo-fuga IN= OUT=enp0s3 SRC=10.0.2.15 DST=10.0.2.16 LEN=204 TOS=0x08 PREC=0xC0 TTL=64 ID=58837 PROTO=ICMP TYPE=3 CODE=3 [SRC=10.0.2.16 DST=10.0.2.15 LEN=176 TOS=0x08 PREC=0x80 TTL=64 ID=41931 PROTO=UDP SPT=51820 DPT=51820 LEN=156 ] \nnov 12 22:58:14 nimboa kernel: nimbo-fuga IN= OUT=enp0s3 SRC=10.0.2.15 DST=10.0.2.16 LEN=204 TOS=0x08 PREC=0xC0 TTL=64 ID=57981 PROTO=ICMP TYPE=3 CODE=3 [SRC=10.0.2.16 DST=10.0.2.15 LEN=176 TOS=0x08 PREC=0x80 TTL=64 ID=41505 PROTO=UDP SPT=51820 DPT=51820 LEN=156 ] \n"
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "tor_off",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-tor: modo Tor APAGADO. Red normal restaurada.\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "leave",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-net: tunel retirado; red fisica sin cambios\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "tor_off",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-tor: modo Tor APAGADO. Red normal restaurada.\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "leave",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-net: tunel retirado; red fisica sin cambios\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "race",
+    "response": {
+      "ok": true,
+      "result": {
+        "join": {
+          "rc": 1,
+          "output": "nimbo-net: Tor activo, en transicion o sin estado fiable; apaga nimbo-tor antes de join\n",
+          "error": ""
+        },
+        "tor": {
+          "rc": 0,
+          "output": "nimbo-tor: modo Tor ACTIVO. Abre \"Navegar por Tor\" o ejecuta: nimbo-navegar-tor\nMientras est\u00e9 activo, solo tor puede salir a la red.\n",
+          "error": ""
+        }
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "join",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 1,
+        "output": "nimbo-net: esperando al par; ejecuta join en ambos equipos\nnimbo-net: timeout sin handshake y trafico; activa join en ambos equipos y revisa perfiles\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "coexistence",
+    "response": {
+      "ok": true,
+      "result": {
+        "tor": "active",
+        "links": [
+          {
+            "ifindex": 1,
+            "ifname": "lo",
+            "flags": [
+              "LOOPBACK",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 65536,
+            "qdisc": "noqueue",
+            "operstate": "UNKNOWN",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "loopback",
+            "address": "00:00:00:00:00:00",
+            "broadcast": "00:00:00:00:00:00"
+          },
+          {
+            "ifindex": 2,
+            "ifname": "enp0s3",
+            "flags": [
+              "BROADCAST",
+              "MULTICAST",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 1500,
+            "qdisc": "fq_codel",
+            "operstate": "UP",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "ether",
+            "address": "52:54:00:22:00:02",
+            "broadcast": "ff:ff:ff:ff:ff:ff"
+          }
+        ],
+        "tables": {
+          "nftables": [
+            {
+              "metainfo": {
+                "version": "1.0.6",
+                "release_name": "Lester Gooch #5",
+                "json_schema_version": 1
+              }
+            },
+            {
+              "table": {
+                "family": "inet",
+                "name": "nimbo_tor",
+                "handle": 14
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "leaks",
+    "response": {
+      "ok": true,
+      "result": {
+        "counter": {
+          "nftables": [
+            {
+              "metainfo": {
+                "version": "1.0.6",
+                "release_name": "Lester Gooch #5",
+                "json_schema_version": 1
+              }
+            },
+            {
+              "counter": {
+                "family": "inet",
+                "name": "fugas",
+                "table": "nimbo_tor",
+                "handle": 2,
+                "packets": 5,
+                "bytes": 1020
+              }
+            }
+          ]
+        },
+        "leakcheck": {
+          "modo_tor": true,
+          "vigilante": "ok",
+          "limpio": false,
+          "paquetes_descartados": 4,
+          "actualizado": 1794542335.2341332
+        }
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "leak_log",
+    "response": {
+      "ok": true,
+      "result": {
+        "kernel_log": "nov 12 22:58:55 nimbob kernel: nimbo-fuga IN= OUT=enp0s3 SRC=10.0.2.16 DST=10.0.2.15 LEN=204 TOS=0x08 PREC=0xC0 TTL=64 ID=26281 PROTO=ICMP TYPE=3 CODE=3 [SRC=10.0.2.15 DST=10.0.2.16 LEN=176 TOS=0x08 PREC=0x80 TTL=64 ID=30715 PROTO=UDP SPT=51820 DPT=51820 LEN=156 ] \nnov 12 22:58:50 nimbob kernel: nimbo-fuga IN= OUT=enp0s3 SRC=10.0.2.16 DST=10.0.2.15 LEN=204 TOS=0x08 PREC=0xC0 TTL=64 ID=25107 PROTO=ICMP TYPE=3 CODE=3 [SRC=10.0.2.15 DST=10.0.2.16 LEN=176 TOS=0x08 PREC=0x80 TTL=64 ID=30244 PROTO=UDP SPT=51820 DPT=51820 LEN=156 ] \nnov 12 22:58:44 nimbob kernel: nimbo-fuga IN= OUT=enp0s3 SRC=10.0.2.16 DST=10.0.2.15 LEN=204 TOS=0x08 PREC=0xC0 TTL=64 ID=24781 PROTO=ICMP TYPE=3 CODE=3 [SRC=10.0.2.15 DST=10.0.2.16 LEN=176 TOS=0x08 PREC=0x80 TTL=64 ID=28980 PROTO=UDP SPT=51820 DPT=51820 LEN=156 ] \nnov 12 22:58:39 nimbob kernel: nimbo-fuga IN= OUT=enp0s3 SRC=10.0.2.16 DST=10.0.2.15 LEN=204 TOS=0x08 PREC=0xC0 TTL=64 ID=24382 PROTO=ICMP TYPE=3 CODE=3 [SRC=10.0.2.15 DST=10.0.2.16 LEN=176 TOS=0x08 PREC=0x80 TTL=64 ID=28725 PROTO=UDP SPT=51820 DPT=51820 LEN=156 ] \nnov 12 22:58:34 nimbob kernel: nimbo-fuga IN= OUT=enp0s3 SRC=10.0.2.16 DST=10.0.2.15 LEN=204 TOS=0x08 PREC=0xC0 TTL=64 ID=24009 PROTO=ICMP TYPE=3 CODE=3 [SRC=10.0.2.15 DST=10.0.2.16 LEN=176 TOS=0x08 PREC=0x80 TTL=64 ID=27953 PROTO=UDP SPT=51820 DPT=51820 LEN=156 ] \n"
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "tor_off",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-tor: modo Tor APAGADO. Red normal restaurada.\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "leave",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-net: tunel retirado; red fisica sin cambios\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "tor_off",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-tor: modo Tor APAGADO. Red normal restaurada.\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "leave",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-net: tunel retirado; red fisica sin cambios\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "race",
+    "response": {
+      "ok": true,
+      "result": {
+        "join": {
+          "rc": 1,
+          "output": "nimbo-net: Tor activo, en transicion o sin estado fiable; apaga nimbo-tor antes de join\n",
+          "error": ""
+        },
+        "tor": {
+          "rc": 0,
+          "output": "nimbo-tor: modo Tor ACTIVO. Abre \"Navegar por Tor\" o ejecuta: nimbo-navegar-tor\nMientras est\u00e9 activo, solo tor puede salir a la red.\n",
+          "error": ""
+        }
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "join",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 1,
+        "output": "nimbo-net: esperando al par; ejecuta join en ambos equipos\nnimbo-net: timeout sin handshake y trafico; activa join en ambos equipos y revisa perfiles\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "coexistence",
+    "response": {
+      "ok": true,
+      "result": {
+        "tor": "active",
+        "links": [
+          {
+            "ifindex": 1,
+            "ifname": "lo",
+            "flags": [
+              "LOOPBACK",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 65536,
+            "qdisc": "noqueue",
+            "operstate": "UNKNOWN",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "loopback",
+            "address": "00:00:00:00:00:00",
+            "broadcast": "00:00:00:00:00:00"
+          },
+          {
+            "ifindex": 2,
+            "ifname": "enp0s3",
+            "flags": [
+              "BROADCAST",
+              "MULTICAST",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 1500,
+            "qdisc": "fq_codel",
+            "operstate": "UP",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "ether",
+            "address": "52:54:00:22:00:01",
+            "broadcast": "ff:ff:ff:ff:ff:ff"
+          }
+        ],
+        "tables": {
+          "nftables": [
+            {
+              "metainfo": {
+                "version": "1.0.6",
+                "release_name": "Lester Gooch #5",
+                "json_schema_version": 1
+              }
+            },
+            {
+              "table": {
+                "family": "inet",
+                "name": "nimbo_tor",
+                "handle": 16
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "leaks",
+    "response": {
+      "ok": true,
+      "result": {
+        "counter": {
+          "nftables": [
+            {
+              "metainfo": {
+                "version": "1.0.6",
+                "release_name": "Lester Gooch #5",
+                "json_schema_version": 1
+              }
+            },
+            {
+              "counter": {
+                "family": "inet",
+                "name": "fugas",
+                "table": "nimbo_tor",
+                "handle": 2,
+                "packets": 4,
+                "bytes": 816
+              }
+            }
+          ]
+        },
+        "leakcheck": {
+          "modo_tor": true,
+          "vigilante": "ok",
+          "limpio": false,
+          "paquetes_descartados": 4,
+          "actualizado": 1794542360.8571625
+        }
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "leak_log",
+    "response": {
+      "ok": true,
+      "result": {
+        "kernel_log": "nov 12 22:59:16 nimboa kernel: nimbo-fuga IN= OUT=enp0s3 SRC=10.0.2.15 DST=10.0.2.16 LEN=204 TOS=0x08 PREC=0xC0 TTL=64 ID=4516 PROTO=ICMP TYPE=3 CODE=3 [SRC=10.0.2.16 DST=10.0.2.15 LEN=176 TOS=0x08 PREC=0x80 TTL=64 ID=47219 PROTO=UDP SPT=51820 DPT=51820 LEN=156 ] \nnov 12 22:59:11 nimboa kernel: nimbo-fuga IN= OUT=enp0s3 SRC=10.0.2.15 DST=10.0.2.16 LEN=204 TOS=0x08 PREC=0xC0 TTL=64 ID=3217 PROTO=ICMP TYPE=3 CODE=3 [SRC=10.0.2.16 DST=10.0.2.15 LEN=176 TOS=0x08 PREC=0x80 TTL=64 ID=46584 PROTO=UDP SPT=51820 DPT=51820 LEN=156 ] \nnov 12 22:59:06 nimboa kernel: nimbo-fuga IN= OUT=enp0s3 SRC=10.0.2.15 DST=10.0.2.16 LEN=204 TOS=0x08 PREC=0xC0 TTL=64 ID=2358 PROTO=ICMP TYPE=3 CODE=3 [SRC=10.0.2.16 DST=10.0.2.15 LEN=176 TOS=0x08 PREC=0x80 TTL=64 ID=45790 PROTO=UDP SPT=51820 DPT=51820 LEN=156 ] \nnov 12 22:59:00 nimboa kernel: nimbo-fuga IN= OUT=enp0s3 SRC=10.0.2.15 DST=10.0.2.16 LEN=204 TOS=0x08 PREC=0xC0 TTL=64 ID=1333 PROTO=ICMP TYPE=3 CODE=3 [SRC=10.0.2.16 DST=10.0.2.15 LEN=176 TOS=0x08 PREC=0x80 TTL=64 ID=45259 PROTO=UDP SPT=51820 DPT=51820 LEN=156 ] \nnov 12 22:58:30 nimboa kernel: nimbo-fuga IN= OUT=enp0s3 SRC=10.0.2.15 DST=10.0.2.16 LEN=204 TOS=0x08 PREC=0xC0 TTL=64 ID=59272 PROTO=ICMP TYPE=3 CODE=3 [SRC=10.0.2.16 DST=10.0.2.15 LEN=176 TOS=0x08 PREC=0x80 TTL=64 ID=42805 PROTO=UDP SPT=51820 DPT=51820 LEN=156 ] \nnov 12 22:58:25 nimboa kernel: nimbo-fuga IN= OUT=enp0s3 SRC=10.0.2.15 DST=10.0.2.16 LEN=204 TOS=0x08 PREC=0xC0 TTL=64 ID=59188 PROTO=ICMP TYPE=3 CODE=3 [SRC=10.0.2.16 DST=10.0.2.15 LEN=176 TOS=0x08 PREC=0x80 TTL=64 ID=42082 PROTO=UDP SPT=51820 DPT=51820 LEN=156 ] \nnov 12 22:58:19 nimboa kernel: nimbo-fuga IN= OUT=enp0s3 SRC=10.0.2.15 DST=10.0.2.16 LEN=204 TOS=0x08 PREC=0xC0 TTL=64 ID=58837 PROTO=ICMP TYPE=3 CODE=3 [SRC=10.0.2.16 DST=10.0.2.15 LEN=176 TOS=0x08 PREC=0x80 TTL=64 ID=41931 PROTO=UDP SPT=51820 DPT=51820 LEN=156 ] \nnov 12 22:58:14 nimboa kernel: nimbo-fuga IN= OUT=enp0s3 SRC=10.0.2.15 DST=10.0.2.16 LEN=204 TOS=0x08 PREC=0xC0 TTL=64 ID=57981 PROTO=ICMP TYPE=3 CODE=3 [SRC=10.0.2.16 DST=10.0.2.15 LEN=176 TOS=0x08 PREC=0x80 TTL=64 ID=41505 PROTO=UDP SPT=51820 DPT=51820 LEN=156 ] \n"
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "tor_off",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-tor: modo Tor APAGADO. Red normal restaurada.\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "leave",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-net: tunel retirado; red fisica sin cambios\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "tor_off",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-tor: modo Tor APAGADO. Red normal restaurada.\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "leave",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-net: tunel retirado; red fisica sin cambios\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "network_off",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-red: enp0s3 apagada. El equipo queda sin red.\n",
+        "status": "nimbo-net: inactivo\n"
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "network_snapshot",
+    "response": {
+      "ok": true,
+      "result": {
+        "routes": [
+          {
+            "type": "local",
+            "dst": "127.0.0.0/8",
+            "dev": "lo",
+            "table": "local",
+            "protocol": "kernel",
+            "scope": "host",
+            "prefsrc": "127.0.0.1",
+            "flags": []
+          },
+          {
+            "type": "local",
+            "dst": "127.0.0.1",
+            "dev": "lo",
+            "table": "local",
+            "protocol": "kernel",
+            "scope": "host",
+            "prefsrc": "127.0.0.1",
+            "flags": []
+          },
+          {
+            "type": "broadcast",
+            "dst": "127.255.255.255",
+            "dev": "lo",
+            "table": "local",
+            "protocol": "kernel",
+            "scope": "link",
+            "prefsrc": "127.0.0.1",
+            "flags": []
+          },
+          {
+            "type": "local",
+            "dst": "::1",
+            "dev": "lo",
+            "table": "local",
+            "protocol": "kernel",
+            "metric": 0,
+            "flags": [],
+            "pref": "medium"
+          }
+        ],
+        "resolv_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "links": [
+          {
+            "ifindex": 1,
+            "ifname": "lo",
+            "flags": [
+              "LOOPBACK",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 65536,
+            "qdisc": "noqueue",
+            "operstate": "UNKNOWN",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "loopback",
+            "address": "00:00:00:00:00:00",
+            "broadcast": "00:00:00:00:00:00"
+          },
+          {
+            "ifindex": 2,
+            "ifname": "enp0s3",
+            "flags": [
+              "BROADCAST",
+              "MULTICAST"
+            ],
+            "mtu": 1500,
+            "qdisc": "fq_codel",
+            "operstate": "DOWN",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "ether",
+            "address": "52:54:00:22:00:01",
+            "broadcast": "ff:ff:ff:ff:ff:ff"
+          }
+        ],
+        "dhclient": "",
+        "leaks": {
+          "counter": null,
+          "leakcheck": null
+        },
+        "red_estado": "lo               UNKNOWN        127.0.0.1/8 ::1/128 \nenp0s3           DOWN           \nnimbo-red: sin red (apagada)\n"
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "network_off",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-red: enp0s3 apagada. El equipo queda sin red.\n",
+        "status": "nimbo-net: inactivo\n"
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "network_snapshot",
+    "response": {
+      "ok": true,
+      "result": {
+        "routes": [
+          {
+            "type": "local",
+            "dst": "127.0.0.0/8",
+            "dev": "lo",
+            "table": "local",
+            "protocol": "kernel",
+            "scope": "host",
+            "prefsrc": "127.0.0.1",
+            "flags": []
+          },
+          {
+            "type": "local",
+            "dst": "127.0.0.1",
+            "dev": "lo",
+            "table": "local",
+            "protocol": "kernel",
+            "scope": "host",
+            "prefsrc": "127.0.0.1",
+            "flags": []
+          },
+          {
+            "type": "broadcast",
+            "dst": "127.255.255.255",
+            "dev": "lo",
+            "table": "local",
+            "protocol": "kernel",
+            "scope": "link",
+            "prefsrc": "127.0.0.1",
+            "flags": []
+          },
+          {
+            "type": "local",
+            "dst": "::1",
+            "dev": "lo",
+            "table": "local",
+            "protocol": "kernel",
+            "metric": 0,
+            "flags": [],
+            "pref": "medium"
+          }
+        ],
+        "resolv_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "links": [
+          {
+            "ifindex": 1,
+            "ifname": "lo",
+            "flags": [
+              "LOOPBACK",
+              "UP",
+              "LOWER_UP"
+            ],
+            "mtu": 65536,
+            "qdisc": "noqueue",
+            "operstate": "UNKNOWN",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "loopback",
+            "address": "00:00:00:00:00:00",
+            "broadcast": "00:00:00:00:00:00"
+          },
+          {
+            "ifindex": 2,
+            "ifname": "enp0s3",
+            "flags": [
+              "BROADCAST",
+              "MULTICAST"
+            ],
+            "mtu": 1500,
+            "qdisc": "fq_codel",
+            "operstate": "DOWN",
+            "linkmode": "DEFAULT",
+            "group": "default",
+            "txqlen": 1000,
+            "link_type": "ether",
+            "address": "52:54:00:22:00:02",
+            "broadcast": "ff:ff:ff:ff:ff:ff"
+          }
+        ],
+        "dhclient": "",
+        "leaks": {
+          "counter": null,
+          "leakcheck": null
+        },
+        "red_estado": "lo               UNKNOWN        127.0.0.1/8 ::1/128 \nenp0s3           DOWN           \nnimbo-red: sin red (apagada)\n"
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "capture_stop",
+    "response": {
+      "ok": true,
+      "result": {}
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "tor_off",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-tor: modo Tor APAGADO. Red normal restaurada.\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "leave",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-net: tunel retirado; red fisica sin cambios\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "network_off",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-red: enp0s3 apagada. El equipo queda sin red.\n",
+        "status": "nimbo-net: inactivo\n"
+      }
+    }
+  },
+  {
+    "node": "A",
+    "cmd": "shutdown",
+    "response": {
+      "ok": true,
+      "result": {
+        "apagando": true
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "capture_stop",
+    "response": {
+      "ok": true,
+      "result": {}
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "tor_off",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-tor: modo Tor APAGADO. Red normal restaurada.\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "leave",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-net: tunel retirado; red fisica sin cambios\n",
+        "error": ""
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "network_off",
+    "response": {
+      "ok": true,
+      "result": {
+        "rc": 0,
+        "output": "nimbo-red: enp0s3 apagada. El equipo queda sin red.\n",
+        "status": "nimbo-net: inactivo\n"
+      }
+    }
+  },
+  {
+    "node": "B",
+    "cmd": "shutdown",
+    "response": {
+      "ok": true,
+      "result": {
+        "apagando": true
+      }
+    }
+  }
+]

@@ -1,0 +1,258 @@
+[
+  {
+    "check": "A:arranque desde instalado",
+    "ok": true
+  },
+  {
+    "check": "A:red apagada al arrancar instalado",
+    "ok": true
+  },
+  {
+    "check": "A:Secure Boot activo",
+    "ok": true
+  },
+  {
+    "check": "A:cifrado LUKS2 activo",
+    "ok": true
+  },
+  {
+    "check": "A:modulo net integrado",
+    "ok": true
+  },
+  {
+    "check": "A:nimbo-red corregido",
+    "ok": true
+  },
+  {
+    "check": "A:hardening vigente",
+    "ok": true
+  },
+  {
+    "check": "A:reposo sin wg",
+    "ok": true
+  },
+  {
+    "check": "A:unidad no arranca sola tor.service",
+    "ok": true
+  },
+  {
+    "check": "A:unidad no arranca sola tor@default.service",
+    "ok": true
+  },
+  {
+    "check": "A:unidad no arranca sola nimbo-modo-tor.service",
+    "ok": true
+  },
+  {
+    "check": "A:unidad no arranca sola nimbo-leakcheck.service",
+    "ok": true
+  },
+  {
+    "check": "A:unidad no arranca sola wg-quick@wg-nimbo.service",
+    "ok": true
+  },
+  {
+    "check": "A:alias aplicado con set en kernel real",
+    "ok": true
+  },
+  {
+    "check": "A:red off inicial",
+    "ok": true
+  },
+  {
+    "check": "A:sin dhclient tras off",
+    "ok": true
+  },
+  {
+    "check": "B:arranque desde instalado",
+    "ok": true
+  },
+  {
+    "check": "B:red apagada al arrancar instalado",
+    "ok": true
+  },
+  {
+    "check": "B:Secure Boot activo",
+    "ok": true
+  },
+  {
+    "check": "B:cifrado LUKS2 activo",
+    "ok": true
+  },
+  {
+    "check": "B:modulo net integrado",
+    "ok": true
+  },
+  {
+    "check": "B:nimbo-red corregido",
+    "ok": true
+  },
+  {
+    "check": "B:hardening vigente",
+    "ok": true
+  },
+  {
+    "check": "B:reposo sin wg",
+    "ok": true
+  },
+  {
+    "check": "B:unidad no arranca sola tor.service",
+    "ok": true
+  },
+  {
+    "check": "B:unidad no arranca sola tor@default.service",
+    "ok": true
+  },
+  {
+    "check": "B:unidad no arranca sola nimbo-modo-tor.service",
+    "ok": true
+  },
+  {
+    "check": "B:unidad no arranca sola nimbo-leakcheck.service",
+    "ok": true
+  },
+  {
+    "check": "B:unidad no arranca sola wg-quick@wg-nimbo.service",
+    "ok": true
+  },
+  {
+    "check": "B:alias aplicado con set en kernel real",
+    "ok": true
+  },
+  {
+    "check": "B:red off inicial",
+    "ok": true
+  },
+  {
+    "check": "B:sin dhclient tras off",
+    "ok": true
+  },
+  {
+    "check": "handshake y trafico en ambos",
+    "ok": true
+  },
+  {
+    "check": "A:rp_filter estricto efectivo",
+    "ok": true
+  },
+  {
+    "check": "B:rp_filter estricto efectivo",
+    "ok": true
+  },
+  {
+    "check": "ping bidireccional",
+    "ok": true
+  },
+  {
+    "check": "A:Tor se niega con VPN",
+    "ok": true
+  },
+  {
+    "check": "A:VPN conservada y Tor inactivo",
+    "ok": true
+  },
+  {
+    "check": "B:Tor se niega con VPN",
+    "ok": true
+  },
+  {
+    "check": "B:VPN conservada y Tor inactivo",
+    "ok": true
+  },
+  {
+    "check": "A:DNS conservado",
+    "ok": true
+  },
+  {
+    "check": "A:ruta por defecto conservada",
+    "ok": true
+  },
+  {
+    "check": "A:sin WG ni ruta de tunel",
+    "ok": true
+  },
+  {
+    "check": "A:Tor arranca sin VPN",
+    "ok": true
+  },
+  {
+    "check": "A:join se niega con Tor",
+    "ok": true
+  },
+  {
+    "check": "A:Tor conservado sin WG",
+    "ok": true
+  },
+  {
+    "check": "A:Tor off",
+    "ok": true
+  },
+  {
+    "check": "B:DNS conservado",
+    "ok": true
+  },
+  {
+    "check": "B:ruta por defecto conservada",
+    "ok": true
+  },
+  {
+    "check": "B:sin WG ni ruta de tunel",
+    "ok": true
+  },
+  {
+    "check": "B:Tor arranca sin VPN",
+    "ok": true
+  },
+  {
+    "check": "B:join se niega con Tor",
+    "ok": true
+  },
+  {
+    "check": "B:Tor conservado sin WG",
+    "ok": true
+  },
+  {
+    "check": "B:Tor off",
+    "ok": true
+  },
+  {
+    "check": "ronda 1:no ambos modos exitosos",
+    "ok": true
+  },
+  {
+    "check": "ronda 1:no coexistencia final",
+    "ok": true
+  },
+  {
+    "check": "ronda 2:no ambos modos exitosos",
+    "ok": true
+  },
+  {
+    "check": "ronda 2:no coexistencia final",
+    "ok": true
+  },
+  {
+    "check": "ronda 3:no ambos modos exitosos",
+    "ok": true
+  },
+  {
+    "check": "ronda 3:no coexistencia final",
+    "ok": true
+  },
+  {
+    "check": "A:red off final",
+    "ok": true
+  },
+  {
+    "check": "A:sin dhclient final",
+    "ok": true
+  },
+  {
+    "check": "B:red off final",
+    "ok": true
+  },
+  {
+    "check": "B:sin dhclient final",
+    "ok": true
+  }
+]
