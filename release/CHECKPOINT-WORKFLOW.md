@@ -173,3 +173,24 @@ bateria en bookworm: 38 passed, 1 warning en 1.53 s; Python 3.11.2-1+b1,
 pytest 7.2.1-2 y GnuPG 2.2.40-1.1+deb12u2. El warning corresponde al ZIP
 duplicado deliberado de la prueba negativa. El ensayo real tras caducar sigue
 pendiente; no se ha re-ejecutado ningun run ni usado la clave real.
+
+## Ventana sin merges durante los reruns
+
+Los reruns de build 42850483095 y repro 42850482997, y el ensayo con los
+runs de 3825b0e (42525558358 y 42525558338), conservan ref = refs/heads/main.
+Comparten estos grupos con los builds disparados por pushes a main:
+
+- build-iso-refs/heads/main.
+- repro-verify-refs/heads/main-normal.
+
+Ambos usan cancel-in-progress: true. Durante la ventana completa del rerun
+(aproximadamente 12 minutos), coordinar con el equipo que **no se mergeen a
+main cambios en iso/, packages/ ni security/hardening/3b2/** que recompilen
+la ISO. Un push que active esos workflows puede cancelar el rerun. No basta
+con que la peticion de reejecucion haya sido aceptada: comprobar despues que
+el attempt nuevo de **ambos runs** termino en success, no en cancelled, antes
+de comprobar y promover sus artifacts.
+
+El repro-verify semanal (lunes a las 06:00 UTC) usa un grupo separado y no
+choca con el grupo normal. Esta regla no modifica la concurrencia de CI;
+es coordinacion operativa para el ensayo y el plan B.
