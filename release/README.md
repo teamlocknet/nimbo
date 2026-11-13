@@ -1,6 +1,7 @@
 # Distribución firmada: preparación local
 
-Estado: herramientas locales en desarrollo, sin workflow ni publicación.
+Estado: herramientas locales verificadas y workflow preparado para revision;
+sin ejecucion de firma real ni publicacion.
 Requiere Python 3.11+, GnuPG (`gpg` y `gpgv`). No instala paquetes ni configura
 claves reales. Juan José custodia y configura la identidad real de firma.
 
@@ -74,9 +75,11 @@ autorizada. Se rechazan REVKEYSIG, EXPKEYSIG, EXPSIG, BADSIG, ERRSIG y NO_PUBKEY
 así como avisos KEYEXPIRED, SIGEXPIRED o KEYREVOKED. Un código 0 de gpgv no basta.
 El certificado debe contener una sola clave primaria autorizada y un solo UID.
 
-Política provisional: rechazar también una subclave que haya caducado después
-de firmar. Esto hace que una distribución antigua deje de verificar al caducar;
-Juan José decide en ADR-015 si se mantiene o si se diseña una política histórica.
+Política decidida por Juan José el 12-nov (ADR-015): rechazar siempre una
+subclave caducada, aunque la firma sea anterior. Una distribución antigua deja
+de verificar al caducar. Una sola UID sin correo; primaria ed25519 solo para
+certificar, 2 años; subclave de firma ed25519, 1 año. Juan José genera y
+configura el material real fuera del repositorio.
 
 La revocación solo se conoce si se dispone de un certificado actualizado.
 Un atacante con una subclave robada puede adjuntar un certificado anterior.
@@ -102,3 +105,40 @@ GnuPG 2.2.40-1.1+deb12u2. Comando: ci/test-modulo-en-bookworm.sh release gnupg.
 La evidencia QEMU ya está versionada en repro/evidencia/2026-11-10-qemu-instalado-03ff84c.md,
 con bloque NIMBO_APROBACION_QEMU. CANDIDATO-VERIFICADO.json contiene el enlace
 blob fijado al commit que la incorpora; no depende del texto mutable de un PR.
+
+## Operacion del workflow
+
+release.yml usa promover.py (procedencia y borrador) y firmar.py (subclave).
+El codigo ejecutado se fija al SHA de main desde el que se hace dispatch;
+el tag se crea sobre el commit candidato, no sobre ese main.
+Ver CHECKPOINT-WORKFLOW.md para permisos, acciones fijadas por SHA, compuertas
+y comportamiento ante fallos. No ejecutar el dispatch hasta que ADR-015 figure como Aceptado en main y
+Juan José configure la subclave vigente, la huella pública y las dos políticas
+del environment descritas abajo.
+
+La bateria completa se ejecuta con el mismo comando bookworm anterior; ahora
+incluye 36 casos. Los tests de GitHub usan dobles controlados y no publican nada.
+La firma integrada de prueba usa claves efimeras y no instala una identidad real.
+
+Validacion de la bateria ampliada en bookworm (ejecutada por Alejandro):
+36 passed, 1 warning en 1.59 s. El warning de zipfile corresponde al archivo
+con nombre duplicado creado deliberadamente por la prueba negativa; la
+extraccion lo rechaza como se espera. Python 3.11.2, pytest 7.2.1 y GnuPG 2.2.40.
+
+## Precondiciones del environment y plan B
+
+Juan José configura `release` con **Required reviewers = Juan José** y
+**Deployment branches = solo main** antes de usar claves reales. Ambas son
+obligatorias. El if de main en el YAML no basta: un dispatch desde otra rama
+usa su propio YAML y podría omitir esa condición. La política del environment
+impide que esa rama acceda a los secretos. Este PR no configura esos ajustes.
+
+El límite del candidato es **17-nov-2026, 16:11:04 UTC** (iso-sha-B), no la
+caducidad de la ISO a las 16:11:17. El plan B re-ejecuta **los dos runs completos**,
+build-iso 42850483095 y repro-verify 42850482997, con Re-run all jobs, para
+renovar ISO y A/B. Se exige el mismo hash aprobado. Ver CHECKPOINT-WORKFLOW.md
+para los ensayos propuestos en Actions y sobre los runs de 3825b0e.
+
+Revision del plan B: 38 pruebas aprobadas en bookworm (ejecucion de Alejandro),
+38 passed, 1 warning en 1.53 s. El warning es el ZIP duplicado deliberado de
+la prueba negativa. El ensayo de reruns tras caducidad sigue pendiente.
