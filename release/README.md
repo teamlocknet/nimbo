@@ -16,10 +16,15 @@ Se distribuyen exactamente cinco archivos:
 - SHA256SUMS.asc (firma separada del manifiesto)
 
 La huella primaria completa se obtiene por el canal independiente acordado:
-README y documento de sustentación. Una clave descargada junto a la ISO no
-establece por sí sola la confianza. El verificador usa un llavero temporal y
-exige una sola identidad primaria; admite firmas de sus subclaves vinculadas.
-No hereda el llavero del usuario ni busca claves en la red.
+README y documento de sustentación. Clave vigente, generada el 13-nov-2026:
+
+- Huella primaria: `0C50 B739 1A9B 8CFF 8A36  A627 D3B9 111F EC57 48C6`
+- Certificado público para `--clave`: `release/nimbo-release-publica.asc`
+
+Una clave descargada junto a la ISO no establece por sí sola la confianza. El
+verificador usa un llavero temporal y exige una sola identidad primaria; admite
+firmas de sus subclaves vinculadas. No hereda el llavero del usuario ni busca
+claves en la red.
 
 PROCEDENCIA.json tiene: tag prerelease; commit completo; build_run; repro_run;
 iso_sha256; leg_a_sha256; leg_b_sha256; qemu_iso_sha256; qemu_evidence_url;

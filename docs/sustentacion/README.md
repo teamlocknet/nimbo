@@ -14,3 +14,10 @@ al pie de cada página). Lo que todavía no se ha medido sobre la ISO integrada 
 el código (rojo → verde), y cada vez que se probó en un Debian real apareció algo que las
 pruebas unitarias no podían ver: rutas que Firefox no leía, un fichero de `procps` que pisaba un
 parámetro, un falso positivo de DHCP. Encontrarlos y corregirlos con evidencia es la garantía.
+
+## Huella de la clave de release
+
+Segundo canal independiente de la huella (ADR-015); el primero es el README del repositorio.
+Quien verifique un release compara la huella de su `release-key.asc` con esta:
+
+- Huella primaria: `0C50 B739 1A9B 8CFF 8A36  A627 D3B9 111F EC57 48C6`
