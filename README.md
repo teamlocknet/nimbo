@@ -20,6 +20,20 @@ Sistema operativo de ciberseguridad basado en Debian — proyecto de grado del g
 El chat orquesta y diseña; Claude Code escribe el código real. El equipo humano
 ejecuta las gestiones del mundo físico y **verifica con los ojos** antes de mergear.
 
+## Verificar un release
+
+Los releases se firman con una subclave de la clave de release de LockNet
+([ADR-015](docs/adr/ADR-015-custodia-y-release-firmado.md)). Este README es uno de los dos
+canales independientes de la huella; el otro es el
+[material de sustentación](docs/sustentacion/README.md). La `release-key.asc` que viaja junto a
+la ISO **no basta por sí sola**: su huella tiene que coincidir con esta.
+
+- Huella primaria: `0C50 B739 1A9B 8CFF 8A36  A627 D3B9 111F EC57 48C6`
+- Clave pública: [`release/nimbo-release-publica.asc`](release/nimbo-release-publica.asc)
+  (primaria ed25519 solo para certificar, caduca el 2028-11-12; subclave de firma ed25519,
+  caduca el 2027-11-13).
+- Cómo verificar: [`release/README.md`](release/README.md).
+
 ## Licencia
 
 El código propio de este repositorio se distribuye bajo **GPL-3.0-or-later**: texto
