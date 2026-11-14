@@ -1,0 +1,7 @@
+leg=B
+sha256=30b5958fab71595533d67a6ee630bb6a531ed87f085f1c8260f80f39f0eda732
+boot_id=d1c7793a-106e-4159-96b8-54216f0d10c0
+machine_id=8d4ace31bca84511b5238b15acaeac38
+hostname=runnervm7aw5e
+runner_name=GitHub Actions 1000001136
+origen=espejo

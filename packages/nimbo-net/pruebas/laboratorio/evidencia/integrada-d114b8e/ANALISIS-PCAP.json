@@ -1,0 +1,34 @@
+{
+  "A": {
+    "A.enp0s3.pcap": {
+      "bytes": 3856,
+      "linktype": 1,
+      "packets": 24,
+      "marker_packets": 0,
+      "udp_51820_packets": 18
+    },
+    "A.wg-nimbo.pcap": {
+      "bytes": 1224,
+      "linktype": 101,
+      "packets": 12,
+      "marker_packets": 12,
+      "udp_51820_packets": 0
+    }
+  },
+  "B": {
+    "B.enp0s3.pcap": {
+      "bytes": 3856,
+      "linktype": 1,
+      "packets": 24,
+      "marker_packets": 0,
+      "udp_51820_packets": 18
+    },
+    "B.wg-nimbo.pcap": {
+      "bytes": 1224,
+      "linktype": 101,
+      "packets": 12,
+      "marker_packets": 12,
+      "udp_51820_packets": 0
+    }
+  }
+}

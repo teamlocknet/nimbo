@@ -1,0 +1,10 @@
+{
+  "commit": "d114b8e3acb9a2297c369d7df42ac2db8cc61dd6",
+  "build_run": 43346092320,
+  "repro_run": 43346092325,
+  "iso_sha256": "30b5958fab71595533d67a6ee630bb6a531ed87f085f1c8260f80f39f0eda732",
+  "match": true,
+  "iso_bytes": 572522496,
+  "modo": "instalacion Calamares desde ISO original; arranque posterior desde qcow2, sin ISO live ni initrd modificado",
+  "credenciales": "propias del ensayo, generadas solo en RAM del controlador; no exportadas"
+}
