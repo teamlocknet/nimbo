@@ -1,6 +1,7 @@
 # ADR-014 — Hardening fino 3B.2: parámetros del kernel (sysctl) y autenticación (PAM)
 
-**Estado:** Propuesto (9-nov, Emmanuel) · **Integración a la ISO:** checkpoint de Juan José
+**Estado:** Aceptado (11-nov, Juan José, checkpoint en #63) · **Autor:** Emmanuel ·
+**Integración a la ISO:** checkpoint de Juan José
 
 ## Contexto
 
@@ -24,7 +25,7 @@ sistema instalado."* (HU-04 CA-1/CA-2/CA-3).
 | **B. Lista corta y justificada de sysctl + `pam_faillock`, con verificador** | Cada ajuste se mide; bajo riesgo de romper cosas | Hay que mantener la lista |
 | C. Perfil completo (CIS / KSPP entero, `pam_pwquality`, `userns` desactivado) | Más puntos en `lynis` | `pam_pwquality` **obliga** contraseñas (choca con RF-CORE-03); quitar `userns` debilita el sandbox de Firefox; más riesgo de romper herramientas |
 
-## Decisión (propuesta): B
+## Decisión (aceptada el 11-nov): B
 
 **sysctl** (`security/hardening/3b2/sysctl/99-zz-nimbo-hardening.conf` → `/etc/sysctl.d/`):
 
@@ -88,6 +89,22 @@ actualizaciones automáticas (sin cambiarlas), cada sysctl de la lista y PAM.
   un hook) cambia el SHA y toca `iso/live-build/`: **checkpoint de Juan José**, en un PR aparte.
 - **Abierto:** `--firmware-chroot` (3B.2 de Juan José, maestro §0) queda fuera de este ADR.
 
+## Pendiente tras la aceptación
+
+Se cumplieron las condiciones de #47 con #60 (fase `account`, sin `authsucc` ni `silent`) y la
+evidencia de #63 (`security/hardening/3b2/evidencia/2026-11-11-vm-3b2.md`). Quedan abiertos, y
+no bloquean la aceptación:
+
+- **RF-CORE-04 CA-1/CA-2 en la ISO integrada:** `verify-hardening` con **0 fallos** en la sesión
+  live y en el sistema instalado (en la VM quedaron los 3 de actualizaciones automáticas, que en
+  la ISO cierra 3B.1).
+- **faillock con un `login` real** en QEMU sobre la ISO integrada. En la VM, el "acierto" se hizo
+  con `sudo -n true` (fase `account`). El primer intento en la consola tty3 no dejó **ningún**
+  `FAILED LOGIN` en el diario, así que no llegó a hacerse ningún intento en esa consola (el
+  diario los registra aunque el contador se ponga a cero); se repetirá en la integración.
+- **`rp_filter = 1` frente a WireGuard** (`nimbo-net`, ADR-011): medir cuando se pruebe el túnel.
+  Si choca, `rp_filter = 2`.
+
 ## Fecha
 
-2026-11-09
+2026-11-09 (propuesto) · 2026-11-11 (aceptado)
