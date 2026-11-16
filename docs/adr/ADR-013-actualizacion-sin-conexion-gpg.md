@@ -66,7 +66,7 @@
 | CA-2 / CA-3 | **N = 10** lotes manipulados (sin firma, sin manifiesto, manifiesto alterado, otra clave, firma basura, byte cambiado, `.deb` extra, `.deb` ausente, ruta firmada, manifiesto vacío firmado) | ✅ 10/10 rechazados, cada uno con su motivo (100 %); + **caso 11** (lote de otra clave con su propio anillo y `--anillo`: `instalar` no admite la opción y lo rechaza) y los 2 casos de datos raros |
 | Rojo → verde | Pruebas escritas antes que el código | Rojo: 2 errores de colección → verde: 16 passed. Revisión de #49: 6 failed → 20 passed |
 | Prueba sin red, ISO `30b5958f…` (16-nov) | VM **sin tarjeta de red**, instalada con Calamares: 1 lote de control + **13 inválidos** (los 10 de antes + firma de otro fichero, **clave revocada**, **clave caducada**) — `repro/evidencia/2026-11-16-rnf03-sin-red.md` | 12/14 en la VM: **revocada y caducada aceptadas** (arreglado, rojo → verde); **la ISO no traía el anillo** (añadido al paquete; `verificar-cli-rootfs.sh` lo exige) |
-| CA-1 real, sin red (RNF-03) | Misma prueba sobre la ISO con el anillo: un lote **firmado por Juan José** con la clave de release se instala sin red y el 100 % de los inválidos se rechaza | *Pendiente* |
+| CA-1 real, sin red (RNF-03) | ISO de #89 (`7d0da21c…`, MATCH ×2) con el anillo, VM sin tarjeta de red: un lote **firmado por Juan José** con la clave de release y los mismos inválidos | ✅ 16-nov: el lote firmado **se instala sin red** (`dpkg`: instalado); **14/14 rechazados (100 %)**; `rnf03-en-vm.sh` 0 fallos de 37 |
 
 ## Consecuencias
 
