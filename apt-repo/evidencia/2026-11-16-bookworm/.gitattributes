@@ -1,0 +1,2 @@
+# Preservar exactamente los metadatos firmados, incluidos sus finales de linea.
+metadatos/** -text -diff
