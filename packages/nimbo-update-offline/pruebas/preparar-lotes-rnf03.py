@@ -39,6 +39,13 @@ EPOCA = 1794326512  # fija: el .deb de juguete sale igual en cada ejecución
 def _tar_gz(miembros: dict[str, bytes]) -> bytes:
     buf = io.BytesIO()
     with tarfile.open(fileobj=buf, mode="w:gz", format=tarfile.GNU_FORMAT) as t:
+        # dpkg no crea los directorios padre: cada uno va como entrada propia (VM, 16-nov).
+        dirs = sorted({"/".join(n.split("/")[:i]) for n in miembros for i in range(1, n.count("/") + 1)})
+        for d in dirs:
+            info = tarfile.TarInfo(d + "/")
+            info.type, info.mtime, info.mode = tarfile.DIRTYPE, EPOCA, 0o755
+            info.uname = info.gname = "root"
+            t.addfile(info)
         for nombre, datos in miembros.items():
             info = tarfile.TarInfo(nombre)
             info.size, info.mtime, info.mode = len(datos), EPOCA, 0o644

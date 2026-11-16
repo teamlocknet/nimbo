@@ -6,6 +6,7 @@ RF-UPD-01: el 100 %). Las claves son efímeras y no salen del directorio tempora
 """
 import importlib.util
 import shutil
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -95,3 +96,30 @@ def test_lote_para_firmar_con_la_clave_de_release(tmp_path):
     assert "20-firmado-release instalar INSTALADO" in texto
     # sin firmar todavía: se rechaza con cualquier anillo
     assert not verificar(lote, destino / "anillo-prueba.gpg").aceptado
+
+
+def test_el_deb_de_juguete_trae_sus_directorios(tmp_path):
+    # VM, 16-nov: dpkg no crea los directorios padre ("unable to create
+    # /usr/share/doc/nimbo-rnf03-prueba/LEEME.dpkg-new: No such file or directory").
+    import io
+    import tarfile
+    datos = _modulo().deb_de_juguete()
+    inicio = datos.index(b"data.tar.gz")
+    tam = int(datos[inicio + 48:inicio + 58].decode().strip())
+    tar = tarfile.open(fileobj=io.BytesIO(datos[inicio + 60:inicio + 60 + tam]), mode="r:gz")
+    nombres = {m.name.rstrip("/") for m in tar.getmembers()}
+    for m in tar.getmembers():
+        if m.isfile():
+            partes = m.name.split("/")
+            for i in range(1, len(partes)):
+                assert "/".join(partes[:i]) in nombres, ("falta el directorio", "/".join(partes[:i]))
+    if shutil.which("dpkg"):
+        deb = tmp_path / "x.deb"
+        deb.write_bytes(datos)
+        raiz = tmp_path / "raiz"
+        (raiz / "var/lib/dpkg/updates").mkdir(parents=True)
+        (raiz / "var/lib/dpkg/info").mkdir()
+        (raiz / "var/lib/dpkg/status").write_text("")
+        r = subprocess.run(["dpkg", "--root", str(raiz), "--force-not-root", "--force-script-chrootless",
+                            "--log=/dev/null", "-i", str(deb)], capture_output=True, text=True)
+        assert r.returncode == 0, r.stderr
