@@ -35,6 +35,10 @@
 # CAPTURA DE RED: NIMBO_PCAP=<fichero.pcap> guarda todo el tráfico del guest (instalar o
 # arrancar). Analizar con: tcpdump -nn -r <fichero.pcap>
 #
+# SIN RED (RNF-03): NIMBO_SIN_RED=1 arranca la VM SIN tarjeta de red (instalar o arrancar).
+# Con NIMBO_LOTES=<dir>, `arrancar` lleva además esos lotes de nimbo-update-offline al disco
+# de herramientas (en el guest: /mnt/lotes). Dentro: sudo sh /mnt/rnf03-en-vm.sh
+#
 # AUTOMATIZACIÓN (evidencia): NIMBO_QEMU_MONITOR=<ruta.sock> expone el monitor de QEMU
 # (screendump, sendkey) y NIMBO_QEMU_SERIAL=<espec> sustituye la consola serie a fichero
 # (p. ej. unix:<ruta.sock>,server,nowait). Sin ellas, el arnés se comporta como antes.
@@ -170,14 +174,13 @@ qemu_base() {
     fi
     # Red user-mode (SLIRP). Con NIMBO_PCAP=<fichero> se captura TODO el tráfico del guest
     # (mismo mecanismo que verify-hermetismo-in-qemu.sh): sirve para demostrar que el
-    # instalador (p. ej. la pantalla de idioma/zona, 3C.2) no sale a la red. Sin la variable,
-    # la red es la de siempre.
-    local RED_ARGS=(-nic user,model=virtio-net-pci)
-    if [ -n "${NIMBO_PCAP:-}" ]; then
-        RED_ARGS=(-netdev user,id=n0 -device virtio-net-pci,netdev=n0
-                  -object filter-dump,id=dump0,netdev=n0,file="$NIMBO_PCAP")
-        echo ">> Captura: $NIMBO_PCAP (todo el tráfico del guest)"
-    fi
+    # instalador (p. ej. la pantalla de idioma/zona, 3C.2) no sale a la red. Con
+    # NIMBO_SIN_RED=1 la VM no tiene tarjeta (RNF-03). La elección vive en nimbo_red_args.
+    local red RED_ARGS
+    red="$(nimbo_red_args)" || { echo "$red"; exit 1; }
+    mapfile -t RED_ARGS <<< "$red"
+    [ -n "${NIMBO_PCAP:-}" ] && echo ">> Captura: $NIMBO_PCAP (todo el tráfico del guest)"
+    [ "${NIMBO_SIN_RED:-}" = 1 ] && echo ">> Red    : NINGUNA (-nic none, RNF-03)"
     qemu-system-x86_64 \
         "${kvm[@]}" \
         "${MACHINE[@]}" -m "$mem" -smp 2 \
@@ -249,6 +252,13 @@ cmd_arrancar() {
         cp "$ic/usr/lib/nimbo/initramfs/cryptsetup-envoltorio" "$tools/h002-cryptsetup-envoltorio"
         cp "$ic/etc/initramfs-tools/hooks/nimbo-cryptsetup-honesto" "$tools/h002-nimbo-cryptsetup-honesto"
         cp "$ic/etc/initramfs-tools/scripts/local-top/nimbo-aviso-ram" "$tools/h002-nimbo-aviso-ram"
+    fi
+    # RNF-03 (16-nov): la prueba sin red y, con NIMBO_LOTES=<dir>, los lotes de
+    # nimbo-update-offline que genera preparar-lotes-rnf03.py (solo lectura, como el resto).
+    cp "$HERE/rnf03-en-vm.sh" "$tools/"
+    if [ -n "${NIMBO_LOTES:-}" ]; then
+        [ -d "$NIMBO_LOTES" ] || { echo "ERROR: NIMBO_LOTES=$NIMBO_LOTES no es un directorio"; exit 1; }
+        cp -r "$NIMBO_LOTES" "$tools/lotes"
     fi
     # Clave LUKS GENERADA para pruebas (.gitignore): viaja al guest para añadirla como
     # keyslot de prueba con `cryptsetup luksAddKey … /mnt/clave-prueba.txt`, de modo que la
