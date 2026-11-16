@@ -74,9 +74,9 @@ class Gates(unittest.TestCase):
             def __init__(self,tag,rel):self.tag=tag;self.rel=rel
             def api(self,endpoint):return [{'ref':'refs/tags/v1.0.0-rc1'}] if self.tag else []
             def pages(self,endpoint):return [{'tag_name':'v1.0.0-rc1'}] if self.rel else []
-        promover.no_collision(API(False,False),'v1.0.0-rc1')
+        promover.no_collision(API(False,False),'v1.0.0-rc1',promover.EXPECTED_SHA)
         for values in [(True,False),(False,True)]:
-            with self.assertRaises(ValueError):promover.no_collision(API(*values),'v1.0.0-rc1')
+            with self.assertRaises(ValueError):promover.no_collision(API(*values),'v1.0.0-rc1',promover.EXPECTED_SHA)
 
     def test_artifact_digest_wrong(self):
         class API:
@@ -120,6 +120,51 @@ class Gates(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             for expired,run in [(True,2),(False,3)]:
                 with self.assertRaises(ValueError):promover.artifact(API(expired,run),2,'iso',Path(tmp)/'out',{'data'},100)
+
+    def tag_api(self,obj,rel=False):
+        class API:
+            posts=[]
+            def api(self,endpoint,payload=None):
+                if endpoint.startswith('git/matching'):
+                    return [dict(ref='refs/tags/v1.0.0-rc10',object=dict(type='commit',sha='0'*40))]+(
+                        [dict(ref='refs/tags/v1.0.0-rc1',object=obj)] if obj else [])
+                API.posts.append(endpoint)
+                return dict(id=1,html_url='https://example.invalid/draft')
+            def pages(self,endpoint):return [{'tag_name':'v1.0.0-rc1'}] if rel else []
+        return API()
+
+    def test_preexisting_tag_on_candidate_accepted(self):
+        # El GITHUB_TOKEN no puede crear un tag sobre un commit con otros workflows (run 43899924167).
+        api=self.tag_api(dict(type='commit',sha=promover.EXPECTED_SHA))
+        self.assertTrue(promover.no_collision(api,'v1.0.0-rc1',promover.EXPECTED_SHA))
+        self.assertFalse(promover.no_collision(self.tag_api(None),'v1.0.0-rc1',promover.EXPECTED_SHA))
+
+    def test_preexisting_tag_elsewhere_annotated_or_with_release_rejected(self):
+        for obj,rel in [(dict(type='commit',sha='0'*40),False),
+                        (dict(type='tag',sha=promover.EXPECTED_SHA),False),
+                        (dict(type='commit',sha=promover.EXPECTED_SHA),True)]:
+            with self.assertRaises(ValueError):
+                promover.no_collision(self.tag_api(obj,rel),'v1.0.0-rc1',promover.EXPECTED_SHA)
+
+    def test_draft_does_not_create_preexisting_tag(self):
+        api=self.tag_api(dict(type='commit',sha=promover.EXPECTED_SHA))
+        info=dict(tag=promover.EXPECTED_TAG,commit=promover.EXPECTED_SHA,iso_sha256=promover.EXPECTED_HASH)
+        with tempfile.TemporaryDirectory() as tmp,patch.object(promover.verifier,'verify',return_value=info),patch.object(promover.subprocess,'run'):
+            with self.assertRaises(ValueError):promover.draft(api,tmp,'A'*40)
+        self.assertEqual(type(api).posts,['releases'])
+
+    def test_github_error_reports_cause(self):
+        fallo=subprocess.CompletedProcess(['gh'],1,b'',b'gh: Resource not accessible by integration (HTTP 403)\n')
+        with patch.object(promover.subprocess,'run',return_value=fallo):
+            with self.assertRaisesRegex(ValueError,'Resource not accessible by integration'):
+                promover.GitHub().api('git/refs',dict(ref='refs/tags/x',sha='0'*40))
+
+    def test_main_prints_cause(self):
+        argv=['promover.py','borrador','/no-existe','--huella','A'*40]
+        out=io.StringIO()
+        with patch.object(sys,'argv',argv),patch.object(promover,'draft',side_effect=ValueError('el tag ya existe en otro commit')),patch('sys.stdout',out):
+            self.assertEqual(promover.main(),1)
+        self.assertIn('el tag ya existe en otro commit',out.getvalue())
 
     def test_upload_failure_never_reports_verified(self):
         class API:
