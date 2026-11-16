@@ -162,6 +162,30 @@ class Gates(unittest.TestCase):
             with self.assertRaises(ValueError):promover.draft(api,tmp,'A'*40)
         self.assertEqual(type(api).posts,['releases'])
 
+    def test_draft_without_target_when_tag_preexists(self):
+        # Run 43905814300: con el tag ya creado, POST releases devolvio 403; target_commitish no se usa si el tag existe.
+        payloads=[]
+        api=self.tag_api(dict(type='commit',sha=promover.EXPECTED_SHA))
+        orig=type(api).api
+        def api_espia(self,endpoint,payload=None):
+            if payload is not None:payloads.append((endpoint,payload))
+            return orig(self,endpoint,payload)
+        type(api).api=api_espia
+        info=dict(tag=promover.EXPECTED_TAG,commit=promover.EXPECTED_SHA,iso_sha256=promover.EXPECTED_HASH)
+        with tempfile.TemporaryDirectory() as tmp,patch.object(promover.verifier,'verify',return_value=info),patch.object(promover.subprocess,'run'):
+            with self.assertRaises(ValueError):promover.draft(api,tmp,'A'*40)
+        self.assertEqual([e for e,_ in payloads],['releases'])
+        self.assertNotIn('target_commitish',payloads[0][1])
+        self.assertEqual(payloads[0][1]['tag_name'],promover.EXPECTED_TAG)
+
+    def test_github_error_names_method_and_endpoint(self):
+        fallo=subprocess.CompletedProcess(['gh'],1,b'',b'gh: Resource not accessible by integration (HTTP 403)\n')
+        with patch.object(promover.subprocess,'run',return_value=fallo):
+            with self.assertRaisesRegex(ValueError,'POST releases'):
+                promover.GitHub().api('releases',dict(tag_name='x'))
+            with self.assertRaisesRegex(ValueError,'GET git/matching-refs/tags/x'):
+                promover.GitHub().api('git/matching-refs/tags/x')
+
     def test_github_error_reports_cause(self):
         fallo=subprocess.CompletedProcess(['gh'],1,b'',b'gh: Resource not accessible by integration (HTTP 403)\n')
         with patch.object(promover.subprocess,'run',return_value=fallo):

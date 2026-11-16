@@ -31,7 +31,8 @@ class GitHub:
         p = subprocess.run(args, input=data, capture_output=True, timeout=120)
         if p.returncode:
             causa = p.stderr.decode(errors="replace").strip().splitlines()[:1]
-            raise ValueError("consulta/mutacion de GitHub rechazada: "+(causa[0][:300] if causa else "sin detalle"))
+            metodo = "POST" if payload is not None else "GET"
+            raise ValueError("consulta/mutacion de GitHub rechazada ("+metodo+" "+endpoint+"): "+(causa[0][:300] if causa else "sin detalle"))
         return json.loads(p.stdout)
 
     def pages(self, endpoint, key=None):
@@ -221,9 +222,12 @@ def draft(api, directory, expected):
     info=verifier.verify(directory,expected)
     if (info["tag"],info["commit"],info["iso_sha256"])!=(EXPECTED_TAG,EXPECTED_SHA,EXPECTED_HASH):
         raise ValueError("distribucion no autorizada")
+    datos=dict(tag_name=info["tag"])
     if not no_collision(api,info["tag"],info["commit"]):
         api.api("git/refs",dict(ref="refs/tags/"+info["tag"],sha=info["commit"]))
-    release=api.api("releases",dict(tag_name=info["tag"],target_commitish=info["commit"],
+        datos["target_commitish"]=info["commit"]
+    # Con el tag ya creado, target_commitish no se usa y GitHub rechazo el POST (run 43905814300).
+    release=api.api("releases",dict(datos,
         name=info["tag"],draft=True,prerelease=True,
         body="Candidato de pruebas. Commit "+info["commit"]+". ISO SHA-256 "+info["iso_sha256"]+
              ". Procedencia y verificacion en los assets. Pendiente comprobacion de descarga."))
