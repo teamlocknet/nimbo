@@ -40,8 +40,9 @@ trap 'rm -rf "$TRABAJO"' EXIT
 # corre <segundos> <fichero-salida> <orden...>: ejecuta con límite de tiempo; deja la salida
 # en el fichero y devuelve el código (124 = se colgó).
 corre() { t="$1"; f="$2"; shift 2; timeout "$t" "$@" > "$f" 2>&1; }
-# como_usuario <orden...>: la orden como la persona que lanzó sudo, con su HOME.
-como_usuario() { runuser -u "$USUARIO" -- env HOME="$(getent passwd "$USUARIO" | cut -d: -f6)" "$@"; }
+# Las órdenes "como la persona" van con runuser escrito en la línea: timeout ejecuta
+# programas, no funciones de shell (primera pasada, 16-nov).
+HOGAR="$(getent passwd "$USUARIO" | cut -d: -f6)"
 muestra() { sed -n '1,6p' "$1" | while IFS= read -r l; do p "         | $l"; done; }
 limpio() { ! grep -q 'Traceback' "$1"; }
 
@@ -66,10 +67,11 @@ sec "3. nimbo-audit: init → capture → report → verify (como $USUARIO)"
 f="$TRABAJO/audit.txt"
 echo "evidencia de la prueba RNF-03" > "$TRABAJO/evidencia.txt"; chown "$USUARIO" "$TRABAJO/evidencia.txt"
 caso="$TRABAJO/casos/rnf03"
-if corre 60 "$f" como_usuario nimbo-audit init rnf03 --dir "$TRABAJO/casos" \
-   && corre 60 "$f.c" como_usuario nimbo-audit capture "$TRABAJO/evidencia.txt" --dir "$caso" \
-   && corre 60 "$f.r" como_usuario nimbo-audit report --dir "$caso" \
-   && corre 60 "$f.v" como_usuario nimbo-audit verify "$caso"; then
+mkdir "$TRABAJO/casos"; chown "$USUARIO" "$TRABAJO/casos"
+if corre 60 "$f" runuser -u "$USUARIO" -- env HOME="$HOGAR" nimbo-audit init rnf03 --dir "$TRABAJO/casos" \
+   && corre 60 "$f.c" runuser -u "$USUARIO" -- env HOME="$HOGAR" nimbo-audit capture "$TRABAJO/evidencia.txt" --dir "$caso" \
+   && corre 60 "$f.r" runuser -u "$USUARIO" -- env HOME="$HOGAR" nimbo-audit report --dir "$caso" \
+   && corre 60 "$f.v" runuser -u "$USUARIO" -- env HOME="$HOGAR" nimbo-audit verify "$caso"; then
     ok "ciclo completo sin red ($(grep -h 'Resumen' "$f.v"))"
 else ko "el ciclo de nimbo-audit falló:"; for x in "$f" "$f.c" "$f.r" "$f.v"; do [ -f "$x" ] && muestra "$x"; done; fi
 
@@ -89,7 +91,7 @@ else ko "nimbo-net status (código $?)"; muestra "$f"; fi
 
 sec "6. nimbo-nav (Firefox endurecido y modo Tor)"
 f="$TRABAJO/ff.txt"
-corre 120 "$f" como_usuario firefox-esr --headless --screenshot "$TRABAJO/ff.png" "file:///usr/share/doc/firefox-esr/copyright"
+corre 120 "$f" runuser -u "$USUARIO" -- env HOME="$HOGAR" firefox-esr --headless --screenshot "$TRABAJO/ff.png" "file:///usr/share/doc/firefox-esr/copyright"
 if [ -s "$TRABAJO/ff.png" ]; then ok "Firefox abre un fichero local sin red (captura de $(stat -c %s "$TRABAJO/ff.png") bytes)"
 else ko "Firefox no generó la captura"; muestra "$f"; fi
 f="$TRABAJO/tor.txt"

@@ -58,6 +58,11 @@ grep -q 'NIMBO_LOTES' "$SRC/install-in-qemu.sh" \
     && ok "arrancar admite NIMBO_LOTES" || falla "no admite NIMBO_LOTES"
 [ -f "$SRC/rnf03-en-vm.sh" ] && sh -n "$SRC/rnf03-en-vm.sh" \
     && ok "rnf03-en-vm.sh existe y es sh válido" || falla "falta rnf03-en-vm.sh o no es sh válido"
+# 16-nov, primera pasada en la VM: `timeout` no puede ejecutar una FUNCIÓN de shell
+# ("fallo al ejecutar la orden «como_usuario»") y nimbo-audit y Firefox no llegaron a probarse.
+! grep -qE '^[^#]*corre [0-9]+ [^ ]+ como_usuario' "$SRC/rnf03-en-vm.sh" \
+    && ok "rnf03-en-vm.sh no pasa funciones de shell a timeout" \
+    || falla "rnf03-en-vm.sh pasa la función como_usuario a timeout (no se puede ejecutar)"
 
 echo
 if [ "$fallos" -ne 0 ]; then echo "RESULTADO: $fallos comprobaciones fallaron"; exit 1; fi
