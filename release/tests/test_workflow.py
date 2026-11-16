@@ -146,6 +146,15 @@ class Gates(unittest.TestCase):
             with self.assertRaises(ValueError):
                 promover.no_collision(self.tag_api(obj,rel),'v1.0.0-rc1',promover.EXPECTED_SHA)
 
+    def test_validate_accepts_preexisting_tag_on_candidate(self):
+        # Run 43904407697: validate() seguia llamando a no_collision sin el commit (TypeError).
+        hasta_runs=ValueError('comprobacion de colision superada')
+        for obj,esperado in [(dict(type='commit',sha=promover.EXPECTED_SHA),'comprobacion de colision superada'),
+                             (dict(type='commit',sha='0'*40),'otro commit')]:
+            with tempfile.TemporaryDirectory() as tmp,patch.object(promover,'validate_run',side_effect=hasta_runs):
+                with self.assertRaisesRegex(ValueError,esperado):
+                    promover.validate(self.tag_api(obj),promover.EXPECTED_TAG,promover.EXPECTED_SHA,1,2,Path(tmp)/'c')
+
     def test_draft_does_not_create_preexisting_tag(self):
         api=self.tag_api(dict(type='commit',sha=promover.EXPECTED_SHA))
         info=dict(tag=promover.EXPECTED_TAG,commit=promover.EXPECTED_SHA,iso_sha256=promover.EXPECTED_HASH)
