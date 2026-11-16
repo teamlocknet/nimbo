@@ -1,0 +1,60 @@
+NIMBO_RNF03_BEGIN
+fecha: 2026-11-16T17:46:04Z · kernel: 6.1.0-52-amd64 · usuario: juan
+
+== 1. Sin red ==
+  OK     solo existe lo (la VM no tiene tarjeta de red)
+  OK     sin ruta por defecto
+
+== 2. Módulos instalados (modulos.list) ==
+  OK     nimbo-audit instalado (0.1.0-1)
+  OK     nimbo-red instalado (0.1.1-1)
+  OK     nimbo-update-offline instalado (0.1.0-1)
+  OK     nimbo-nav instalado (0.1.0-1)
+  OK     nimbo-net instalado (0.1.0-1)
+
+== 3. nimbo-audit: init → capture → report → verify (como juan) ==
+  FALLO  el ciclo de nimbo-audit falló:
+         | timeout: fallo al ejecutar la orden «como_usuario»: No existe el fichero o el directorio
+
+== 4. nimbo-red (red a demanda) ==
+  OK     estado responde: lo               UNKNOWN        127.0.0.1/8 ::1/128 
+  OK     on sin tarjeta falla con mensaje (código 1): nimbo-red: no hay ninguna interfaz por cable. En esta versión solo hay red por cable.
+
+== 5. nimbo-net (WireGuard) ==
+  OK     status responde: nimbo-net: inactivo
+  OK     wg-nimbo no existe
+
+== 6. nimbo-nav (Firefox endurecido y modo Tor) ==
+  FALLO  Firefox no generó la captura
+         | timeout: fallo al ejecutar la orden «como_usuario»: No existe el fichero o el directorio
+  OK     nimbo-tor estado: nimbo-tor: modo Tor inactivo
+  OK     nimbo-tor on sin red termina (código 0): nimbo-tor: modo Tor ACTIVO. Abre "Navegar por Tor" o ejecuta: nimbo-navegar-tor
+  OK     tras off no queda la tabla nimbo_tor (off, código 0)
+  OK     tor@default inactivo tras off
+
+== 7. Hardening 3B.2 ==
+  OK     verify-hardening: VEREDICTO: OK — 0 fallos (44 comprobaciones)
+
+== 8. nimbo-update-offline (RF-UPD-01) ==
+  FALLO  falta el anillo de nimbo (/usr/share/nimbo/keyrings/nimbo-actualizaciones.gpg): ningún lote, ni uno bien firmado, se podrá instalar
+  OK     00-control [prueba] ACEPTADO — ACEPTADO: 1 paquetes con firma válida
+  OK     00-control [nimbo] RECHAZADO — RECHAZADO: firma inválida: el MANIFIESTO no está firmado por la clave de actualizaciones de nimbo, o fue modificado después de firmarse
+  OK     00-control [instalar] RECHAZADO — RECHAZADO: firma inválida: el MANIFIESTO no está firmado por la clave de actualizaciones de nimbo, o fue modificado después de firmarse. No se instaló nada.
+  OK     01-sin-firma [prueba] RECHAZADO — RECHAZADO: lote sin firma: faltan MANIFIESTO o MANIFIESTO.asc
+  OK     02-sin-manifiesto [prueba] RECHAZADO — RECHAZADO: lote sin firma: faltan MANIFIESTO o MANIFIESTO.asc
+  OK     03-otra-clave [prueba] RECHAZADO — RECHAZADO: firma inválida: el MANIFIESTO no está firmado por la clave de actualizaciones de nimbo, o fue modificado después de firmarse
+  OK     04-manifiesto-alterado [prueba] RECHAZADO — RECHAZADO: firma inválida: el MANIFIESTO no está firmado por la clave de actualizaciones de nimbo, o fue modificado después de firmarse
+  OK     05-deb-alterado [prueba] RECHAZADO — RECHAZADO: paquete alterado: el SHA-256 de nimbo-rnf03-prueba_1.0_all.deb no coincide con el firmado
+  OK     06-deb-extra [prueba] RECHAZADO — RECHAZADO: el paquete colado_1.0_all.deb no está firmado (no figura en el MANIFIESTO)
+  OK     07-deb-faltante [prueba] RECHAZADO — RECHAZADO: falta el paquete nimbo-rnf03-prueba_1.0_all.deb, que figura en el MANIFIESTO
+  OK     08-firma-de-otro-fichero [prueba] RECHAZADO — RECHAZADO: firma inválida: el MANIFIESTO no está firmado por la clave de actualizaciones de nimbo, o fue modificado después de firmarse
+  OK     09-firma-basura [prueba] RECHAZADO — RECHAZADO: firma inválida: el MANIFIESTO no está firmado por la clave de actualizaciones de nimbo, o fue modificado después de firmarse
+  OK     10-nombre-con-ruta [prueba] RECHAZADO — RECHAZADO: nombre no permitido en el manifiesto: '../nimbo-rnf03-prueba_1.0_all.deb'
+  OK     11-manifiesto-vacio [prueba] RECHAZADO — RECHAZADO: manifiesto vacío: no hay paquetes que instalar
+  FALLO  12-clave-revocada [prueba] esperado RECHAZADO, obtenido ACEPTADO (código 0) — ACEPTADO: 1 paquetes con firma válida
+  FALLO  13-clave-caducada [prueba] esperado RECHAZADO, obtenido ACEPTADO (código 0) — ACEPTADO: 1 paquetes con firma válida
+  lotes inválidos rechazados: 12 de 14
+
+== Resumen ==
+VEREDICTO: FALLA — 5 fallos de 35 comprobaciones
+NIMBO_RNF03_END

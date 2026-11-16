@@ -72,7 +72,7 @@ if corre 60 "$f" runuser -u "$USUARIO" -- env HOME="$HOGAR" nimbo-audit init rnf
    && corre 60 "$f.c" runuser -u "$USUARIO" -- env HOME="$HOGAR" nimbo-audit capture "$TRABAJO/evidencia.txt" --dir "$caso" \
    && corre 60 "$f.r" runuser -u "$USUARIO" -- env HOME="$HOGAR" nimbo-audit report --dir "$caso" \
    && corre 60 "$f.v" runuser -u "$USUARIO" -- env HOME="$HOGAR" nimbo-audit verify "$caso"; then
-    ok "ciclo completo sin red ($(grep -h 'Resumen' "$f.v"))"
+    ok "ciclo completo sin red; salida de verify:"; muestra "$f.v"
 else ko "el ciclo de nimbo-audit falló:"; for x in "$f" "$f.c" "$f.r" "$f.v"; do [ -f "$x" ] && muestra "$x"; done; fi
 
 sec "4. nimbo-red (red a demanda)"
