@@ -99,6 +99,15 @@ if grep -qx nimbo-net "$LISTA"; then
     [ -z "$(find "$ROOT/etc/systemd/system" -name 'wg-quick*')" ] || fallar "wg-quick habilitado"
     echo "P: [ADR-020] nimbo-net: wireguard-tools; wg-nimbo sin configuracion ni wg-quick (solo join)"
 fi
+if grep -qx nimbo-update-offline "$LISTA"; then
+    # Sin el anillo, instalar rechaza todo, también un lote bien firmado (RNF-03, 16-nov).
+    # Es la clave de release 0C50B7391A9B8CFF8A36A627D3B9111FEC5748C6 (ADR-013, ADR-015).
+    a="$ROOT/usr/share/nimbo/keyrings/nimbo-actualizaciones.gpg"
+    [ -s "$a" ] || fallar "nimbo-update-offline sin anillo (/usr/share/nimbo/keyrings/nimbo-actualizaciones.gpg)"
+    [ "$(sha256sum "$a" | cut -d' ' -f1)" = 6ec0748141b647664b71c41b5e30e983e5441a609849fe4fb35233ac48971b01 ] \
+        || fallar "el anillo de nimbo-update-offline no es la clave de release esperada"
+    echo "P: [ADR-013] nimbo-update-offline: anillo = clave de release 0C50…48C6"
+fi
 
 # ADR-020: hardening 3B.2 en el squashfs (los valores en vivo los mide verify-hardening).
 for f in etc/sysctl.d/99-zz-nimbo-hardening.conf usr/share/nimbo/hardening/99-zz-nimbo-hardening.conf \

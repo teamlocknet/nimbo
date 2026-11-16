@@ -13,6 +13,8 @@ import pytest
 from nimbo_update_offline.verificar import verificar
 
 RUTA = Path(__file__).resolve().parents[1] / "pruebas" / "preparar-lotes-rnf03.py"
+# pybuild (dh_auto_test, al construir el .deb) copia solo tests/: ahí no hay pruebas/.
+pytestmark = pytest.mark.skipif(not RUTA.is_file(), reason="sin pruebas/ (build del .deb)")
 
 
 def _modulo():
