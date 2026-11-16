@@ -182,7 +182,7 @@ evalúan en ADR-011, sin decidir) · **Calamares 3.3.8** (única excepción de b
 ## 9. Estado actual y plan de fases
 
 El estado detallado y el calendario viven en el **maestro v2.4** (§0 y §8). Este resumen
-es del 13-nov-2026; si choca con el maestro, gana el maestro.
+es del 16-nov-2026; si choca con el maestro, gana el maestro.
 
 - ✅ **Core OS:** ISO live + instalable (Calamares, LUKS2 argon2id, Secure Boot verificado),
   hermética (0 sospechosos, 0 listeners), <500 MB en reposo; 3C.2 idioma/zona/swap (#40).
@@ -199,10 +199,10 @@ es del 13-nov-2026; si choca con el maestro, gana el maestro.
   ISO de la demo: `30b5958f…` (546 MiB), verificada en QEMU live e instalada.
 - 🟡 **Validación por requisito sobre esa ISO:** RF-RED-01 en dos instalaciones (#84);
   RF-NAV-01/02 (Emmanuel) pendiente.
-- 🟡 **Release firmado (ADR-015 Aceptado, `release.yml` en #78):** clave de release generada
-  el 13-nov (huella en el `README.md`, clave pública en `release/`, #85) y environment
-  `release` con sus tres secretos. Falta lanzarlo: candidato `03ff84c`, límite 17-nov
-  16:11:04 UTC.
+- ✅ **Release firmado `v1.0.0-rc1` (ADR-015, `release.yml`):** publicado el 16-nov como
+  pre-release (tag en `03ff84c`, ISO `28760694…`), firmado con la clave de release (huella en
+  el `README.md`, clave pública en `release/`, #85). El tag lo crea Juan José antes de lanzar
+  el workflow (#86–#88).
 - ⏭️ **Prioridad Media, si da el tiempo (D15 = B):** RF-DIST-01, RNF-06.
 
 **Requisitos vigentes:** el `.docx` "Requisitos de sistema" (15 RF + 7 RNF) y sus historias
