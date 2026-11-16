@@ -78,3 +78,20 @@ def test_el_deb_de_control_es_un_ar_de_debian(lotes):
     datos = debs[0].read_bytes()
     assert datos.startswith(b"!<arch>\ndebian-binary   ")
     assert b"control.tar.gz" in datos and b"data.tar.gz" in datos
+
+
+def test_lote_para_firmar_con_la_clave_de_release(tmp_path):
+    # Parte 2 (16-nov): un lote SIN firma que Juan José firma con la clave de release;
+    # en la VM, con el anillo de la ISO, tiene que aceptarse e instalarse sin red.
+    if not (shutil.which("gpg") and shutil.which("gpgv")):
+        pytest.skip("gpg/gpgv no disponibles")
+    destino = tmp_path / "lotes"
+    filas = _modulo().preparar(destino, para_firmar=True)
+    lote = destino / "20-firmado-release"
+    assert sorted(p.name for p in lote.iterdir()) == ["MANIFIESTO", "nimbo-rnf03-prueba_1.0_all.deb"]
+    assert ("20-firmado-release", "nimbo", "ACEPTADO") in filas
+    assert ("20-firmado-release", "instalar", "INSTALADO") in filas
+    texto = (destino / "ESPERADO").read_text(encoding="utf-8")
+    assert "20-firmado-release instalar INSTALADO" in texto
+    # sin firmar todavía: se rechaza con cualquier anillo
+    assert not verificar(lote, destino / "anillo-prueba.gpg").aceptado

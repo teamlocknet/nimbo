@@ -5,7 +5,7 @@ Genera, en el HOST, un lote de control bien firmado y lotes inválidos (uno por 
 romper la firma o el contenido), más el anillo PÚBLICO de prueba y el fichero ESPERADO que
 lee iso/live-build/rnf03-en-vm.sh dentro de la VM:
 
-    python3 -I packages/nimbo-update-offline/pruebas/preparar-lotes-rnf03.py <destino>
+    python3 -I packages/nimbo-update-offline/pruebas/preparar-lotes-rnf03.py <destino> [--para-firmar]
     NIMBO_SIN_RED=1 NIMBO_LOTES=<destino> iso/live-build/install-in-qemu.sh arrancar
 
 Claves: EFÍMERAS, sin frase, en un GNUPGHOME temporal que se borra al terminar. Al destino
@@ -14,6 +14,9 @@ solo llegan claves públicas (anillo-prueba.gpg) y firmas. Ninguna clave entra a
 La clave de prueba NO es la de nimbo: con el anillo de la ISO, el lote de control se tiene
 que rechazar (y `instalar` no puede instalarlo). Con anillo-prueba.gpg (solo para
 `verificar --anillo`) el control se acepta y todos los inválidos se rechazan (RF-UPD-01).
+
+Con --para-firmar añade 20-firmado-release, SIN firma: lo firma Juan José con la clave de
+release (ADR-013) y, con el anillo de la ISO, se tiene que aceptar e instalar sin red.
 
 Solo usa la biblioteca estándar y gpg (el .deb de juguete se arma a mano: formato ar).
 """
@@ -101,7 +104,7 @@ def _manifiesto(lote: Path, nombres: list[str]) -> Path:
     return m
 
 
-def preparar(destino: Path) -> list[tuple[str, str, str]]:
+def preparar(destino: Path, para_firmar: bool = False) -> list[tuple[str, str, str]]:
     destino = Path(destino)
     if destino.exists():
         raise FileExistsError(f"{destino} ya existe: no se sobrescribe nada")
@@ -154,6 +157,16 @@ def preparar(destino: Path) -> list[tuple[str, str, str]]:
         lote("12-clave-revocada", firma=revocada)
         lote("13-clave-caducada", firma=caducada, hora="20200101T120000")
 
+        if para_firmar:
+            # Parte 2: SIN firma. Lo firma Juan José con la clave de release (ADR-013); con el
+            # anillo de la ISO se tiene que aceptar e instalar sin red.
+            d = destino / "20-firmado-release"
+            d.mkdir()
+            (d / DEB).write_bytes(deb)
+            _manifiesto(d, [DEB])
+            esperado += [("20-firmado-release", "nimbo", "ACEPTADO"),
+                         ("20-firmado-release", "instalar", "INSTALADO")]
+
         g.revocar(revocada)
         # Anillo PÚBLICO: la buena, la revocada (con su revocación) y la caducada. La "otra" no.
         (destino / "anillo-prueba.gpg").write_bytes(g("--export", buena, revocada, caducada))
@@ -167,12 +180,16 @@ def preparar(destino: Path) -> list[tuple[str, str, str]]:
 
 
 def main(argv: list[str]) -> int:
-    if len(argv) != 2:
+    para_firmar = "--para-firmar" in argv
+    args = [a for a in argv[1:] if a != "--para-firmar"]
+    if len(args) != 1:
         print(__doc__.split("\n\n")[1])
         return 2
-    filas = preparar(Path(argv[1]))
+    filas = preparar(Path(args[0]), para_firmar)
     inv = sum(1 for _, m, r in filas if m == "prueba" and r == "RECHAZADO")
-    print(f"Lotes en {argv[1]}: 1 de control y {inv} inválidos. Claves privadas borradas.")
+    print(f"Lotes en {args[0]}: 1 de control y {inv} inválidos. Claves privadas borradas.")
+    if para_firmar:
+        print(f"Falta firmar con la clave de release: {args[0]}/20-firmado-release/MANIFIESTO")
     return 0
 
 

@@ -132,6 +132,11 @@ else
         c=$?
         if [ "$c" -eq 0 ]; then obtenido=ACEPTADO; [ "$modo" = instalar ] && obtenido=INSTALADO
         else obtenido=RECHAZADO; fi
+        # INSTALADO solo cuenta si dpkg lo confirma (el paquete de juguete de los lotes).
+        if [ "$obtenido" = INSTALADO ] && ! dpkg-query -W -f='${Status}' nimbo-rnf03-prueba 2>/dev/null \
+                | grep -q 'install ok installed'; then
+            obtenido="INSTALADO-sin-dpkg"
+        fi
         if [ "$esperado" = RECHAZADO ] && [ "$modo" != instalar ]; then
             invalidos=$((invalidos+1)); [ "$obtenido" = RECHAZADO ] && rechazados=$((rechazados+1))
         fi
