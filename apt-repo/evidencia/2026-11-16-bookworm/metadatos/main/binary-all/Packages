@@ -1,0 +1,104 @@
+Package: nimbo-audit
+Priority: optional
+Section: utils
+Installed-Size: 93
+Maintainer: Juan José Duque <jd1020157@gmail.com>
+Architecture: all
+Version: 0.1.0-1
+Depends: python3-typer (>= 0.7), python3:any
+Suggests: pandoc
+Filename: pool/main/n/nimbo-audit/nimbo-audit_0.1.0-1_all.deb
+Size: 20260
+MD5sum: 948c00e651116e1ebc0a6056521bace8
+SHA1: dc90e4269d8cd39713e988738d8958a5348b4c26
+SHA256: 8eb7aaa1b360767f415568c17859e4557209be21f76450c9f70366632dc2bf2a
+SHA512: b44ef206ab0dbaffb88bf3ff99238b3d018656ac314c3b0a4e65ab40663db45bb7c66520dd1bfe92e76f509558e67c7f96dd0ace15d9a059171d950a5669a441
+Description: CLI para organizar auditorias y registrar evidencias
+ Crea directorios de auditoria, captura archivos con hashes SHA-256
+ y genera informes Markdown con comprobacion de integridad.
+ La exportacion opcional a PDF requiere pandoc y un motor PDF compatible.
+Homepage: https://github.com/teamlocknet/nimbo
+
+Package: nimbo-nav
+Priority: optional
+Section: net
+Installed-Size: 74
+Maintainer: Juan José Duque <jd1020157@gmail.com>
+Architecture: all
+Version: 0.1.0-1
+Depends: python3:any, firefox-esr, tor, nftables, iproute2, libnotify-bin
+Filename: pool/main/n/nimbo-nav/nimbo-nav_0.1.0-1_all.deb
+Size: 15368
+MD5sum: 58bc6cf1d71d37091d540ef33ba5e15a
+SHA1: 5ded7fd9acc5149ba04753206e9c9e1fbbb7e92a
+SHA256: 46dbe0cfee1648f0f7696acba55613ce49d9ae99d958b1d97ed1b33913b4ab6f
+SHA512: 2a93a403c29ef05f9d5a8433af6f7bc6d806fdc05ae7ffef2530f74ef9662d06a6f956507a71e1f5bf926c30206bfbf4a55c2201efbd229a8aa63e243ace2857
+Description: navegacion segura de nimbo: Firefox endurecido y modo Tor
+ Endurece firefox-esr con politicas (sin telemetria ni conexiones en reposo)
+ y anade un modo Tor que se activa a peticion: una tabla nftables que falla
+ cerrada solo deja salir al proceso tor, y nimbo-leakcheck avisa si algo
+ intenta salir fuera del tunel. Tor no arranca solo.
+Homepage: https://github.com/teamlocknet/nimbo
+
+Package: nimbo-net
+Priority: optional
+Section: net
+Installed-Size: 46
+Maintainer: Juan José Duque <jd1020157@gmail.com>
+Architecture: all
+Version: 0.1.0-1
+Depends: python3:any, wireguard-tools, iproute2, iputils-ping, nftables, systemd, nimbo-red
+Filename: pool/main/n/nimbo-net/nimbo-net_0.1.0-1_all.deb
+Size: 11344
+MD5sum: 236ee95a8b54c5d62be45cb9d1bc9946
+SHA1: 118480263d6f801e6004c53eb97fce1d51c14757
+SHA256: b516e285bdb427cd73be30300d5b6ebe04feaa4a40727550727121f85bedd5e4
+SHA512: 6058eecde547e2e2c33f549d38320798c8e257e0ac6feba07d4b66e7eae6b9e37d74eafd80730c3730b4224490762ad258c8bf9bdc8027fbafc946bbd7a20cc1
+Description: red privada WireGuard entre dos pares preparados
+ Activa un tunel dividido solo a demanda. Usa la conectividad previamente
+ activada con nimbo-red y se niega cuando el modo Tor esta activo.
+Homepage: https://github.com/teamlocknet/nimbo
+
+Package: nimbo-red
+Priority: optional
+Section: net
+Installed-Size: 32
+Maintainer: Juan José Duque <jd1020157@gmail.com>
+Architecture: all
+Version: 0.1.1-1
+Depends: python3:any, iproute2, isc-dhcp-client
+Filename: pool/main/n/nimbo-red/nimbo-red_0.1.1-1_all.deb
+Size: 6752
+MD5sum: 5c7bdebd1220ce60529db23684db1dd4
+SHA1: e5375579a9f4ca1b281bc48ca5fe229611c81640
+SHA256: 7a69905297a7fd8735161e22550857ee7d5fc3cf44849394134594416e2aa510
+SHA512: 5b320185fe366f39d251970c564167841f77ed1a1bbbc117179b5632e82b943b8ebfcd5a941a3ff687ed887e0c790cd0914e8e46bcb2179909aec695dadccf75
+Description: red por cable de nimbo, solo a demanda
+ nimbo arranca sin red: ninguna interfaz esta configurada. nimbo-red on
+ levanta la interfaz por cable y pide una sola concesion DHCP; nimbo-red off
+ la suelta y baja la interfaz. No deja servicios ni configuracion persistente:
+ al reiniciar, el equipo vuelve a quedar sin red. Solo cable.
+Homepage: https://github.com/teamlocknet/nimbo
+
+Package: nimbo-update-offline
+Priority: optional
+Section: admin
+Installed-Size: 42
+Maintainer: Juan José Duque <jd1020157@gmail.com>
+Architecture: all
+Version: 0.1.1-1
+Depends: python3:any, gpgv, apt
+Suggests: gpg
+Filename: pool/main/n/nimbo-update-offline/nimbo-update-offline_0.1.1-1_all.deb
+Size: 9684
+MD5sum: 7af83a3fd64f76d6b03f2836e1982e31
+SHA1: 1dc6046b115166bc099bcca2fd5df6033e953d0f
+SHA256: 822535b263e0708fbf3d01537e3d750660218b06bb61950f945f48e6c055b4c7
+SHA512: dcfab753d1f531b9619991418878aca9cd3be14ac1886a51a4dc6b409204950607afbe423ab178cb46bfaf57d0607f49c190c476db610b6a13ae926cd27cef50
+Description: actualizacion de nimbo sin conexion, solo con paquetes firmados
+ Instala lotes de paquetes traidos por USB solo si su MANIFIESTO esta firmado
+ con la clave de actualizaciones de nimbo y cada .deb coincide con su SHA-256.
+ Rechaza lotes sin firma, con firma de otra clave, alterados o con paquetes de
+ mas. Instala con apt-get --no-download, sin red.
+Homepage: https://github.com/teamlocknet/nimbo
+

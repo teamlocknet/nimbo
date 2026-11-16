@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Firma en environment aprobado con subclave; nunca crea tags ni releases."""
+from contextlib import contextmanager
 import argparse
 import hashlib
 import os
@@ -45,38 +46,54 @@ def select_subkey(rows, expected, now):
     return signing[0]
 
 
+@contextmanager
+def signing_key(expected, secret):
+    """Llavero efimero compartido: solo una subclave vigente, primaria offline."""
+    with tempfile.TemporaryDirectory(prefix="nimbo-signing-") as tmp:
+        home = Path(tmp)
+        def call(*args, input=None):
+            p = subprocess.run(["gpg", "--no-options", "--homedir", str(home), "--batch",
+                "--no-auto-key-retrieve", "--auto-key-locate", "clear", *args],
+                input=input, capture_output=True, timeout=120)
+            if p.returncode:
+                raise ValueError("operacion GPG de firma rechazada")
+            return p.stdout
+        try:
+            call("--import", input=secret)
+            signer = select_subkey(call("--with-colons", "--list-secret-keys").decode(), expected, int(time.time()))
+            public = home / "public.asc"
+            public.write_bytes(call("--armor", "--export", expected))
+            verifier.keyring(home, public, expected)
+            yield home, call, signer, public
+        finally:
+            subprocess.run(["gpgconf", "--homedir", str(home), "--kill", "gpg-agent"], capture_output=True)
+
+
+def sign_document(call, signer, source, output, passphrase, clearsign=False):
+    """Firma un fichero existente y confirma la subclave realmente utilizada."""
+    if Path(output).exists():
+        raise FileExistsError("no se sobrescribe una firma")
+    status = call("--pinentry-mode", "loopback", "--passphrase-fd", "0",
+        "--local-user", signer+"!", "--armor", "--digest-algo", "SHA256", "--status-fd", "1",
+        "--clearsign" if clearsign else "--detach-sign", "--output", str(output), str(source),
+        input=passphrase+b"\n").decode()
+    created = [line.split() for line in status.splitlines() if line.startswith("[GNUPG:] SIG_CREATED ")]
+    if len(created) != 1 or created[0][-1] != signer:
+        raise ValueError("firmante efectivo incorrecto")
+
+
 def sign(bundle, output, expected, secret, passphrase, adr):
-    # El ADR sigue Propuesto hasta la decision de Juan Jose: impedir firma anticipada.
+    # La firma requiere la decision versionada de Juan Jose en ADR-015.
     if not re.search(r"^\*\*Estado:\*\* Aceptado(?:[. ;]|$)", Path(adr).read_text(),re.M):
         raise ValueError("ADR-015 aun no esta Aceptado")
     bundle=Path(bundle);info=verifier.metadata(bundle/"candidate.json")
     if verifier.digest(bundle/"candidate.iso")!=info["iso_sha256"]:
         raise ValueError("candidato alterado")
-    with tempfile.TemporaryDirectory(prefix="nimbo-signing-") as tmp:
-        home=Path(tmp)
-        def call(*args,input=None):
-            p=subprocess.run(["gpg","--no-options","--homedir",str(home),"--batch",
-                "--no-auto-key-retrieve","--auto-key-locate","clear",*args],
-                input=input,capture_output=True,timeout=120)
-            if p.returncode:raise ValueError("operacion GPG de firma rechazada")
-            return p.stdout
-        try:
-            call("--import",input=secret)
-            rows=call("--with-colons","--list-secret-keys").decode()
-            signer=select_subkey(rows,expected,int(time.time()))
-            public=home/"public.asc";public.write_bytes(call("--armor","--export",expected))
-            verifier.prepare(bundle/"candidate.iso",bundle/"candidate.json",public,output,expected)
-            status=call("--pinentry-mode","loopback","--passphrase-fd","0",
-                "--local-user",signer+"!","--armor","--status-fd","1","--detach-sign",
-                "--output",str(Path(output)/"SHA256SUMS.asc"),str(Path(output)/"SHA256SUMS"),
-                input=passphrase+b"\n").decode()
-            created=[line.split() for line in status.splitlines() if line.startswith("[GNUPG:] SIG_CREATED ")]
-            if len(created)!=1 or created[0][-1]!=signer:
-                raise ValueError("firmante efectivo incorrecto")
-            verifier.verify(output,expected)
-            return signer
-        finally:
-            subprocess.run(["gpgconf","--homedir",str(home),"--kill","gpg-agent"],capture_output=True)
+    with signing_key(expected, secret) as (home, call, signer, public):
+        verifier.prepare(bundle/"candidate.iso", bundle/"candidate.json", public, output, expected)
+        sign_document(call, signer, Path(output)/"SHA256SUMS", Path(output)/"SHA256SUMS.asc", passphrase)
+        verifier.verify(output, expected)
+        return signer
 
 
 def main():
