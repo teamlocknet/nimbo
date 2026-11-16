@@ -147,3 +147,24 @@ para los ensayos propuestos en Actions y sobre los runs de 3825b0e.
 Revision del plan B: 38 pruebas aprobadas en bookworm (ejecucion de Alejandro),
 38 passed, 1 warning en 1.53 s. El warning es el ZIP duplicado deliberado de
 la prueba negativa. El ensayo de reruns tras caducidad sigue pendiente.
+
+## Tag creado por Juan José antes del borrador
+
+En el run 43899924167 (16-nov) `validar` y `firmar` pasaron y `borrador` falló
+sin crear nada, en la creación del tag (la distribución firmada se verificó
+después en local: OK). Causa probable, no confirmada porque `promover.py`
+descartaba el stderr de `gh`: el `GITHUB_TOKEN` no puede crear una ref sobre
+`03ff84c`, cuyos workflows difieren de los de main, y ese token no admite el
+permiso `workflows`. Con la cuenta de Juan José (scope `workflow`) el mismo tag
+se creó sin error. Por eso Juan José crea antes el **tag ligero** con su
+cuenta, exactamente en el commit del candidato:
+
+```sh
+gh api repos/teamlocknet/nimbo/git/refs -f ref=refs/tags/v1.0.0-rc1 \
+  -f sha=03ff84cd1804908cbd1fd7cdb90c0e8c1734a5fa
+```
+
+`promover.py borrador` lo acepta solo si es un tag ligero que apunta a ese
+commit; un tag en otro commit, un tag anotado o un release ya existente se
+rechazan. Si el tag no existe, lo intenta crear como antes. Los errores de
+`gh` se muestran con su causa (antes se descartaba el stderr).

@@ -30,7 +30,8 @@ class GitHub:
             data = json.dumps(payload).encode()
         p = subprocess.run(args, input=data, capture_output=True, timeout=120)
         if p.returncode:
-            raise ValueError("consulta/mutacion de GitHub rechazada")
+            causa = p.stderr.decode(errors="replace").strip().splitlines()[:1]
+            raise ValueError("consulta/mutacion de GitHub rechazada: "+(causa[0][:300] if causa else "sin detalle"))
         return json.loads(p.stdout)
 
     def pages(self, endpoint, key=None):
@@ -52,12 +53,19 @@ class GitHub:
             raise ValueError("descarga de GitHub rechazada")
 
 
-def no_collision(api, tag):
-    refs = api.api("git/matching-refs/tags/"+tag)
-    if any(x["ref"] == "refs/tags/"+tag for x in refs):
-        raise ValueError("el tag ya existe")
+def no_collision(api, tag, commit):
+    """True si el tag ya existe como tag ligero exactamente en commit.
+
+    El GITHUB_TOKEN no puede crear un tag sobre un commit cuyos workflows
+    difieren de main (run 43899924167): Juan Jose lo crea antes con su cuenta.
+    """
+    refs = [x for x in api.api("git/matching-refs/tags/"+tag) if x["ref"] == "refs/tags/"+tag]
+    obj = refs[0].get("object", {}) if refs else {}
+    if refs and (obj.get("type"), obj.get("sha")) != ("commit", commit):
+        raise ValueError("el tag ya existe en otro commit o no es un tag ligero")
     if any(x["tag_name"] == tag for x in api.pages("releases")):
         raise ValueError("el release ya existe")
+    return bool(refs)
 
 
 def validate_run(run, workflow, commit):
@@ -213,8 +221,8 @@ def draft(api, directory, expected):
     info=verifier.verify(directory,expected)
     if (info["tag"],info["commit"],info["iso_sha256"])!=(EXPECTED_TAG,EXPECTED_SHA,EXPECTED_HASH):
         raise ValueError("distribucion no autorizada")
-    no_collision(api,info["tag"])
-    api.api("git/refs",dict(ref="refs/tags/"+info["tag"],sha=info["commit"]))
+    if not no_collision(api,info["tag"],info["commit"]):
+        api.api("git/refs",dict(ref="refs/tags/"+info["tag"],sha=info["commit"]))
     release=api.api("releases",dict(tag_name=info["tag"],target_commitish=info["commit"],
         name=info["tag"],draft=True,prerelease=True,
         body="Candidato de pruebas. Commit "+info["commit"]+". ISO SHA-256 "+info["iso_sha256"]+
@@ -255,8 +263,8 @@ def main():
             expected=args.huella or public_identity(Path(args.directorio)/"release-key.asc",args.huella_sha256)
             print("BORRADOR VERIFICADO, publicar manualmente: "+draft(api,args.directorio,expected))
         return 0
-    except (ValueError,KeyError,OSError,subprocess.SubprocessError,zipfile.BadZipFile):
-        print("ERROR: promocion rechazada; no publicar el borrador")
+    except (ValueError,KeyError,OSError,subprocess.SubprocessError,zipfile.BadZipFile) as e:
+        print("ERROR: promocion rechazada ("+type(e).__name__+": "+str(e)[:300]+"); no publicar el borrador")
         return 1
 
 if __name__=="__main__":raise SystemExit(main())
