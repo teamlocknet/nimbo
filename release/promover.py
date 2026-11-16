@@ -157,7 +157,7 @@ def validate(api, tag, commit, build, repro, output):
         raise ValueError("este workflow solo promueve el candidato rc1 aprobado")
     if type(build) is not int or type(repro) is not int or min(build, repro) <= 0:
         raise ValueError("runs invalidos")
-    no_collision(api, tag)
+    no_collision(api, tag, commit)
     for run_id, workflow in [(build,"build-iso.yml"),(repro,"repro-verify.yml")]:
         validate_run(api.api("actions/runs/"+str(run_id)),workflow,commit)
     main_sha = api.api("git/ref/heads/main")["object"]["sha"]
