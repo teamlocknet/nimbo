@@ -51,9 +51,12 @@ cualquier otro programa se quedan sin red. Es a propósito.
 - Si el modo Tor no llega a arrancar, systemd deshace lo que alcanzó a hacer y
   `nimbo-tor estado` dice "falló". `nimbo-tor off` solo dice "red restaurada" cuando la
   unidad quedó realmente apagada.
-- Al integrarse en la ISO, el navegador entrará en la versión del snapshot (`firefox-esr`
-  140.14.0esr-1~deb12u1, publicada el 21-ago-2026) y no se actualizará solo (ADR-012). Hoy la
-  ISO todavía no lleva Firefox.
+- Si enciendes el modo Tor **sin red** (ninguna interfaz con ruta por defecto),
+  `nimbo-tor on` lo activa igual (bloquea desde ya) y añade: "Sin red: Tor no podrá
+  conectarse hasta que haya red (nimbo-red on)." Levanta la red y Tor se conectará solo.
+- La ISO lleva `nimbo-nav` (#81, #83) y, con él, el navegador en la versión del snapshot
+  (`firefox-esr` 140.14.0esr-1~deb12u1, publicada el 21-ago-2026), que no se actualiza solo
+  (ADR-012).
 
 ## Cómo se verificó
 
