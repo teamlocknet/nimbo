@@ -62,12 +62,15 @@ manifiesto vacío firmado y (**caso 11**) un lote firmado por otra clave que tra
 anillo y pide `--anillo`. Además, un MANIFIESTO que no es UTF-8 o un directorio llamado
 `.deb` se rechazan con su motivo, sin *traceback*.
 
-## Pendiente
+Manual para el usuario: [`docs/manuales/actualizacion-sin-conexion.md`](../../docs/manuales/actualizacion-sin-conexion.md) (RNF-06).
 
-- **Clave real de actualizaciones:** la genera y custodia Juan José (ADR-015). El paquete
-  necesita su **parte pública** en `/usr/share/nimbo/keyrings/nimbo-actualizaciones.gpg`.
-- Prueba en una VM bookworm **sin red** (RNF-03, la lleva Juan José): instalar un lote válido
-  y comprobar el rechazo de uno manipulado.
+## Estado
+
+- **Anillo:** la clave de release firma también los lotes; su parte pública viaja en el
+  paquete a `/usr/share/nimbo/keyrings/nimbo-actualizaciones.gpg` (0.1.1-1, #89, ADR-013).
+- **RNF-03 / RF-UPD-01 sobre la ISO, sin red** (Juan José, 16-nov): lote firmado instalado y
+  14/14 lotes inválidos rechazados, incluidas claves revocadas y caducadas
+  ([evidencia](../../repro/evidencia/2026-11-16-rnf03-sin-red.md)).
 - **Límite de v1 — repetición:** un lote viejo pero bien firmado sigue siendo válido. La
   **bajada de versión** la frena `apt-get -y` (sin `--allow-downgrades` se niega): **medido en
   VM el 11-nov** con `pruebas/prueba-bajada-version.sh`. Mejora posible: fecha o número de

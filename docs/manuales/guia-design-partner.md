@@ -57,9 +57,6 @@ caso (`~/audits/cliente-prueba/evidencia/`), cambia una letra y guarda. Ejecuta 
 
 ## 4. Navegar de forma segura (30 min)
 
-> Este paso aplica cuando la ISO ya incluya la navegación segura. Si no tienes Firefox en
-> el menú, anótalo y salta al paso 5.
-
 nimbo arranca **sin red**. Para este paso necesitas el equipo conectado **por cable** (o la
 máquina virtual con red). El Wi-Fi no está soportado en esta versión.
 
@@ -74,13 +71,25 @@ máquina virtual con red). El Wi-Fi no está soportado en esta versión.
 
 ## 5. Comprobar el endurecimiento (10 min)
 
-> Aplica cuando la ISO incluya el endurecimiento 3B.2.
-
 `sudo /usr/lib/nimbo/verify-hardening`. Debe terminar con **"VEREDICTO: OK — 0 fallos"**.
 
 Si te equivocas 5 veces seguidas con la contraseña, la cuenta se bloquea 10 minutos y el
 sistema **te dice que está bloqueada**. No la olvidaste: espera o pide a quien tenga `sudo`
 que ejecute `sudo faillock --user <tu-usuario> --reset`.
+
+## 6. Actualizar sin conexión (15 min)
+
+> Solo si el equipo te entregó una **USB con un lote de actualización**. Si no, salta este paso.
+
+Sigue el [manual de actualización sin conexión](actualizacion-sin-conexion.md):
+
+1. Conecta la USB y ábrela en el gestor de archivos.
+2. `nimbo-update-offline verificar /media/<tu-usuario>/<usb>/<carpeta-del-lote>` → debe decir
+   **`ACEPTADO`**.
+3. `sudo nimbo-update-offline instalar /media/<tu-usuario>/<usb>/<carpeta-del-lote>` → debe
+   terminar con **"actualización instalada"**.
+4. Si el equipo te dio también un **lote manipulado** (marcado como tal), pruébalo igual: debe
+   decir **`RECHAZADO`** y **"No se instaló nada"**.
 
 ## Al terminar
 
