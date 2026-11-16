@@ -38,12 +38,15 @@ chown "$USUARIO" "$TRABAJO"
 trap 'rm -rf "$TRABAJO"' EXIT
 
 # corre <segundos> <fichero-salida> <orden...>: ejecuta con límite de tiempo; deja la salida
-# en el fichero y devuelve el código (124 = se colgó).
-corre() { t="$1"; f="$2"; shift 2; timeout "$t" "$@" > "$f" 2>&1; }
+# en el fichero y devuelve el código (124 = se colgó). En sh las variables de una función son
+# globales: nombres propios para no pisar la f del llamador (16-nov, la salida de verify
+# salía vacía).
+corre() { _corre_t="$1"; _corre_f="$2"; shift 2; timeout "$_corre_t" "$@" > "$_corre_f" 2>&1; }
 # Las órdenes "como la persona" van con runuser escrito en la línea: timeout ejecuta
 # programas, no funciones de shell (primera pasada, 16-nov).
 HOGAR="$(getent passwd "$USUARIO" | cut -d: -f6)"
-muestra() { sed -n '1,6p' "$1" | while IFS= read -r l; do p "         | $l"; done; }
+muestra() { [ -f "$1" ] || { p "         | (no existe $1)"; return; }
+            sed -n '1,6p' "$1" | while IFS= read -r l; do p "         | $l"; done; }
 limpio() { ! grep -q 'Traceback' "$1"; }
 
 p "NIMBO_RNF03_BEGIN"

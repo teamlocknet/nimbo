@@ -63,6 +63,17 @@ grep -q 'NIMBO_LOTES' "$SRC/install-in-qemu.sh" \
 ! grep -qE '^[^#]*corre [0-9]+ [^ ]+ como_usuario' "$SRC/rnf03-en-vm.sh" \
     && ok "rnf03-en-vm.sh no pasa funciones de shell a timeout" \
     || falla "rnf03-en-vm.sh pasa la función como_usuario a timeout (no se puede ejecutar)"
+# 16-nov, Parte 2: en sh las variables de una función son globales; corre() hacía f="$2" y
+# pisaba la f del llamador, así que la salida de nimbo-audit verify se buscaba en un fichero
+# que no existía y salía vacía. Prueba de comportamiento: corre() no cambia f ni t.
+if (
+    corre=$(grep '^corre() {' "$SRC/rnf03-en-vm.sh")
+    eval "$corre"
+    f=llamador; t=llamador
+    corre 5 /dev/null true
+    [ "$f" = llamador ] && [ "$t" = llamador ]
+); then ok "corre() no pisa las variables f y t del llamador"
+else falla "corre() pisa f o t del llamador (la salida de verify salía vacía)"; fi
 
 echo
 if [ "$fallos" -ne 0 ]; then echo "RESULTADO: $fallos comprobaciones fallaron"; exit 1; fi
