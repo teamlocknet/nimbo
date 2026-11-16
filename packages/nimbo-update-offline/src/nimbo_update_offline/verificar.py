@@ -26,6 +26,8 @@ from pathlib import Path
 ANILLO = Path("/usr/share/nimbo/keyrings/nimbo-actualizaciones.gpg")
 NOMBRE_VALIDO = re.compile(r"^[A-Za-z0-9][A-Za-z0-9.+_~-]*\.deb$")
 LINEA = re.compile(r"^([0-9a-f]{64})  (\S+)$")
+PROHIBIDOS = frozenset({"REVKEYSIG", "EXPKEYSIG", "EXPSIG", "BADSIG", "ERRSIG",
+                        "NO_PUBKEY", "KEYEXPIRED", "SIGEXPIRED", "KEYREVOKED"})
 
 
 @dataclass
@@ -62,7 +64,17 @@ def firma_valida(manifiesto: Path, firma: Path, anillo: Path) -> bool:
         return False
     r = subprocess.run([gpgv, "--status-fd", "1", "--keyring", _ruta(anillo),
                         _ruta(firma), _ruta(manifiesto)], capture_output=True, text=True)
-    return r.returncode == 0 and "[GNUPG:] VALIDSIG" in r.stdout
+    if r.returncode != 0:
+        return False
+    # gpgv da código 0 y VALIDSIG también con una clave REVOCADA (REVKEYSIG) o CADUCADA
+    # (EXPKEYSIG): medido en bookworm el 16-nov (prueba RNF-03, lotes 12 y 13). Mismo
+    # criterio que release/release.py (#74): una sola GOODSIG y una sola VALIDSIG, y ningún
+    # estado de revocación, caducidad o error.
+    estados = [l.split()[1] for l in r.stdout.splitlines()
+               if l.startswith("[GNUPG:] ") and len(l.split()) > 1]
+    if PROHIBIDOS.intersection(estados):
+        return False
+    return estados.count("GOODSIG") == 1 and estados.count("VALIDSIG") == 1
 
 
 def verificar(directorio: Path, anillo: Path = ANILLO) -> Veredicto:

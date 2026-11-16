@@ -163,3 +163,24 @@ nimbo_video_args() {
         || { echo "ERROR: NIMBO_QEMU_RES='$res' no es ANCHOxALTO (p. ej. 1280x800)"; return 1; }
     printf '%s\n' -vga none -device "bochs-display,xres=${BASH_REMATCH[1]},yres=${BASH_REMATCH[2]}"
 }
+
+# nimbo_red_args   Argumentos de red de QEMU, uno por línea (mapfile -t).
+#   Por defecto, red user-mode (SLIRP) con virtio. NIMBO_PCAP=<fichero> captura todo el
+#   tráfico del guest (mismo mecanismo que verify-hermetismo-in-qemu.sh). NIMBO_SIN_RED=1
+#   quita la tarjeta (`-nic none`): RNF-03 (16-nov), "funciona en una VM sin red". Las dos
+#   juntas no tienen sentido (sin tarjeta no hay tráfico que capturar) y dan ERROR.
+nimbo_red_args() {
+    case "${NIMBO_SIN_RED:-}" in
+        "") ;;
+        1)  [ -z "${NIMBO_PCAP:-}" ] \
+                || { echo "ERROR: NIMBO_SIN_RED=1 y NIMBO_PCAP juntos: sin tarjeta no hay tráfico que capturar"; return 1; }
+            printf '%s\n' -nic none; return 0 ;;
+        *)  echo "ERROR: NIMBO_SIN_RED='$NIMBO_SIN_RED' (solo se admite 1)"; return 1 ;;
+    esac
+    if [ -n "${NIMBO_PCAP:-}" ]; then
+        printf '%s\n' -netdev user,id=n0 -device virtio-net-pci,netdev=n0 \
+            -object "filter-dump,id=dump0,netdev=n0,file=$NIMBO_PCAP"
+        return 0
+    fi
+    printf '%s\n' -nic user,model=virtio-net-pci
+}

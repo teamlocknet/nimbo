@@ -1,0 +1,19 @@
+# <lote> <prueba|nimbo|instalar> <resultado> — lo lee iso/live-build/rnf03-en-vm.sh
+00-control prueba ACEPTADO
+00-control nimbo RECHAZADO
+00-control instalar RECHAZADO
+01-sin-firma prueba RECHAZADO
+02-sin-manifiesto prueba RECHAZADO
+03-otra-clave prueba RECHAZADO
+04-manifiesto-alterado prueba RECHAZADO
+05-deb-alterado prueba RECHAZADO
+06-deb-extra prueba RECHAZADO
+07-deb-faltante prueba RECHAZADO
+08-firma-de-otro-fichero prueba RECHAZADO
+09-firma-basura prueba RECHAZADO
+10-nombre-con-ruta prueba RECHAZADO
+11-manifiesto-vacio prueba RECHAZADO
+12-clave-revocada prueba RECHAZADO
+13-clave-caducada prueba RECHAZADO
+20-firmado-release nimbo ACEPTADO
+20-firmado-release instalar INSTALADO

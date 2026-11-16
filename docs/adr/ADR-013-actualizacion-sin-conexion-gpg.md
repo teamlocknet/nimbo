@@ -43,8 +43,19 @@
   que no instala.
 - Cualquier dato raro (MANIFIESTO que no es UTF-8, un directorio con nombre `.deb`, un fichero
   ilegible) se **rechaza con su motivo**, nunca con un *traceback*.
-- **Claves:** la de actualizaciones la genera y custodia Juan José (ADR-015). El paquete
-  lleva solo su **parte pública**. El desarrollo y las pruebas usan claves efímeras.
+- **Claves (decisión de Juan José, 16-nov):** los lotes los firma **la clave de release**
+  (ADR-015, huella primaria `0C50 B739 1A9B 8CFF 8A36  A627 D3B9 111F EC57 48C6`): una sola
+  raíz de confianza para la ISO y para sus actualizaciones, con la huella ya publicada en el
+  `README.md`, y ninguna clave más que custodiar. Juan José firma cada lote con la subclave
+  de firma (la frase la teclea él; nunca pasa por el chat ni por el repo). El paquete lleva
+  solo la **parte pública**, en `debian/keyrings/nimbo-actualizaciones.gpg` (binaria, de
+  `release/nimbo-release-publica.asc` con `gpg --dearmor`), que instala en
+  `/usr/share/nimbo/keyrings/`. El desarrollo y las pruebas usan claves efímeras.
+- **Firma aceptada:** `gpgv` con código 0, **una sola `GOODSIG` y una sola `VALIDSIG`**, y
+  ningún estado de revocación, caducidad o error (`REVKEYSIG`, `EXPKEYSIG`, `EXPSIG`,
+  `BADSIG`, `ERRSIG`, `NO_PUBKEY`, `KEYEXPIRED`, `SIGEXPIRED`, `KEYREVOKED`). `gpgv` da 0 y
+  `VALIDSIG` también con una clave revocada o caducada (medido el 16-nov); mismo criterio que
+  `release/release.py` (#74).
 
 ## Cómo se verifica
 
@@ -54,7 +65,8 @@
 | Instalación real con `apt` | VM Debian 12: las opciones de `instalar` con un `.deb` local | ✅ 11-nov: instala (código 0). Con `--no-download`, `Internal Error` |
 | CA-2 / CA-3 | **N = 10** lotes manipulados (sin firma, sin manifiesto, manifiesto alterado, otra clave, firma basura, byte cambiado, `.deb` extra, `.deb` ausente, ruta firmada, manifiesto vacío firmado) | ✅ 10/10 rechazados, cada uno con su motivo (100 %); + **caso 11** (lote de otra clave con su propio anillo y `--anillo`: `instalar` no admite la opción y lo rechaza) y los 2 casos de datos raros |
 | Rojo → verde | Pruebas escritas antes que el código | Rojo: 2 errores de colección → verde: 16 passed. Revisión de #49: 6 failed → 20 passed |
-| CA-1 real, sin red (RNF-03) | VM bookworm **sin red**: instalar un lote válido por USB y comprobar un rechazo | *Pendiente* |
+| Prueba sin red, ISO `30b5958f…` (16-nov) | VM **sin tarjeta de red**, instalada con Calamares: 1 lote de control + **13 inválidos** (los 10 de antes + firma de otro fichero, **clave revocada**, **clave caducada**) — `repro/evidencia/2026-11-16-rnf03-sin-red.md` | 12/14 en la VM: **revocada y caducada aceptadas** (arreglado, rojo → verde); **la ISO no traía el anillo** (añadido al paquete; `verificar-cli-rootfs.sh` lo exige) |
+| CA-1 real, sin red (RNF-03) | ISO de #89 (`7d0da21c…`, MATCH ×2) con el anillo, VM sin tarjeta de red: un lote **firmado por Juan José** con la clave de release y los mismos inválidos | ✅ 16-nov: el lote firmado **se instala sin red** (`dpkg`: instalado); **14/14 rechazados (100 %)**; `rnf03-en-vm.sh` 0 fallos de 37 |
 
 ## Consecuencias
 
@@ -62,7 +74,9 @@
   un procedimiento por USB documentado en `packages/nimbo-update-offline/README.md`.
 - **Paga:** un formato de lote propio. Las dependencias de un `.deb` nuevo deben venir en el
   mismo lote o estar ya instaladas (sin fuentes remotas, `apt` no busca nada fuera).
-- **Depende de:** la clave real (ADR-015, Juan José) y la integración a la ISO (checkpoint).
+- **Depende de:** la clave de release (ADR-015, Juan José) y la integración a la ISO (ADR-020).
+- **Paga (clave compartida):** si la clave de release se revoca, también deja de valer para
+  las actualizaciones; las dos cosas se reemiten juntas.
 - **Límite de v1 — repetición y bajada de versión:** un lote viejo pero bien firmado sigue
   siendo válido para siempre. `apt-get -y` sin `--allow-downgrades` **se niega a bajar de
   versión: medido en VM el 11-nov** (`pruebas/prueba-bajada-version.sh`: la 1.0 se rechaza con
@@ -72,4 +86,4 @@
 
 ## Fecha
 
-2026-11-09 · revisado 2026-11-10 (#49)
+2026-11-09 · revisado 2026-11-10 (#49) · 2026-11-16 (clave de release, criterio de firma, prueba sin red)

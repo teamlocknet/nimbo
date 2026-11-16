@@ -21,7 +21,7 @@ trap 'rm -rf "$TMP"' EXIT
 
 arnes="$TMP/arnes"; tmpd="$TMP/tmpdir"
 mkdir -p "$arnes" "$tmpd" "$TMP/bin"
-cp "$SRC/install-in-qemu.sh" "$SRC/lib-qemu.sh" "$SRC/verificar-instalado.sh" "$arnes/"
+cp "$SRC/install-in-qemu.sh" "$SRC/lib-qemu.sh" "$SRC/verificar-instalado.sh" "$SRC/rnf03-en-vm.sh" "$arnes/"
 : > "$arnes/nimbo-install.qcow2"            # "instalación" existente (no se arranca de verdad)
 : > "$arnes/nimbo-install-vars.fd"
 echo "clave-falsa-del-test" > "$arnes/.clave-prueba-luks"
