@@ -98,7 +98,7 @@ def vuelta_vigilante(ruta: Path, ejecutar: Ejecutor, ahora: Callable[[], float] 
 
 def informar(resultado: Resultado | None) -> int:
     if resultado is None:
-        print("nimbo-leakcheck: el modo Tor no está activo (actívalo con: nimbo-tor on)")
+        print("nimbo-leakcheck: el modo Tor no está activo (actívalo con: sudo nimbo-tor on)")
         return 2
     if resultado.limpio:
         print("nimbo-leakcheck: OK — 0 fugas (modo Tor activo)")

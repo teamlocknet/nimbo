@@ -65,12 +65,12 @@ máquina virtual con red). El Wi-Fi no está soportado en esta versión.
 
 1. Levanta la red en una terminal: `sudo nimbo-red on`. Debe decir qué interfaz levantó.
 2. Abre **Firefox** desde el menú: es el navegador normal, endurecido y sin telemetría.
-3. Activa el modo Tor: `nimbo-tor on`. El sistema te pide tu contraseña.
+3. Activa el modo Tor: `sudo nimbo-tor on`. El sistema te pide tu contraseña.
 4. Abre **"Navegar por Tor"** desde el menú y visita `https://check.torproject.org`. La página
    debe decir que estás usando Tor. Este modo evita fugas de red, pero no protege frente a la
    huella del navegador.
 5. Ejecuta `sudo nimbo-leakcheck`. Debe decir **"OK — 0 fugas"**.
-6. Apaga el modo Tor (`nimbo-tor off`) y después la red (`sudo nimbo-red off`).
+6. Apaga el modo Tor (`sudo nimbo-tor off`) y después la red (`sudo nimbo-red off`).
 
 ## 5. Comprobar el endurecimiento (10 min)
 

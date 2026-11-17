@@ -26,10 +26,10 @@ que deja el paquete de Debian: tor no arranca solo (RNF-01).
 ```
 firefox-esr                 # navegador normal, endurecido (sin Tor)
 sudo nimbo-red on           # levanta la red por cable (ADR-019); sin red no hay Tor
-nimbo-tor on                # arranca nimbo-modo-tor.service (systemd pide autorización)
+sudo nimbo-tor on           # arranca nimbo-modo-tor.service (la ISO no trae polkit)
 nimbo-navegar-tor           # Firefox con el perfil Tor; avisa si hay fuga o si el vigilante falla
 sudo nimbo-leakcheck        # 0 = sin fugas · 1 = FUGA · 2 = modo apagado · 3 = no se pudo comprobar
-nimbo-tor off               # para el modo Tor (vigilante -> tor -> tabla)
+sudo nimbo-tor off          # para el modo Tor (vigilante -> tor -> tabla)
 sudo nimbo-red off          # suelta la red
 ```
 

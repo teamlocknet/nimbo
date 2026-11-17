@@ -21,7 +21,8 @@ class Sistema:
         for prefijo, r in self.respuestas.items():
             if tuple(argv[: len(prefijo)]) == prefijo:
                 if isinstance(r, tuple) and r[0] == "falla":
-                    raise subprocess.CalledProcessError(r[1], argv, r[2], "fallo simulado")
+                    raise subprocess.CalledProcessError(r[1], argv, r[2],
+                                                        r[3] if len(r) > 3 else "fallo simulado")
                 return r
         return ""
 
@@ -152,3 +153,25 @@ def test_on_que_falla_no_da_el_aviso_sin_red(tmp_path, capsys):
     s = Sistema({("systemctl", "start"): ("falla", 1, "")})
     assert tor_modo.main(["on"], ejecutar=s, sys_net=tmp_path, proc_net=proc) == 1
     assert "Sin red" not in capsys.readouterr().out
+
+
+# --- Sin polkit (ISO, 16-nov): systemd rechaza al usuario sin sudo -------------------------
+SIN_PERMISO = "Failed to start nimbo-modo-tor.service: Access denied\n"
+
+
+def test_on_sin_sudo_rechazado_por_systemd_dice_usa_sudo(tmp_path, capsys):
+    s = Sistema({("systemctl", "start"): ("falla", 1, "", SIN_PERMISO)})
+    assert tor_modo.main(["on"], ejecutar=s, sys_net=tmp_path) == 2
+    salida = capsys.readouterr().out
+    assert "sudo nimbo-tor on" in salida
+    assert "systemd deshace" not in salida  # no llegó a arrancar nada
+
+
+def test_off_sin_sudo_rechazado_por_systemd_dice_usa_sudo(tmp_path, capsys):
+    s = Sistema({("systemctl", "stop"): ("falla", 1, "",
+                                         "Failed to stop nimbo-modo-tor.service: "
+                                         "Interactive authentication required.\n")})
+    assert tor_modo.main(["off"], ejecutar=s, sys_net=tmp_path) == 2
+    salida = capsys.readouterr().out
+    assert "sudo nimbo-tor off" in salida
+    assert "restaurada" not in salida

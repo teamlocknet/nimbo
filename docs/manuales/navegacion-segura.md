@@ -24,12 +24,12 @@
 |---|---|
 | Navegar normal (sin Tor) | Menú → Firefox, o `firefox-esr` |
 | Levantar la red por cable (sin red no hay Tor) | `sudo nimbo-red on` |
-| Activar el modo Tor | `nimbo-tor on` (el sistema pide tu contraseña) |
+| Activar el modo Tor | `sudo nimbo-tor on` (pide tu contraseña) |
 | Navegar por Tor | Menú → "Navegar por Tor", o `nimbo-navegar-tor` |
 | Comprobar que no hay fugas | `sudo nimbo-leakcheck` → `0` sin fugas · `1` FUGA · `2` modo apagado · `3` no se pudo comprobar |
 | Ver los paquetes bloqueados | `sudo journalctl -k \| grep nimbo-fuga` |
 | Saber si el modo está activo | `nimbo-tor estado` |
-| Apagar el modo Tor | `nimbo-tor off` |
+| Apagar el modo Tor | `sudo nimbo-tor off` |
 | Soltar la red | `sudo nimbo-red off` |
 
 **Mientras el modo Tor está activo, solo Tor sale a la red**: el navegador normal y
@@ -47,12 +47,12 @@ cualquier otro programa se quedan sin red. Es a propósito.
   actualizarse, el navegador avisa igual que ante una fuga. Nunca se toma por "limpio".
 - Solo red por cable (ADR-019). Wi-Fi queda fuera de v1.
 - **El modo Tor y la red del equipo (`nimbo-net`) no pueden estar activos a la vez en v1:**
-  `nimbo-tor on` se niega si hay un túnel de `nimbo-net` (primero, `nimbo-net leave`).
+  `sudo nimbo-tor on` se niega si hay un túnel de `nimbo-net` (primero, `nimbo-net leave`).
 - Si el modo Tor no llega a arrancar, systemd deshace lo que alcanzó a hacer y
-  `nimbo-tor estado` dice "falló". `nimbo-tor off` solo dice "red restaurada" cuando la
+  `nimbo-tor estado` dice "falló". `sudo nimbo-tor off` solo dice "red restaurada" cuando la
   unidad quedó realmente apagada.
 - Si enciendes el modo Tor **sin red** (ninguna interfaz con ruta por defecto),
-  `nimbo-tor on` lo activa igual (bloquea desde ya) y añade: "Sin red: Tor no podrá
+  `sudo nimbo-tor on` lo activa igual (bloquea desde ya) y añade: "Sin red: Tor no podrá
   conectarse hasta que haya red (nimbo-red on)." Levanta la red y Tor se conectará solo.
 - La ISO lleva `nimbo-nav` (#81, #83) y, con él, el navegador en la versión del snapshot
   (`firefox-esr` 140.14.0esr-1~deb12u1, publicada el 21-ago-2026), que no se actualiza solo

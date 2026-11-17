@@ -1,11 +1,12 @@
 """nimbo-tor — enciende y apaga el modo Tor (ADR-012 aceptado, #45; revisión de #59).
 
-  nimbo-tor on      arranca nimbo-modo-tor.service: tabla nftables -> tor -> vigilante
-  nimbo-tor off     la para en orden inverso: vigilante -> tor -> tabla
-  nimbo-tor estado  dice si el modo está activo, inactivo o en fallo
+  sudo nimbo-tor on   arranca nimbo-modo-tor.service: tabla nftables -> tor -> vigilante
+  sudo nimbo-tor off  la para en orden inverso: vigilante -> tor -> tabla
+  nimbo-tor estado    dice si el modo está activo, inactivo o en fallo
 
-nimbo-tor NO corre como root: solo pide a systemd que arranque o pare la unidad, y
-systemd pide la autorización (polkit). La red la levanta antes `nimbo-red on` (ADR-019).
+nimbo-tor solo pide a systemd que arranque o pare la unidad. Se usa con sudo, como
+nimbo-red: la ISO no trae polkit, así que sin sudo systemd lo rechaza (medido el 16-nov)
+y nimbo-tor lo dice. La red la levanta antes `nimbo-red on` (ADR-019).
 Nunca dice "red restaurada" sin comprobar antes el estado real de la unidad (ADR-009).
 En v1, el modo Tor y la red del equipo (nimbo-net) son mutuamente excluyentes.
 """
@@ -31,6 +32,14 @@ def ejecutar_sistema(argv: list[str]) -> str:
 
 def _detalle(e: subprocess.CalledProcessError) -> str:
     return (e.stderr or "").strip() or f"código {e.returncode}"
+
+
+def _sin_permiso(e: subprocess.CalledProcessError) -> bool:
+    """systemd rechazó la orden por falta de permisos. La ISO no trae polkit (medido el
+    16-nov): sin sudo, systemctl start/stop responde "Access denied" o pide una
+    autenticación interactiva que nadie puede dar."""
+    texto = (e.stderr or "").lower()
+    return "access denied" in texto or "interactive authentication required" in texto
 
 
 def estado_unidad(ejecutar: Ejecutor) -> str:
@@ -89,6 +98,10 @@ def encender(ejecutar: Ejecutor, sys_net: Path, proc_net: Path = Path("/proc/net
     try:
         ejecutar(["systemctl", "start", UNIDAD])
     except subprocess.CalledProcessError as e:
+        if _sin_permiso(e):
+            print("nimbo-tor: hace falta sudo para activar el modo Tor. No se activó nada; "
+                  "la red sigue como estaba.\nUsa: sudo nimbo-tor on")
+            return 2
         print(f"nimbo-tor: no se pudo activar el modo Tor ({_detalle(e)}).\n"
               "systemd deshace los pasos que llegaron a hacerse (ExecStopPost): tor parado y "
               "tabla borrada; la red sigue como estaba.\n"
@@ -107,6 +120,10 @@ def apagar(ejecutar: Ejecutor, sys_net: Path) -> int:
     try:
         ejecutar(["systemctl", "stop", UNIDAD])
     except subprocess.CalledProcessError as e:
+        if _sin_permiso(e):
+            print("nimbo-tor: hace falta sudo para apagar el modo Tor. Sigue como estaba.\n"
+                  "Usa: sudo nimbo-tor off")
+            return 2
         print(f"nimbo-tor: no se pudo apagar el modo Tor del todo ({_detalle(e)}).\n"
               "La red sigue cerrada (lo seguro). Revisa: journalctl -u nimbo-modo-tor -b\n"
               "Para abrirla a mano, con sudo: systemctl stop tor@default.service && "
@@ -138,7 +155,7 @@ def estado(ejecutar: Ejecutor, sys_net: Path) -> int:
         return 0
     if e == "failed":
         print("nimbo-tor: el modo Tor falló al arrancar. Detalle: journalctl -u nimbo-modo-tor -b"
-              " · Para limpiar: nimbo-tor off")
+              " · Para limpiar: sudo nimbo-tor off")
         return 1
     print("nimbo-tor: modo Tor inactivo")
     return 0
