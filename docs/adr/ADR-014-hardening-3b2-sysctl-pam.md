@@ -76,7 +76,8 @@ actualizaciones automáticas (sin cambiarlas), cada sysctl de la lista y PAM.
 
 - **`rp_filter = 1` frente a WireGuard (`nimbo-net`):** con túnel completo y rutas por
   *fwmark*, el modo estricto podría descartar tráfico legítimo. Medido con `nimbo-net` en dos
-  VMs (#71): el túnel funciona en modo estricto. Si algún día chocara, se entrega la evidencia
+  VMs (#71) y en las dos instalaciones de la ISO integrada (#84): el túnel funciona en modo
+  estricto. Si algún día chocara, se entrega la evidencia
   y se pide checkpoint (como dice ADR-011): cambiar el valor es decisión de Juan José.
 - `aplicar-en-vm.sh` instala `lynis` con red solo en la VM de prueba; `lynis` **nunca** entra
   en la receta de la ISO.
@@ -90,21 +91,23 @@ actualizaciones automáticas (sin cambiarlas), cada sysctl de la lista y PAM.
   un hook) cambia el SHA y toca `iso/live-build/`: **checkpoint de Juan José**, en un PR aparte.
 - **Abierto:** `--firmware-chroot` (3B.2 de Juan José, maestro §0) queda fuera de este ADR.
 
-## Pendiente tras la aceptación
+## Verificado tras la aceptación
 
 Se cumplieron las condiciones de #47 con #60 (fase `account`, sin `authsucc` ni `silent`) y la
-evidencia de #63 (`security/hardening/3b2/evidencia/2026-11-11-vm-3b2.md`). Quedan abiertos, y
-no bloquean la aceptación:
+evidencia de #63 (`security/hardening/3b2/evidencia/2026-11-11-vm-3b2.md`). Lo que quedó
+abierto al aceptarlo ya está cumplido:
 
-- **RF-CORE-04 CA-1/CA-2 en la ISO integrada:** `verify-hardening` con **0 fallos** en la sesión
-  live y en el sistema instalado (en la VM quedaron los 3 de actualizaciones automáticas, que en
-  la ISO cierra 3B.1).
-- **faillock con un `login` real** en QEMU sobre la ISO integrada. En la VM, el "acierto" se hizo
-  con `sudo -n true` (fase `account`). El primer intento en la consola tty3 no dejó **ningún**
-  `FAILED LOGIN` en el diario, así que no llegó a hacerse ningún intento en esa consola (el
-  diario los registra aunque el contador se ponga a cero); se repetirá en la integración.
-- **`rp_filter = 1` frente a WireGuard:** medido con `nimbo-net` en dos VMs (#71): el túnel
-  funciona en modo estricto. Falta repetirlo en la ISO integrada.
+- ✅ **RF-CORE-04 CA-1/CA-2 en la ISO integrada:** `verify-hardening` con **0 fallos de 44** en
+  la sesión live y en el sistema instalado (#83, `repro/evidencia/2026-11-12-qemu-pr83.md`), y
+  otra vez en el instalado sin red (RNF-03, 16-nov, `repro/evidencia/2026-11-16-rnf03-sin-red.md`).
+  Los 3 fallos de la VM (actualizaciones automáticas) los cierra 3B.1 en la ISO.
+- ✅ **faillock con un `login` real** en la ISO instalada, en la consola tty3 (#99,
+  `security/hardening/3b2/evidencia/2026-11-16-iso-faillock.md`): 3 fallos → 0 tras el acierto →
+  bloqueo a los 5 con mensaje visible → desbloqueo a los 10 minutos.
+- ✅ **`rp_filter = 1` frente a WireGuard en la ISO integrada:** `rp_filter=1` en `all`,
+  `default`, `enp0s3` y `wg-nimbo` con el túnel activo, en las dos instalaciones de la ISO
+  `30b5958f…` (#84, `packages/nimbo-net/pruebas/laboratorio/evidencia/integrada-d114b8e/`);
+  antes, en dos VMs (#71).
 
 ## Fecha
 
