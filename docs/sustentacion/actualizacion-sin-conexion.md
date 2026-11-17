@@ -30,6 +30,10 @@ ejecución; ninguna clave entra al repositorio).
 | Datos raros (manifiesto no UTF-8, directorio llamado `.deb`) | rechazados con motivo, sin errores internos |
 | Pruebas | rojo → verde: **20 passed**, en CI con el Python de bookworm |
 
+**Sobre la ISO, sin tarjeta de red** (Juan José, 16-nov, #89, RNF-03): un lote firmado con la
+clave de release **se instala sin red**, y se rechazan **14 de 14** lotes inválidos (los de
+arriba más firma de otro fichero, **clave revocada** y **clave caducada**).
+
 ## Hallazgos
 
 1. **`--anillo` en `instalar` era una puerta trasera** (lo vio Juan José): con esa opción se
@@ -41,12 +45,20 @@ ejecución; ninguna clave entra al repositorio).
 3. **Las pruebas exigen el motivo del rechazo, no solo el rechazo:** un fallo de rutas en Windows
    hizo fallar el caso válido, y así se comprobó que los rechazos no pasan "por accidente".
 
+4. **Firmas de claves revocadas o caducadas se aceptaban** (Juan José, prueba sin red): `gpgv`
+   devuelve 0 y `VALIDSIG` también con `REVKEYSIG`/`EXPKEYSIG`. Ahora se exige una sola
+   `GOODSIG` y una sola `VALIDSIG`, y ningún estado de revocación o caducidad.
+5. **La ISO no traía el anillo de nimbo:** ningún lote, ni uno bien firmado, se podía instalar.
+   Los tests no lo veían porque usan un anillo de prueba. Ahora va en el paquete y la ISO lo
+   exige al compilarse.
+
 ## Límites declarados
 
 Un lote **viejo** pero bien firmado sigue siendo válido. Lo que sí está medido (VM, 11-nov,
 `pruebas/prueba-bajada-version.sh`, #70): `apt` **se niega a bajar de versión** (la 1.0 se
-rechaza con código 100 y la 2.0 sigue instalada). Repetirlo con un lote firmado y sin red queda
-para la prueba de Juan José (RNF-03).
-La clave real la genera y custodia Juan José (ADR-015).
+rechaza con código 100 y la 2.0 sigue instalada). Repetirlo con un lote firmado y sin red sigue
+pendiente. La clave (la de release, ADR-015) la custodia Juan José.
+
+*Evidencia sobre la ISO:* `repro/evidencia/2026-11-16-rnf03-sin-red.md`
 
 *Diseño:* ADR-013 · *Procedimiento por USB:* `packages/nimbo-update-offline/README.md`

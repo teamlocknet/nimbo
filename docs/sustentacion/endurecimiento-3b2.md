@@ -42,10 +42,17 @@ sandbox de Firefox) y la autoconfiguración IPv6 (rompería la red a demanda).
 3. **Medir puede cambiar lo medido:** un `sudo` como el mismo usuario es un acierto y vacía el
    contador; leerlo con `sudo` daba siempre 0. Se lee sin `sudo`.
 
+## Sobre la ISO integrada
+
+`verify-hardening`: **0 fallos de 44** en el live y en el instalado (Juan José, #83,
+`repro/evidencia/2026-11-12-qemu-pr83.md`), otra vez en el instalado sin red (RNF-03, 16-nov) y
+en las dos instalaciones de la prueba de `nimbo-net` (Alejandro, #84). Los 3 fallos de la VM
+(actualizaciones automáticas) los cierra 3B.1 en la ISO, como se esperaba.
+
 ## Lo que falta
 
-`verify-hardening` en la **ISO integrada** (live e instalada) con 0 fallos, y medir `rp_filter`
-frente a WireGuard cuando exista `nimbo-net`.
+El bloqueo de cuenta con un **inicio de sesión real** en la ISO (en la VM se hizo con `su`), y
+medir `rp_filter` con el túnel de `nimbo-net` activo.
 
 *Evidencia:* `security/hardening/3b2/evidencia/2026-11-11-vm-3b2.md` · *Diseño:* ADR-014 ·
 *Manual:* `docs/manuales/endurecimiento-3b2.md`
