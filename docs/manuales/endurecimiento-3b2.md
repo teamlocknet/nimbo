@@ -22,8 +22,8 @@
 | Quiero… | Comando |
 |---|---|
 | Verificar todo el endurecimiento | `sudo /usr/lib/nimbo/verify-hardening` (0 = OK, 1 = algún fallo) |
-| Ver si una cuenta está bloqueada | `sudo faillock --user <usuario>` |
-| Desbloquear una cuenta | `sudo faillock --user <usuario> --reset` |
+| Ver tus intentos fallidos | `/usr/sbin/faillock --user <tu-usuario>` (**sin** `sudo`: `sudo` cuenta como acierto y pone el contador a cero) |
+| Desbloquear una cuenta | esperar 10 minutos, o que **otra** cuenta administradora haga `sudo faillock --user <usuario> --reset` |
 | Ver un parámetro | `sysctl kernel.kptr_restrict` |
 
 ## Efectos que conviene conocer
@@ -32,6 +32,12 @@
   (`ptrace_scope=1`). Con `sudo` sí.
 - `dmesg` necesita `sudo`.
 - Cualquier uso correcto de la cuenta, también `sudo`, pone el contador de fallos a cero.
+- **Si ves "The account is locked due to 5 failed logins", no escribas tu contraseña.** Con la
+  cuenta bloqueada el sistema ya no la pide y vuelve a preguntar el usuario: lo que escribas
+  se vería en pantalla. Espera los minutos que indica.
+- Una cuenta bloqueada **tampoco puede usar `sudo`**: falla sin pedir la contraseña ("3
+  incorrect password attempts") y no dice que está bloqueada. No es que hayas olvidado la
+  contraseña: espera a que pase el bloqueo.
 - Se mantienen a propósito: los espacios de nombres de usuario (el sandbox de Firefox los
   necesita) y la autoconfiguración IPv6.
 
@@ -41,5 +47,5 @@
 |---|---|---|
 | El verificador detecta cada ajuste roto | `pruebas/test-verify-hardening.sh` (raíz falsa, sin root) | Rojo: 9 casos MAL → verde: 9/9 OK; con la revisión de #47: 5 MAL → 13/13 OK |
 | Medición antes/después y herramientas | `aplicar-en-vm.sh` en una VM Debian 12 (lynis + verificador + tcpdump, ping, Firefox) | ✅ VM, 11-nov: lynis 64 → 70; fallos del verificador 29 → 3 (los 3 de actualizaciones, que cierra 3B.1 en la ISO); herramientas ok |
-| Inicio de sesión y bloqueo | `su` con clave mala en la VM, leyendo el contador sin `sudo`: 3 fallos → acierto → 2 fallos no bloquea; 5 fallos bloquean | ✅ VM, 11-nov: 3 → 0 → 2; a los 5, "La cuenta está bloqueada debido a 5 inicios de sesión fallidos" |
-| RF-CORE-04 CA-1/CA-2 en la ISO live e instalada | `verify-hardening` en QEMU tras integrar | *Pendiente: integración a la ISO* |
+| Inicio de sesión y bloqueo | `su` con clave mala en la VM, leyendo el contador sin `sudo`: 3 fallos → acierto → 2 fallos no bloquea; 5 fallos bloquean | ✅ VM, 11-nov: 3 → 0 → 2; a los 5, "La cuenta está bloqueada debido a 5 inicios de sesión fallidos". ✅ **ISO instalada, 16-nov, con `login` real en consola:** 3 → 0 tras el acierto real → 5 → "The account is locked due to 5 failed logins" → a los 10 min entra de nuevo |
+| RF-CORE-04 CA-1/CA-2 en la ISO live e instalada | `verify-hardening` en QEMU tras integrar | ✅ 0 fallos de 44 en live e instalado (Juan José, #83; otra vez sin red en RNF-03) |
