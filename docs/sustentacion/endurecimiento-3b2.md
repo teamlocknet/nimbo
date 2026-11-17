@@ -49,10 +49,15 @@ sandbox de Firefox) y la autoconfiguración IPv6 (rompería la red a demanda).
 en las dos instalaciones de la prueba de `nimbo-net` (Alejandro, #84). Los 3 fallos de la VM
 (actualizaciones automáticas) los cierra 3B.1 en la ISO, como se esperaba.
 
+**Bloqueo de cuenta con inicio de sesión real en la ISO** (16-nov, #99): 3 fallos → 0 con un
+`login` real correcto → 5 fallos → "The account is locked due to 5 failed logins" → a los 10
+minutos entra de nuevo. Salieron dos cosas para el manual: con la cuenta bloqueada `login` ya
+no pide contraseña (lo que se escriba se ve en pantalla) y `sudo` falla sin decir que está
+bloqueada.
+
 ## Lo que falta
 
-El bloqueo de cuenta con un **inicio de sesión real** en la ISO (en la VM se hizo con `su`), y
-medir `rp_filter` con el túnel de `nimbo-net` activo.
+Medir `rp_filter` con el túnel de `nimbo-net` activo (necesita dos equipos).
 
 *Evidencia:* `security/hardening/3b2/evidencia/2026-11-11-vm-3b2.md` · *Diseño:* ADR-014 ·
 *Manual:* `docs/manuales/endurecimiento-3b2.md`
