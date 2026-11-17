@@ -24,7 +24,13 @@ aplican a la fuente APT nimbo.
 publicar.sh genera **solo un sitio local sin firma**, mediante repositorio y
 snapshot de aptly. Recibe --debs, --salida, --commit, --epoch, --snapshot e
 --image (digest sha256 completo de la imagen, sin nombre). Verifica BUILD.json.
-No despliega. aptly publica los índices; antes de firmar se añaden Date,
+No despliega. En el runner ubuntu-24.04, aptly se instala desde el repositorio
+APT de Ubuntu **sin fijar su versión**. La reproducibilidad comprobada corresponde
+a los paquetes .deb construidos con imagen, snapshot y epoch anclados. No se
+promete igualdad byte a byte de los metadatos generados por distintas versiones
+de aptly: esos metadatos se verifican y se firman.
+
+aptly publica los índices; antes de firmar se añaden Date,
 Valid-Until y PROCEDENCIA.json cubierto por SHA256 de Release.
 
 ## Firma y verificación
@@ -40,6 +46,8 @@ verificar.sh permite --clave con un certificado actualizado de esa misma identid
 se importan ambos conservando revocaciones conocidas.
 
 Se reutilizan signing_key, select_subkey y sign_document de release/firmar.py.
+La función compartida fija --digest-algo SHA256; se aplica tanto a InRelease y
+Release.gpg como a la firma SHA256SUMS del release de la ISO.
 Solo se admite una subclave de firma vigente con caducidad y una primaria secreta
 no disponible. El llavero es temporal y no hereda confianza ni recupera claves.
 Los secretos se leen del environment y se retiran antes de crear subprocesos.
@@ -63,8 +71,10 @@ El repositorio vencido se rechaza; la guía no ofrece un bypass.
 
 ## Cliente, después de la publicación aprobada
 
-URL prevista: https://teamlocknet.github.io/nimbo/apt/. No usar hasta el
-despliegue aprobado. Obtener el certificado por el canal independiente,
+Candidato publicado: https://teamlocknet.github.io/nimbo/apt/.
+Run aprobado: 43952639106. Valid-Until: 16-dic-2026, 20:45:23 UTC.
+La procedencia publicada identifica candidato=true; no es v1.0.0 final.
+Obtener el certificado por el canal independiente,
 comprobar su huella y copiarlo como /usr/share/keyrings/nimbo-release.asc
 (archivo público, modo 0644). La fuente es:
 
@@ -104,3 +114,21 @@ Su firma es solo de laboratorio: no sustituye la aprobación/firma real de Juan 
 
 Referencias de formato: [aptly publish snapshot](https://www.aptly.info/doc/aptly/publish/snapshot/)
 y [manual de aptly en Bookworm](https://manpages.debian.org/bookworm/aptly/aptly.1.en.html).
+
+## Validación obligatoria del corte v1.0.0
+
+Repetir en una VM Bookworm limpia la descarga desde Pages, verificación de
+huella/firma y procedencia del tag, e instalación de las cinco versiones exactas.
+En ESA VM ejecutar también las pruebas negativas con APT real, desde el checkout
+del código de pruebas del corte:
+
+```sh
+python3 -m unittest discover -s apt-repo/tests -p test_apt_transport.py -v
+```
+
+Estas pruebas usan un repositorio local efímero y estado temporal de APT;
+no alteran el repositorio publicado. Exigen rechazo de InRelease alterado,
+paquete alterado y clave incorrecta, además del control positivo de descarga.
+Conservar la salida y códigos de salida junto a la evidencia positiva de Pages,
+commit del tag, versiones y hashes. La evidencia local/CI del candidato no
+sustituye estas pruebas en VM para aceptar RF-DIST-01 final.

@@ -1,7 +1,8 @@
 # Checkpoint de apt-repo.yml para Juan José
 
 Preparado después de los scripts, tests y evidencia en VM del 16-nov.
-No se ha hecho dispatch, usado la clave real ni desplegado Pages desde esta rama.
+Checkpoint aprobado y #91 mergeado. El candidato fue firmado y publicado
+con aprobación de Juan José en el run 43952639106. No es el corte final v1.0.0.
 
 ## Entrada y jobs
 
@@ -46,8 +47,8 @@ La renovación la aprueba Juan José y empieza con nuevos metadatos verificados,
 sin alterar la procedencia de los paquetes si sus bytes se conservan.
 
 La evidencia actual acredita candidato de main con firma efímera. No equivale
-a un repositorio publicado con la clave real ni a RF-DIST-01 final. Después del
-checkpoint: ejecutar primero publicar=false; revisar artifact. Para desplegar,
+a un repositorio publicado con la clave real ni a RF-DIST-01 final. Para nuevas
+publicaciones: ejecutar primero publicar=false; revisar artifact. Para desplegar,
 nuevo dispatch publicar=true y aprobación de Juan José. La aceptación final
 requiere el modo v1.0.0, publicación y prueba contra las URL reales.
 
@@ -64,5 +65,14 @@ de firma, de procedencia ni de caducidad.
   rechazo real de metadatos, deb o identidad alterados con estado temporal.
 - Pipeline local con el sitio real de la VM: ZIP/TAR/árbol coinciden y verificación
   completa correcta. actionlint 1.7.12 acepta el YAML; shellcheck no ejecutado.
-- Pendiente del checkpoint: primera ejecución de este workflow en Actions y
-  despliegue/firma reales con Juan José.
+- Primera ejecución real y despliegue candidato completados: run 43952639106.
+  Juan José verificó desde Bookworm limpio huella, update e instalación exacta;
+  otra clave fue rechazada. Queda repetir con v1.0.0, incluyendo dentro de la
+  VM las pruebas negativas de InRelease, deb y clave alterados.
+
+## Notas del checkpoint #91
+
+La función de firma compartida usa --digest-algo SHA256 fijo, también para
+el release ISO. aptly en el runner se obtiene del APT de Ubuntu sin versión
+fijada: los deb son reproducibles; los metadatos se verifican y firman.
+El detalle y la batería negativa obligatoria en VM para v1.0.0 están en README.md.
