@@ -42,7 +42,8 @@ en lugar de `includes.chroot`, para que se instale igual en el sistema instalado
 5. Medir cuánto crece la ISO (hoy 459 MiB; `firefox-esr` ocupa unos 272 MiB instalado).
 6. VM con red: `pruebas/prueba-reposo-navegador.sh` y `pruebas/prueba-fugas-tor.sh`.
    **Hecho el 16-nov sobre la ISO instalada** (`b0df8d62…`, captura desde el hipervisor):
-   RF-NAV-01 y RF-NAV-02 PASAN; hallazgo: sin polkit, `nimbo-tor` necesita `sudo`
+   RF-NAV-01 pasa; RF-NAV-02 pasa CA-1/CA-2 pero no CA-3 (la ISO no trae servicio de
+   notificaciones); otro hallazgo: sin polkit, `nimbo-tor` necesita `sudo`
    ([evidencia](evidencia/2026-11-16-iso-rf-nav.md)).
 
 ## 4. Riesgos a decidir en el checkpoint

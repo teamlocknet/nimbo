@@ -62,7 +62,7 @@ cualquier otro programa se quedan sin red. Es a propósito.
 | Configuración (RF-NAV-01 CA-2) y lógica de detección (RF-NAV-02 CA-3) | Pruebas unitarias (`python3 -m pytest` en `packages/nimbo-nav`), escritas antes que el código; también en CI con el Python de bookworm | 52 passed (10-nov) |
 | RF-NAV-01 CA-1: 0 conexiones en reposo | `pruebas/prueba-reposo-navegador.sh` en una VM Debian 12 (pcap de 120 s) | ✅ VM, 11-nov: **0 paquetes** (rojo sin `nimbo-nav`: 38 011 sospechosos; control con una consulta DNS a propósito: detectada). ✅ **ISO instalada, 16-nov:** 0 sospechosos con Firefox 140.14 (captura del hipervisor; control DNS detectado) |
 | RF-NAV-02 CA-1/CA-2: 0 DNS y 0 paquetes fuera del túnel | `pruebas/prueba-fugas-tor.sh` en una VM Debian 12 | ✅ VM, 10-nov: **0 DNS, 0 fuera del túnel** (3 796 paquetes). ✅ **ISO instalada, 16-nov:** 0 DNS y 0 fuera del túnel en 7 105 paquetes; check.torproject.org confirma Tor |
-| RF-NAV-02 CA-3: la fuga provocada se detecta | La misma prueba, parte negativa (`curl` directo) | ✅ VM, 10-nov: `curl` bloqueado y `nimbo-leakcheck` sale con 1. ✅ **ISO, 16-nov:** conexión directa bloqueada y `nimbo-leakcheck` sale con 1 |
+| RF-NAV-02 CA-3: la fuga provocada se detecta | La misma prueba, parte negativa (`curl` directo) | ✅ VM, 10-nov: `curl` bloqueado y `nimbo-leakcheck` sale con 1. ✅ **ISO, 16-nov:** conexión directa bloqueada y `nimbo-leakcheck` sale con 1. ❌ **El aviso al usuario no se ve en la ISO** (no trae servicio de notificaciones): pendiente |
 | RNF-01 y RNF-02 no empeoran | `verify-hermetismo-in-qemu.sh` y `measure-ram-in-qemu.sh` sobre la ISO integrada | *Pendiente: integración a la ISO* |
 
 Detalle de cada ejecución: `packages/nimbo-nav/evidencia/2026-11-10-vm-rf-nav-01.md` (VM Debian) y
