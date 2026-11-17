@@ -1,0 +1,220 @@
+name: apt-repo
+
+on:
+  pull_request:
+    paths:
+      - 'apt-repo/**'
+      - 'release/**'
+      - '.github/workflows/apt-repo.yml'
+  workflow_dispatch:
+    inputs:
+      modo:
+        description: Candidato de main o paquetes del tag final v1.0.0
+        required: true
+        default: candidato-main
+        type: choice
+        options: [candidato-main, v1.0.0]
+      publicar:
+        description: Firmar con aprobacion y reemplazar TODO el sitio Pages
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: apt-repo-${{ github.event_name == 'pull_request' && github.ref || 'pages' }}
+  cancel-in-progress: false
+
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Release y APT en Bookworm anclado, sin secretos
+        env:
+          CONTAINER_ENGINE: docker
+        run: ./apt-repo/test-bookworm.sh
+
+  preparar:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    needs: tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    outputs:
+      artifact_id: ${{ steps.artifact.outputs.artifact-id }}
+      zip_digest: ${{ steps.artifact.outputs.artifact-digest }}
+      tar_digest: ${{ steps.metadatos.outputs.tar_digest }}
+      tree_digest: ${{ steps.metadatos.outputs.tree_digest }}
+      commit: ${{ steps.fuente.outputs.commit }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Fijar commit; v1.0.0 nunca significa rc1
+        id: fuente
+        env:
+          MODO: ${{ inputs.modo }}
+          MAIN_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          if [ "$MODO" = v1.0.0 ]; then
+            SOURCE_COMMIT="$(git rev-parse 'refs/tags/v1.0.0^{commit}')"
+            git merge-base --is-ancestor "$SOURCE_COMMIT" "$MAIN_SHA"
+          else
+            [ "$MODO" = candidato-main ]
+            SOURCE_COMMIT="$MAIN_SHA"
+          fi
+          echo "commit=$SOURCE_COMMIT" >> "$GITHUB_OUTPUT"
+      - name: Dos builds independientes de los cinco modulos
+        env:
+          CONTAINER_ENGINE: docker
+          SOURCE_COMMIT: ${{ steps.fuente.outputs.commit }}
+        run: |
+          set -euo pipefail
+          ./apt-repo/build-packages.sh "$RUNNER_TEMP/build-A" "$SOURCE_COMMIT"
+          ./apt-repo/build-packages.sh "$RUNNER_TEMP/build-B" "$SOURCE_COMMIT"
+          cmp "$RUNNER_TEMP/build-A/BUILD.json" "$RUNNER_TEMP/build-B/BUILD.json"
+      - name: Generar con aptly, verificar sin firma y fijar digests
+        id: metadatos
+        env:
+          MODO: ${{ inputs.modo }}
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends aptly gnupg bzip2
+          python3 - <<'PY'
+          import json,os,sys
+          from pathlib import Path
+          sys.path.insert(0,'apt-repo')
+          import aptrepo,artifact
+          root=Path(os.environ['RUNNER_TEMP'])
+          info=json.loads((root/'build-A/BUILD.json').read_text())
+          aptrepo.prepare(root/'build-A',root/'site',info['commit'],info['source_date_epoch'],
+              info['snapshot'],info['base_image_digest'],candidate=os.environ['MODO']!='v1.0.0')
+          digest=aptrepo.bundle_digest(root/'site')
+          (root/'payload').mkdir()
+          tar=artifact.pack(root/'site',root/'payload/site.tar')
+          with open(os.environ['GITHUB_OUTPUT'],'a') as out:
+              out.write('tree_digest='+digest+'\ntar_digest='+tar+'\n')
+          PY
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        id: artifact
+        with:
+          name: apt-sin-firma-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/payload/site.tar
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+
+  firmar:
+    if: inputs.publicar == true
+    needs: preparar
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: release
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      artifact_id: ${{ steps.artifact.outputs.artifact-id }}
+      zip_digest: ${{ steps.artifact.outputs.artifact-digest }}
+      tar_digest: ${{ steps.metadatos.outputs.tar_digest }}
+      tree_digest: ${{ steps.metadatos.outputs.tree_digest }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Recibir exactamente el artifact verificado; no reconstruir
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ needs.preparar.outputs.artifact_id }}
+          ZIP_DIGEST: ${{ needs.preparar.outputs.zip_digest }}
+          TAR_DIGEST: ${{ needs.preparar.outputs.tar_digest }}
+          TREE_DIGEST: ${{ needs.preparar.outputs.tree_digest }}
+        run: |
+          set -euo pipefail
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$ARTIFACT_ID/zip" > "$RUNNER_TEMP/input.zip"
+          python3 apt-repo/artifact.py github-zip "$RUNNER_TEMP/input.zip" "$RUNNER_TEMP/site" \
+            --zip-digest "${ZIP_DIGEST#sha256:}" --tar-digest "$TAR_DIGEST"
+          test "$(python3 apt-repo/aptrepo.py digest "$RUNNER_TEMP/site")" = "$TREE_DIGEST"
+          ./apt-repo/verificar.sh "$RUNNER_TEMP/site" --sin-firma
+      - name: Firmar solo InRelease y Release.gpg con subclave vigente
+        env:
+          RELEASE_GPG_SUBKEY: ${{ secrets.RELEASE_GPG_SUBKEY }}
+          RELEASE_GPG_PASSPHRASE: ${{ secrets.RELEASE_GPG_PASSPHRASE }}
+          RELEASE_GPG_FINGERPRINT: ${{ secrets.RELEASE_GPG_FINGERPRINT }}
+          TREE_DIGEST: ${{ needs.preparar.outputs.tree_digest }}
+        run: >-
+          python3 apt-repo/aptrepo.py firmar "$RUNNER_TEMP/site" "$RUNNER_TEMP/firmado"
+          --digest "$TREE_DIGEST" --adr docs/adr/ADR-015-custodia-y-release-firmado.md
+      - name: Fijar artifact publico firmado
+        id: metadatos
+        run: |
+          set -euo pipefail
+          ./apt-repo/verificar.sh "$RUNNER_TEMP/firmado" --clave release/nimbo-release-publica.asc
+          mkdir "$RUNNER_TEMP/payload"
+          TAR_DIGEST="$(python3 apt-repo/artifact.py pack "$RUNNER_TEMP/firmado" "$RUNNER_TEMP/payload/site.tar")"
+          TREE_DIGEST="$(python3 apt-repo/aptrepo.py digest "$RUNNER_TEMP/firmado")"
+          echo "tar_digest=$TAR_DIGEST" >> "$GITHUB_OUTPUT"
+          echo "tree_digest=$TREE_DIGEST" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        id: artifact
+        with:
+          name: apt-firmado-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/payload/site.tar
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+
+  preparar-pages:
+    needs: firmar
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Descargar, cotejar digests y verificar firma antes de Pages
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ needs.firmar.outputs.artifact_id }}
+          ZIP_DIGEST: ${{ needs.firmar.outputs.zip_digest }}
+          TAR_DIGEST: ${{ needs.firmar.outputs.tar_digest }}
+          TREE_DIGEST: ${{ needs.firmar.outputs.tree_digest }}
+        run: |
+          set -euo pipefail
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$ARTIFACT_ID/zip" > "$RUNNER_TEMP/signed.zip"
+          python3 apt-repo/artifact.py github-zip "$RUNNER_TEMP/signed.zip" "$RUNNER_TEMP/site" \
+            --zip-digest "${ZIP_DIGEST#sha256:}" --tar-digest "$TAR_DIGEST"
+          test "$(python3 apt-repo/aptrepo.py digest "$RUNNER_TEMP/site")" = "$TREE_DIGEST"
+          ./apt-repo/verificar.sh "$RUNNER_TEMP/site" --clave release/nimbo-release-publica.asc
+      - name: Sitio completo; cada despliegue sustituye TODO Pages
+        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
+        with:
+          path: ${{ runner.temp }}/site
+
+  desplegar:
+    needs: preparar-pages
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
+        id: deployment

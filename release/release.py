@@ -139,6 +139,20 @@ def prepare(iso, candidate, public, output, expected):
         shutil.rmtree(staging)
 
 
+def signature_status(output, expected):
+    """Politica comun: una GOODSIG y VALIDSIG, sin revocacion ni caducidad."""
+    statuses = [line.split()[1:] for line in output.decode().splitlines()
+                if line.startswith("[GNUPG:] ")]
+    forbidden = {"REVKEYSIG", "EXPKEYSIG", "EXPSIG", "BADSIG", "ERRSIG",
+                 "NO_PUBKEY", "KEYEXPIRED", "SIGEXPIRED", "KEYREVOKED"}
+    if any(row and row[0] in forbidden for row in statuses):
+        raise ValueError("firma revocada, caducada o no valida")
+    good = [row for row in statuses if row and row[0] == "GOODSIG"]
+    valid = [row for row in statuses if row and row[0] == "VALIDSIG"]
+    if len(good) != 1 or len(valid) != 1 or valid[0][-1] != fingerprint(expected):
+        raise ValueError("firma de identidad no autorizada o ambigua")
+
+
 def verify(directory, expected, public=None):
     directory = Path(directory)
     if directory.is_symlink() or not directory.is_dir():
@@ -156,16 +170,7 @@ def verify(directory, expected, public=None):
         check = subprocess.run(["gpgv", "--homedir", str(home), "--keyring", str(ring),
             "--status-fd", "1", str(signature), str(manifest)],
             capture_output=True, check=True, timeout=30)
-        statuses = [line.split()[1:] for line in check.stdout.decode().splitlines()
-                    if line.startswith("[GNUPG:] ")]
-        forbidden = {"REVKEYSIG", "EXPKEYSIG", "EXPSIG", "BADSIG", "ERRSIG",
-                     "NO_PUBKEY", "KEYEXPIRED", "SIGEXPIRED", "KEYREVOKED"}
-        if any(row and row[0] in forbidden for row in statuses):
-            raise ValueError("firma revocada, caducada o no valida")
-        good = [row for row in statuses if row and row[0] == "GOODSIG"]
-        valid = [row for row in statuses if row and row[0] == "VALIDSIG"]
-        if len(good) != 1 or len(valid) != 1 or valid[0][-1] != fingerprint(expected):
-            raise ValueError("firma de identidad no autorizada o ambigua")
+        signature_status(check.stdout, expected)
     entries = {}
     for line in manifest.read_text(encoding="ascii").splitlines():
         match = re.fullmatch(r"([0-9a-f]{64})  ([A-Za-z0-9][A-Za-z0-9._-]*)", line)

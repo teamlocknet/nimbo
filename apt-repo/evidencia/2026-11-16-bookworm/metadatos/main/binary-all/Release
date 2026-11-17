@@ -1,0 +1,6 @@
+Origin: nimbo
+Label: nimbo
+Archive: bookworm
+Suite: bookworm
+Architecture: all
+Component: main
