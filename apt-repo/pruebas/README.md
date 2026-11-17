@@ -37,3 +37,9 @@ La VM demuestra instalación del candidato con firma efímera y las pruebas
 negativas. La firma real, el despliegue Pages y la aceptación del tag v1.0.0
 son pasos posteriores con aprobación de Juan José. Los hash de las fuentes
 de instrumentación usadas se deben conservar junto a los resultados.
+
+Para aceptar v1.0.0, ejecutar dentro de la VM Bookworm limpia también
+`python3 -m unittest discover -s apt-repo/tests -p test_apt_transport.py -v`:
+APT real debe rechazar InRelease alterado, paquete alterado y clave incorrecta.
+Es un requisito adicional a instalar las versiones exactas desde Pages;
+registrar ambas evidencias y el commit del tag final.
