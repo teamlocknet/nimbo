@@ -1,7 +1,7 @@
 """nimbo-navegar-tor — abre firefox-esr con el perfil Tor y avisa si hay fugas.
 
 Se ejecuta como el usuario (sin sudo). Exige que el modo Tor esté activo
-(`nimbo-tor on`). Mientras el navegador está abierto, lee el estado que deja el
+(`sudo nimbo-tor on`). Mientras el navegador está abierto, lee el estado que deja el
 vigilante y muestra una notificación si algo va mal (HU-08 CA-3). Falla hacia el aviso:
 "sin estado", "estado viejo" o "vigilante en error" también avisan; nunca se toman
 por "limpio".
@@ -78,7 +78,7 @@ def main(argv: list[str] | None = None, ruta_estado: Path = Path(RUTA_ESTADO),
     estado = leer_estado(ruta_estado)
     if not estado or not estado.get("modo_tor"):
         print("nimbo-navegar-tor: el modo Tor no está activo. Primero: "
-              "sudo nimbo-red on && nimbo-tor on")
+              "sudo nimbo-red on && sudo nimbo-tor on")
         return 2
 
     preparar_perfil(args.perfil, PLANTILLA)

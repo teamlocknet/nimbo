@@ -21,7 +21,8 @@ def test_no_abre_si_el_modo_tor_esta_apagado(tmp_path, capsys):
     estado.write_text(json.dumps({"modo_tor": False}), encoding="utf-8")
     assert navegar.main([], ruta_estado=estado, lanzar=lambda *a: None) == 2
     salida = capsys.readouterr().out
-    assert "nimbo-tor on" in salida and "sudo nimbo-tor" not in salida
+    # La ISO no trae polkit (medido el 16-nov): nimbo-tor se usa con sudo, como nimbo-red.
+    assert "sudo nimbo-tor on" in salida
 
 
 def test_no_abre_sin_fichero_de_estado(tmp_path, capsys):
