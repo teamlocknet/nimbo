@@ -1,11 +1,15 @@
 """analizar_pcap.py (pruebas/): lectura de pcap y criterios de RF-NAV-01/02 en el host."""
 import importlib.util
 import ipaddress
+import os
 import struct
 import sys
 from pathlib import Path
 
-_RUTA = Path(__file__).resolve().parents[1] / "pruebas" / "analizar_pcap.py"
+# Al construir el .deb, pybuild ejecuta las pruebas desde una copia sin pruebas/:
+# debian/rules exporta NIMBO_NAV_SRC con la raíz de la fuente (como en test_config.py).
+_RAIZ = Path(os.environ.get("NIMBO_NAV_SRC") or Path(__file__).resolve().parents[1])
+_RUTA = _RAIZ / "pruebas" / "analizar_pcap.py"
 _spec = importlib.util.spec_from_file_location("analizar_pcap", _RUTA)
 ap = importlib.util.module_from_spec(_spec)
 sys.modules["analizar_pcap"] = ap  # dataclass lo necesita
