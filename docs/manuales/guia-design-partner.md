@@ -1,7 +1,8 @@
 # Guía de instalación y uso de nimbo (Design Partner)
 
 **Para:** la persona externa que valida nimbo (RNF-06 / HT-06). **Tiempo previsto:** una jornada.
-Sigue los pasos en orden **sin pedir ayuda**. Si algo no funciona o no se entiende, anótalo
+Sigue los pasos en orden **sin pedir ayuda**. Cada módulo tiene además su guía detallada:
+[guías de uso](guias-de-uso.md). Si algo no funciona o no se entiende, anótalo
 en el [formulario de hallazgos](formulario-hallazgos-design-partner.md) y sigue con el
 siguiente paso. Cada tropiezo que anotes nos sirve.
 
