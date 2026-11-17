@@ -23,6 +23,7 @@ Depends:
  nftables,
  iproute2,
  libnotify-bin,
+ xfce4-notifyd,
 Description: navegacion segura de nimbo: Firefox endurecido y modo Tor
  Endurece firefox-esr con politicas (sin telemetria ni conexiones en reposo)
  y anade un modo Tor que se activa a peticion: una tabla nftables que falla

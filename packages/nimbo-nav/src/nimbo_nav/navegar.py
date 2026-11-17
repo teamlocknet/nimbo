@@ -61,8 +61,14 @@ def preparar_perfil(perfil: Path, plantilla: Path) -> None:
 
 
 def avisar(texto: str) -> None:
-    subprocess.run(["notify-send", "--urgency=critical", "nimbo: modo Tor", texto], check=False)
+    # El aviso en pantalla lo muestra xfce4-notifyd (dependencia del paquete). Si no hay quien
+    # lo muestre, el vigilante del navegador NO se cae: sigue vigilando y avisa por stderr.
     print(f"nimbo-navegar-tor: AVISO — {texto}", file=sys.stderr)
+    try:
+        subprocess.run(["notify-send", "--urgency=critical", "nimbo: modo Tor", texto],
+                       check=False, timeout=10)
+    except (OSError, subprocess.SubprocessError):
+        pass
 
 
 def lanzar_firefox(perfil: Path) -> subprocess.Popen:
