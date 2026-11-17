@@ -96,7 +96,12 @@ def decodificar(t: float, trama: bytes) -> Paquete:
         _transporte(p, ip[9], ip[ihl:])
     elif tipo == 0x86DD and len(ip) >= 40:
         p.src, p.dst = str(ipaddress.IPv6Address(ip[8:24])), str(ipaddress.IPv6Address(ip[24:40]))
-        _transporte(p, ip[6], ip[40:])   # sin cabeceras de extensión (no las usa el tráfico medido)
+        sig, resto = ip[6], ip[40:]
+        # Cabeceras de extensión (salto a salto, enrutamiento, opciones de destino): MLD,
+        # por ejemplo, va tras una salto a salto. Sin esto, ese tráfico quedaría sin clasificar.
+        while sig in (0, 43, 60) and len(resto) >= 8:
+            sig, resto = resto[0], resto[(resto[1] + 1) * 8:]
+        _transporte(p, sig, resto)
     return p
 
 
@@ -148,7 +153,7 @@ def es_dns(p: Paquete) -> bool:
 
 
 def fuera_del_tunel(p: Paquete, reles: set[str]) -> bool:
-    if es_puesta_en_marcha(p) or p.proto == "otro":
+    if es_puesta_en_marcha(p) or not p.src:   # sin IP (tramas que no son IP ni ARP): no salen
         return False
     return p.src not in reles and p.dst not in reles
 

@@ -96,3 +96,18 @@ def test_fichero_que_no_es_pcap_da_2(tmp_path):
     f = tmp_path / "x.pcap"
     f.write_bytes(b"\x0a\x0d\x0d\x0a" + b"\x00" * 40)
     assert ap.main([str(f)]) == 2
+
+
+def test_ipv6_con_cabecera_salto_a_salto_se_clasifica(tmp_path):
+    # MLDv2 (ICMPv6 143) tras una cabecera salto a salto: puesta en marcha, no fuga
+    hbh = bytes([58, 0, 5, 2, 0, 0, 1, 0])
+    mld = _v6("fe80::1", "ff02::16", 0, hbh + b"\x8f\x00\x00\x00")
+    p = ap.leer_pcap(_pcap(tmp_path, [mld]))[0]
+    assert p.proto == "icmp6" and ap.es_puesta_en_marcha(p)
+
+
+def test_ip_de_protocolo_desconocido_fuera_de_reles_cuenta(tmp_path):
+    reles = tmp_path / "reles.txt"
+    reles.write_text("1.2.3.4\n", encoding="utf-8")
+    gre = _pcap(tmp_path, [_v4("10.0.2.15", "5.6.7.8", 47, b"\x00" * 8)], "g.pcap")
+    assert ap.main([str(gre), "--reles", str(reles)]) == 1
