@@ -84,12 +84,16 @@ que ejecute `sudo faillock --user <tu-usuario> --reset`.
 
 Sigue el [manual de actualización sin conexión](actualizacion-sin-conexion.md):
 
-1. Conecta la USB y ábrela en el gestor de archivos.
-2. `nimbo-update-offline verificar /media/<tu-usuario>/<usb>/<carpeta-del-lote>` → debe decir
-   **`ACEPTADO`**.
-3. `sudo nimbo-update-offline instalar /media/<tu-usuario>/<usb>/<carpeta-del-lote>` → debe
-   terminar con **"actualización instalada"**.
-4. Si el equipo te dio también un **lote manipulado** (marcado como tal), pruébalo igual: debe
+La USB **no aparece en el gestor de archivos**: se monta a mano, en solo lectura.
+
+1. Conecta la USB y busca su partición: `lsblk -o NAME,SIZE,TRAN,LABEL,FSTYPE` → la de la
+   línea con `usb` en `TRAN`, por ejemplo `sdb1` (no el disco del sistema).
+2. `sudo mount -o ro /dev/sdb1 /mnt` (con el nombre que viste).
+3. `nimbo-update-offline verificar /mnt/<carpeta-del-lote>` → debe decir **`ACEPTADO`**.
+4. `sudo nimbo-update-offline instalar /mnt/<carpeta-del-lote>` → debe terminar con
+   **"actualización instalada"**.
+5. `sudo umount /mnt` y retira la USB.
+6. Si el equipo te dio también un **lote manipulado** (marcado como tal), pruébalo igual: debe
    decir **`RECHAZADO`** y **"No se instaló nada"**.
 
 ## Al terminar

@@ -92,3 +92,20 @@ def test_11_instalar_no_acepta_un_anillo_traido_en_el_lote(lote, claves, tmp_pat
 def test_verificar_si_admite_otro_anillo_solo_para_comprobar(lote, claves, capsys):
     # verificar no instala nada: puede usarse con otro anillo para diagnosticar.
     assert cli.main(["verificar", str(lote), "--anillo", str(claves["anillo"])]) == 0
+
+
+def test_instalar_con_el_lote_en_solo_lectura(lote, claves):
+    # La USB se monta a mano en solo lectura (la ISO no trae udisks2; medido el 17-nov):
+    # instalar solo LEE el lote, copia y verifica la copia; nunca escribe en la USB.
+    # (Con root, como en algunos contenedores de CI, los permisos no limitan: el test
+    # sigue comprobando que todo funciona.)
+    rutas = [lote, *lote.iterdir()]
+    for p in rutas:
+        p.chmod(0o555 if p.is_dir() else 0o444)
+    try:
+        rc = cli.main(["instalar", str(lote)], anillo_instalar=claves["anillo"],
+                      es_root=lambda: True, ejecutar=lambda argv: None)
+    finally:
+        for p in rutas:
+            p.chmod(0o755 if p.is_dir() else 0o644)
+    assert rc == 0

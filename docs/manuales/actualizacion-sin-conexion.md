@@ -22,29 +22,52 @@ Una carpeta (por ejemplo `nimbo-0.1.2/`) con:
 No hace falta abrirlos ni cambiarlos. **No añadas ni quites ficheros**: el lote se
 rechazaría.
 
-## Actualizar, paso a paso (5 min)
+## Actualizar, paso a paso (10 min)
 
-1. Conecta la USB. En el escritorio aparece en el gestor de archivos; ábrela una vez para que
-   quede montada, normalmente en `/media/<tu-usuario>/<nombre-de-la-usb>/`.
-2. Abre una terminal (menú → Terminal) y **comprueba** el lote (no instala nada):
+nimbo **no monta las USB solo**: el gestor de archivos no las muestra y no aparecen en
+`/media/` (medido en la ISO instalada, 17-nov). Se montan a mano, en **solo lectura**, con
+estos comandos. Abre una terminal (menú → Terminal):
+
+1. Conecta la USB y **busca su nombre**:
 
    ```
-   nimbo-update-offline verificar /media/<tu-usuario>/<nombre-de-la-usb>/nimbo-0.1.2
+   lsblk -o NAME,SIZE,TRAN,LABEL,FSTYPE
+   ```
+
+   Es la línea con **`usb`** en la columna `TRAN`; usa su **partición** (la de la línea de
+   abajo, con `FSTYPE`), por ejemplo `sdb1`. **No uses el disco del sistema** (el que tiene
+   las particiones de nimbo, normalmente `sda` o `nvme0n1`).
+2. **Móntala en solo lectura** (el sistema te pide tu contraseña):
+
+   ```
+   sudo mount -o ro /dev/sdb1 /mnt
+   ```
+
+   Cambia `sdb1` por el nombre que viste. En solo lectura, nada en el equipo puede modificar
+   la USB.
+3. **Comprueba** el lote (no instala nada):
+
+   ```
+   nimbo-update-offline verificar /mnt/nimbo-0.1.2
    ```
 
    Debe decir **`ACEPTADO: N paquetes con firma válida`** y listarlos.
-3. **Instala** (el sistema te pide tu contraseña):
+4. **Instala**:
 
    ```
-   sudo nimbo-update-offline instalar /media/<tu-usuario>/<nombre-de-la-usb>/nimbo-0.1.2
+   sudo nimbo-update-offline instalar /mnt/nimbo-0.1.2
    ```
 
    Copia el lote al disco, **vuelve a comprobar la copia** y la instala sin red. Termina con
    **`nimbo-update-offline: actualización instalada.`**
-4. Expulsa la USB desde el gestor de archivos antes de retirarla.
+5. **Desmonta** la USB y después retírala:
 
-> Consejo: escribe `/media/` y pulsa **Tab** dos o tres veces para que la terminal complete
-> la ruta de la USB.
+   ```
+   sudo umount /mnt
+   ```
+
+> Consejo: escribe `/mnt/` y pulsa **Tab** para que la terminal complete el nombre de la
+> carpeta del lote.
 
 ## Si dice `RECHAZADO`
 
@@ -52,7 +75,7 @@ rechazaría.
 
 | Mensaje | Qué significa | Qué hacer |
 |---|---|---|
-| `lote sin firma` | falta `MANIFIESTO` o `MANIFIESTO.asc` | pide al equipo una USB nueva |
+| `lote sin firma` | falta `MANIFIESTO` o `MANIFIESTO.asc` (o la ruta no es la carpeta del lote: mira con `ls /mnt`) | pide al equipo una USB nueva |
 | `firma inválida` | no lo firmó nimbo, la clave está revocada o caducada, o la lista se cambió después de firmar | **no lo instales**; avisa al equipo |
 | `paquete alterado` | un `.deb` no es el que se firmó | **no lo instales**; avisa al equipo |
 | `no está firmado` / `falta el paquete` | sobran o faltan `.deb` en la carpeta | ¿copiaste la carpeta entera? Si sí, avisa |
@@ -85,6 +108,7 @@ entregar la USB. La clave privada nunca viaja en la USB ni entra al repositorio.
 |---|---|---|
 | RF-UPD-01 (rechazo) | pruebas automáticas + 14 lotes inválidos en VM sin tarjeta de red (16-nov, Juan José) | 14/14 rechazados, incluidas clave revocada y caducada (#89) |
 | RF-UPD-01 (instalar) | lote firmado con la clave de release en la ISO instalada, sin red | `ACEPTADO` e instalado ([evidencia](../../repro/evidencia/2026-11-16-rnf03-sin-red.md)) |
+| USB en la ISO instalada | conectar una USB en caliente; montaje a mano en solo lectura (VM, 17-nov) | no se monta sola ni sale en el gestor de archivos; con `mount -o ro`, `verificar` e `instalar` funcionan y la USB no se modifica ([evidencia](../../packages/nimbo-update-offline/evidencia/2026-11-17-usb-iso.md)) |
 | Bajada de versión | lote válido con una versión más vieja (VM, 11-nov) | apt se niega; no se instala |
 
 **Límite de v1:** un lote viejo pero bien firmado sigue siendo válido como lote; lo que impide

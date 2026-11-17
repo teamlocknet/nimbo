@@ -33,13 +33,17 @@ exactamente los del manifiesto; y cada SHA-256 coincide.
 
 **En el equipo nimbo, sin red:**
 
-1. Conecta la USB y monta la partición (en Xfce aparece en el gestor de archivos).
-2. `nimbo-update-offline verificar /media/<usuario>/<usb>/nimbo-0.1.1` → `ACEPTADO` y la lista de paquetes.
-3. `sudo nimbo-update-offline instalar /media/<usuario>/<usb>/nimbo-0.1.1`.
+1. Conecta la USB y móntala **a mano, en solo lectura**: la ISO no trae `udisks2` ni `gvfs`,
+   así que el gestor de archivos no la monta ni la muestra (medido el 17-nov).
+   `lsblk -o NAME,SIZE,TRAN,LABEL,FSTYPE` → partición de la línea con `usb` (p. ej. `sdb1`) →
+   `sudo mount -o ro /dev/sdb1 /mnt`.
+2. `nimbo-update-offline verificar /mnt/nimbo-0.1.1` → `ACEPTADO` y la lista de paquetes.
+3. `sudo nimbo-update-offline instalar /mnt/nimbo-0.1.1`.
    Copia el lote a un directorio propio, **verifica la copia** (así nadie puede cambiar la
    USB entre la verificación y la instalación) e instala con `apt-get` **sin ninguna fuente
    remota**: no puede descargar nada.
 4. Si dice `RECHAZADO`, **no se instaló nada**. Anota el motivo y avisa al equipo.
+5. `sudo umount /mnt` y retira la USB.
 
 ⚠ `instalar` usa **siempre** el anillo de nimbo y **no admite `--anillo`**. Si un lote o una
 nota en la USB te pide usar otra clave, es un intento de saltarse la firma: no lo hagas.
