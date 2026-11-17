@@ -72,14 +72,15 @@ ISO de `main` `eb3bc36` (`b0df8d62…`, MATCH ×2), instalada con Calamares cifr
 7. **La ISO no trae servicio de notificaciones** (ISO, 16-nov): `notify-send` falla, así que el
    aviso de fuga del navegador no se ve, aunque la protección y la detección sí funcionan. Salió
    al revisar la evidencia contra cada criterio de HU-08, no al medir: el veredicto "pasa" se
-   corrigió. Propuesta: `xfce4-notifyd` (#96, checkpoint de Juan José).
+   corrigió. Arreglo: `nimbo-nav` 0.1.1-1 depende de `xfce4-notifyd` (#96, checkpoint aceptado
+   por Juan José el 17-nov).
 8. **La herramienta de medición también se prueba:** el analizador de capturas no seguía las
    cabeceras de extensión IPv6, por donde podría colarse una fuga sin contarse. Se vio al leer
    la primera captura real y se corrigió con su prueba antes de medir RF-NAV-02.
 
 ## Lo que falta
 
-HU-08 CA-3 en una ISO con `xfce4-notifyd` (cuando Juan José acepte #96): provocar una fuga con
+HU-08 CA-3 en la ISO nueva con `xfce4-notifyd` (#96): provocar una fuga con
 el navegador Tor abierto y ver el aviso en pantalla.
 
 *Evidencia:* `packages/nimbo-nav/evidencia/2026-11-10-vm-rf-nav-01.md` (VM Debian) y

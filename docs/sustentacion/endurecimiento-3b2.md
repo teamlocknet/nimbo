@@ -55,9 +55,13 @@ minutos entra de nuevo. Salieron dos cosas para el manual: con la cuenta bloquea
 no pide contraseña (lo que se escriba se ve en pantalla) y `sudo` falla sin decir que está
 bloqueada.
 
+**`rp_filter` frente a WireGuard:** `rp_filter=1` en `all`, `default`, `enp0s3` y `wg-nimbo` con
+el túnel de `nimbo-net` activo, en las dos instalaciones de la ISO (Alejandro, #84): el modo
+estricto no rompe la red del equipo.
+
 ## Lo que falta
 
-Medir `rp_filter` con el túnel de `nimbo-net` activo (necesita dos equipos).
+Nada de RF-CORE-04. ADR-014 pasa a Aceptado con los tres pendientes verificados (#69).
 
 *Evidencia:* `security/hardening/3b2/evidencia/2026-11-11-vm-3b2.md` · *Diseño:* ADR-014 ·
 *Manual:* `docs/manuales/endurecimiento-3b2.md`
