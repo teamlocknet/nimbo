@@ -1,6 +1,7 @@
 # ADR-013 — Actualización sin conexión con paquetes firmados (`nimbo-update-offline`)
 
-**Estado:** Propuesto (9-nov, Emmanuel; revisado en #49) · **Autor:** Emmanuel ·
+**Estado:** Aceptado (16-nov, Juan José al aprobar este cambio; revisado en #49, medido en #89) ·
+**Autor:** Emmanuel ·
 **Aceptación de RF-UPD-01:** Juan José, dentro de RNF-03 (decisión del 10-nov)
 
 ## Contexto
@@ -23,7 +24,7 @@
 | **B. Lote = `.deb` + `MANIFIESTO` firmado (firma separada) verificado con `gpgv`** | Simple de preparar y auditar; cada regla de rechazo es explícita y probada; `gpgv` ya viene con `apt` | Un formato propio (pequeño), documentado aquí |
 | C. Firmar cada `.deb` (`debsigs`/`dpkg-sig`) | Firma por paquete | `debsig-verify` exige políticas por clave; más piezas; `dpkg-sig` ya no está en bookworm |
 
-## Decisión (propuesta): B
+## Decisión (aceptada el 16-nov): B
 
 - `nimbo-update-offline preparar <lote> --clave <id>` (equipo de firma): escribe
   `MANIFIESTO` (`<sha256>  <nombre.deb>`) y su firma separada `MANIFIESTO.asc`.
@@ -86,4 +87,4 @@
 
 ## Fecha
 
-2026-11-09 · revisado 2026-11-10 (#49) · 2026-11-16 (clave de release, criterio de firma, prueba sin red)
+2026-11-09 · revisado 2026-11-10 (#49) · 2026-11-16 (clave de release, criterio de firma, prueba sin red) · aceptado 2026-11-16
