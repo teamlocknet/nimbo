@@ -33,13 +33,17 @@ exactamente los del manifiesto; y cada SHA-256 coincide.
 
 **En el equipo nimbo, sin red:**
 
-1. Conecta la USB y monta la partición (en Xfce aparece en el gestor de archivos).
-2. `nimbo-update-offline verificar /media/<usuario>/<usb>/nimbo-0.1.1` → `ACEPTADO` y la lista de paquetes.
-3. `sudo nimbo-update-offline instalar /media/<usuario>/<usb>/nimbo-0.1.1`.
+1. Conecta la USB y móntala **a mano, en solo lectura**: la ISO no trae `udisks2` ni `gvfs`,
+   así que el gestor de archivos no la monta ni la muestra (medido el 17-nov).
+   `lsblk -o NAME,SIZE,TRAN,LABEL,FSTYPE` → partición de la línea con `usb` (p. ej. `sdb1`) →
+   `sudo mount -o ro /dev/sdb1 /mnt`.
+2. `nimbo-update-offline verificar /mnt/nimbo-0.1.1` → `ACEPTADO` y la lista de paquetes.
+3. `sudo nimbo-update-offline instalar /mnt/nimbo-0.1.1`.
    Copia el lote a un directorio propio, **verifica la copia** (así nadie puede cambiar la
    USB entre la verificación y la instalación) e instala con `apt-get` **sin ninguna fuente
    remota**: no puede descargar nada.
 4. Si dice `RECHAZADO`, **no se instaló nada**. Anota el motivo y avisa al equipo.
+5. `sudo umount /mnt` y retira la USB.
 
 ⚠ `instalar` usa **siempre** el anillo de nimbo y **no admite `--anillo`**. Si un lote o una
 nota en la USB te pide usar otra clave, es un intento de saltarse la firma: no lo hagas.
@@ -62,12 +66,15 @@ manifiesto vacío firmado y (**caso 11**) un lote firmado por otra clave que tra
 anillo y pide `--anillo`. Además, un MANIFIESTO que no es UTF-8 o un directorio llamado
 `.deb` se rechazan con su motivo, sin *traceback*.
 
-## Pendiente
+Manual para el usuario: [`docs/manuales/actualizacion-sin-conexion.md`](../../docs/manuales/actualizacion-sin-conexion.md) (RNF-06).
 
-- **Clave real de actualizaciones:** la genera y custodia Juan José (ADR-015). El paquete
-  necesita su **parte pública** en `/usr/share/nimbo/keyrings/nimbo-actualizaciones.gpg`.
-- Prueba en una VM bookworm **sin red** (RNF-03, la lleva Juan José): instalar un lote válido
-  y comprobar el rechazo de uno manipulado.
+## Estado
+
+- **Anillo:** la clave de release firma también los lotes; su parte pública viaja en el
+  paquete a `/usr/share/nimbo/keyrings/nimbo-actualizaciones.gpg` (0.1.1-1, #89, ADR-013).
+- **RNF-03 / RF-UPD-01 sobre la ISO, sin red** (Juan José, 16-nov): lote firmado instalado y
+  14/14 lotes inválidos rechazados, incluidas claves revocadas y caducadas
+  ([evidencia](../../repro/evidencia/2026-11-16-rnf03-sin-red.md)).
 - **Límite de v1 — repetición:** un lote viejo pero bien firmado sigue siendo válido. La
   **bajada de versión** la frena `apt-get -y` (sin `--allow-downgrades` se niega): **medido en
   VM el 11-nov** con `pruebas/prueba-bajada-version.sh`. Mejora posible: fecha o número de

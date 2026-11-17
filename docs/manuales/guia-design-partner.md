@@ -1,7 +1,8 @@
 # Guía de instalación y uso de nimbo (Design Partner)
 
 **Para:** la persona externa que valida nimbo (RNF-06 / HT-06). **Tiempo previsto:** una jornada.
-Sigue los pasos en orden **sin pedir ayuda**. Si algo no funciona o no se entiende, anótalo
+Sigue los pasos en orden **sin pedir ayuda**. Cada módulo tiene además su guía detallada:
+[guías de uso](guias-de-uso.md). Si algo no funciona o no se entiende, anótalo
 en el [formulario de hallazgos](formulario-hallazgos-design-partner.md) y sigue con el
 siguiente paso. Cada tropiezo que anotes nos sirve.
 
@@ -57,9 +58,6 @@ caso (`~/audits/cliente-prueba/evidencia/`), cambia una letra y guarda. Ejecuta 
 
 ## 4. Navegar de forma segura (30 min)
 
-> Este paso aplica cuando la ISO ya incluya la navegación segura. Si no tienes Firefox en
-> el menú, anótalo y salta al paso 5.
-
 nimbo arranca **sin red**. Para este paso necesitas el equipo conectado **por cable** (o la
 máquina virtual con red). El Wi-Fi no está soportado en esta versión.
 
@@ -74,13 +72,29 @@ máquina virtual con red). El Wi-Fi no está soportado en esta versión.
 
 ## 5. Comprobar el endurecimiento (10 min)
 
-> Aplica cuando la ISO incluya el endurecimiento 3B.2.
-
 `sudo /usr/lib/nimbo/verify-hardening`. Debe terminar con **"VEREDICTO: OK — 0 fallos"**.
 
 Si te equivocas 5 veces seguidas con la contraseña, la cuenta se bloquea 10 minutos y el
 sistema **te dice que está bloqueada**. No la olvidaste: espera o pide a quien tenga `sudo`
 que ejecute `sudo faillock --user <tu-usuario> --reset`.
+
+## 6. Actualizar sin conexión (15 min)
+
+> Solo si el equipo te entregó una **USB con un lote de actualización**. Si no, salta este paso.
+
+Sigue el [manual de actualización sin conexión](actualizacion-sin-conexion.md):
+
+La USB **no aparece en el gestor de archivos**: se monta a mano, en solo lectura.
+
+1. Conecta la USB y busca su partición: `lsblk -o NAME,SIZE,TRAN,LABEL,FSTYPE` → la de la
+   línea con `usb` en `TRAN`, por ejemplo `sdb1` (no el disco del sistema).
+2. `sudo mount -o ro /dev/sdb1 /mnt` (con el nombre que viste).
+3. `nimbo-update-offline verificar /mnt/<carpeta-del-lote>` → debe decir **`ACEPTADO`**.
+4. `sudo nimbo-update-offline instalar /mnt/<carpeta-del-lote>` → debe terminar con
+   **"actualización instalada"**.
+5. `sudo umount /mnt` y retira la USB.
+6. Si el equipo te dio también un **lote manipulado** (marcado como tal), pruébalo igual: debe
+   decir **`RECHAZADO`** y **"No se instaló nada"**.
 
 ## Al terminar
 
