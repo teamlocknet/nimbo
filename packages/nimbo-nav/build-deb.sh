@@ -41,7 +41,8 @@ docker run --rm \
     dpkg-buildpackage -us -uc -b
     cp /build/*.deb /build/*.buildinfo /build/*.changes /out/
     chown "$HOST_UID:$HOST_GID" /out/*
-    dpkg-deb -f /out/nimbo-nav_0.1.0-1_all.deb Package Version Architecture Depends
-    dpkg-deb -c /out/nimbo-nav_0.1.0-1_all.deb
+    deb="/out/nimbo-nav_$(dpkg-parsechangelog -S Version)_all.deb"   # versión del changelog
+    dpkg-deb -f "$deb" Package Version Architecture Depends
+    dpkg-deb -c "$deb"
     sha256sum /out/*.deb
   ' 2>&1 | tee "$salida/build.log"

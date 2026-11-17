@@ -27,3 +27,12 @@ def test_no_abre_si_el_modo_tor_esta_apagado(tmp_path, capsys):
 
 def test_no_abre_sin_fichero_de_estado(tmp_path, capsys):
     assert navegar.main([], ruta_estado=tmp_path / "no-existe.json", lanzar=lambda *a: None) == 2
+
+
+# --- El aviso no puede caerse (ISO 16-nov: sin servicio de notificaciones) -----------------
+def test_avisar_sin_notify_send_no_se_cae_y_avisa_por_stderr(monkeypatch, capsys):
+    def falta(*a, **k):
+        raise FileNotFoundError("notify-send")
+    monkeypatch.setattr(navegar.subprocess, "run", falta)
+    navegar.avisar("fuga de prueba")  # no debe lanzar
+    assert "fuga de prueba" in capsys.readouterr().err
