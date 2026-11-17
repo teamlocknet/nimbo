@@ -111,3 +111,11 @@ def test_ip_de_protocolo_desconocido_fuera_de_reles_cuenta(tmp_path):
     reles.write_text("1.2.3.4\n", encoding="utf-8")
     gre = _pcap(tmp_path, [_v4("10.0.2.15", "5.6.7.8", 47, b"\x00" * 8)], "g.pcap")
     assert ap.main([str(gre), "--reles", str(reles)]) == 1
+
+
+def test_lista_de_reles_mal_formada_da_2_sin_traceback(tmp_path, capsys):
+    reles = tmp_path / "reles.txt"
+    reles.write_text("no-es-una-ip\n", encoding="utf-8")
+    f = _pcap(tmp_path, [ARP])
+    assert ap.main([str(f), "--reles", str(reles)]) == 2
+    assert "Traceback" not in capsys.readouterr().out

@@ -181,7 +181,11 @@ def main(argv: list[str] | None = None) -> int:
     dns = [p for p in paquetes if es_dns(p)]
     print(f"- Paquetes capturados: {len(paquetes)} · DNS: {len(dns)}")
     if a.reles:
-        reles = leer_reles(a.reles)
+        try:
+            reles = leer_reles(a.reles)
+        except (OSError, ValueError) as e:
+            print(f"analizar_pcap: {a.reles}: {e}")
+            return 2
         malos = [p for p in paquetes if fuera_del_tunel(p, reles)]
         print(f"- Relés de tor: {len(reles)} · **Fuera del túnel: {len(malos)}**")
         titulo, ok = "Fuera del túnel", not dns and not malos
