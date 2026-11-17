@@ -62,7 +62,7 @@ inactivo` (medido en la ISO, 16-nov).
 ## Bueno saber
 
 - **El modo Tor y la red del equipo no pueden estar activos a la vez** en esta versión:
-  `join` se niega con el modo Tor encendido y `nimbo-tor on` se niega con el túnel puesto.
+  `join` se niega con el modo Tor encendido y `sudo nimbo-tor on` se niega con el túnel puesto.
 - Un apagado brusco puede dejar el túnel a medias: `sudo nimbo-net leave` lo limpia.
 - Sin relay ni Wi-Fi: los dos equipos tienen que alcanzarse directamente por IP.
 
