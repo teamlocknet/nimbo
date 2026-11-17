@@ -48,7 +48,7 @@ Restricciones del proyecto (no negociables):
 
 | Opción | Consecuencia |
 |---|---|
-| **C1. Desactivado; lo enciende el usuario** (`nimbo-tor on/off`) | El hermetismo en reposo no cambia (0/0) |
+| **C1. Desactivado; lo enciende el usuario** (`sudo nimbo-tor on/off`) | El hermetismo en reposo no cambia (0/0) |
 | C2. Activo al arrancar | Conexiones a los directorios de Tor en reposo: **rompe RNF-01**. Descartado |
 
 **D. Cómo se evitan y se detectan las fugas**
@@ -66,8 +66,13 @@ Restricciones del proyecto (no negociables):
 2. **B1 + C1:** `tor` de bookworm, con el servicio **deshabilitado por defecto**.
    El modo Tor lo arranca y lo para **una unidad systemd propia, `nimbo-modo-tor.service`**:
    al arrancar, **tabla → tor → vigilante**; al parar, en orden inverso (vigilante → tor →
-   tabla). `nimbo-tor on/off` solo arranca o para esa unidad: no hay scripts con `sudo`
-   sueltos ni un CLI entero corriendo como root. La red la levanta antes `nimbo-red on`
+   tabla). `sudo nimbo-tor on/off` solo arranca o para esa unidad (`systemctl start/stop`):
+   los pasos con privilegios (tabla, tor, vigilante y su limpieza) los ejecuta systemd en ese
+   orden, no un script. *Cambio del 16-nov (#92):* el diseño contaba con que systemd pidiera la
+   autorización con polkit, pero la ISO no trae polkit (medido en la ISO instalada, #95), así que
+   `nimbo-tor` se usa con `sudo`, como `nimbo-red`. Con `sudo` corre como root un CLI pequeño que
+   solo llama a `systemctl` y lee `/sys/class/net` y `/proc/net`; sin `sudo`, dice "Usa: sudo
+   nimbo-tor on". La red la levanta antes `nimbo-red on`
    (ADR-019); `nimbo-tor` no la configura. El navegador abre un **perfil Tor** separado (SOCKS5
    `127.0.0.1:9050`, `network.proxy.socks_remote_dns = true`, WebRTC apagado, sin prefetch ni
    especulación, `privacy.resistFingerprinting = true` y

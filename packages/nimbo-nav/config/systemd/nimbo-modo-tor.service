@@ -1,5 +1,5 @@
 # nimbo-modo-tor.service — modo Tor de nimbo (ADR-012 aceptado, #45; revisión de #59).
-# La arranca y la para `nimbo-tor on|off` (systemd pide la autorización con polkit).
+# La arranca y la para `sudo nimbo-tor on|off` (la ISO no trae polkit: con sudo, #92).
 #
 # Falla cerrada y en orden:
 #   arranque: tabla nftables -> tor -> vigilante. Si la tabla no carga, tor NO arranca.
