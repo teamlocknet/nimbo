@@ -75,8 +75,9 @@ actualizaciones automáticas (sin cambiarlas), cada sysctl de la lista y PAM.
 ## Consecuencias
 
 - **`rp_filter = 1` frente a WireGuard (`nimbo-net`):** con túnel completo y rutas por
-  *fwmark*, el modo estricto puede descartar tráfico legítimo. Se mide con Alejandro cuando
-  exista `nimbo-net`. Si choca, `rp_filter = 2` (modo flexible) conserva casi todo el beneficio.
+  *fwmark*, el modo estricto podría descartar tráfico legítimo. Medido con `nimbo-net` en dos
+  VMs (#71): el túnel funciona en modo estricto. Si algún día chocara, se entrega la evidencia
+  y se pide checkpoint (como dice ADR-011): cambiar el valor es decisión de Juan José.
 - `aplicar-en-vm.sh` instala `lynis` con red solo en la VM de prueba; `lynis` **nunca** entra
   en la receta de la ISO.
 
@@ -102,8 +103,8 @@ no bloquean la aceptación:
   con `sudo -n true` (fase `account`). El primer intento en la consola tty3 no dejó **ningún**
   `FAILED LOGIN` en el diario, así que no llegó a hacerse ningún intento en esa consola (el
   diario los registra aunque el contador se ponga a cero); se repetirá en la integración.
-- **`rp_filter = 1` frente a WireGuard** (`nimbo-net`, ADR-011): medir cuando se pruebe el túnel.
-  Si choca, `rp_filter = 2`.
+- **`rp_filter = 1` frente a WireGuard:** medido con `nimbo-net` en dos VMs (#71): el túnel
+  funciona en modo estricto. Falta repetirlo en la ISO integrada.
 
 ## Fecha
 
