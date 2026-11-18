@@ -32,26 +32,35 @@ def leer_estado(ruta: Path) -> dict | None:
         return None
 
 
-def motivo_aviso(estado: dict | None, ahora: float) -> str | None:
-    """Texto del aviso, o None si todo está bien."""
+def diagnostico(estado: dict | None, ahora: float) -> tuple[str, str] | None:
+    """(clase, texto) del problema, o None si todo está bien. La CLASE dice qué va mal; el
+    texto lleva además los detalles (p. ej. cuántos paquetes), que cambian con el tiempo."""
     if not estado:
-        return "el vigilante de fugas no está funcionando (no hay estado)"
+        return "sin-estado", "el vigilante de fugas no está funcionando (no hay estado)"
     if estado.get("vigilante") == "error":
-        return f"el vigilante de fugas tiene un error: {estado.get('error', 'desconocido')}"
+        return ("error", "el vigilante de fugas tiene un error: "
+                         f"{estado.get('error', 'desconocido')}")
     try:
         actualizado = float(estado.get("actualizado", 0))
     except (TypeError, ValueError):
-        return "el estado del vigilante de fugas es inválido (no se puede saber si hay fugas)"
+        return ("invalido", "el estado del vigilante de fugas es inválido "
+                            "(no se puede saber si hay fugas)")
     if ahora - actualizado > MAX_EDAD_S:
-        return "el vigilante de fugas no se actualiza (puede haberse detenido)"
+        return "viejo", "el vigilante de fugas no se actualiza (puede haberse detenido)"
     if not estado.get("modo_tor"):
-        return "el modo Tor se ha apagado"
+        return "apagado", "el modo Tor se ha apagado"
     paquetes = estado.get("paquetes_descartados", 0)
     conexiones = len(estado.get("conexiones", []))
     if paquetes or conexiones:
-        return (f"posible FUGA: {paquetes} paquetes bloqueados fuera de Tor y "
-                f"{conexiones} conexiones directas. Detalle: sudo nimbo-leakcheck")
+        return ("fuga", f"posible FUGA: {paquetes} paquetes bloqueados fuera de Tor y "
+                        f"{conexiones} conexiones directas. Detalle: sudo nimbo-leakcheck")
     return None
+
+
+def motivo_aviso(estado: dict | None, ahora: float) -> str | None:
+    """Texto del aviso, o None si todo está bien."""
+    d = diagnostico(estado, ahora)
+    return d[1] if d else None
 
 
 def preparar_perfil(perfil: Path, plantilla: Path) -> None:
@@ -91,15 +100,28 @@ def main(argv: list[str] | None = None, ruta_estado: Path = Path(RUTA_ESTADO),
     proceso = lanzar(args.perfil)
     if not isinstance(proceso, subprocess.Popen):
         return 0
-    ultimo = None
+    return vigilar(ruta_estado, proceso)
+
+
+def vigilar(ruta_estado: Path, proceso, aviso: Callable[[str], None] = None,
+            reloj: Callable[[], float] = time.time,
+            dormir: Callable[[float], None] = time.sleep) -> int:
+    """Mientras el navegador está abierto, avisa UNA vez cada vez que empieza un problema.
+
+    Se compara la clase del problema, no el texto: una fuga que sigue sumando paquetes es la
+    misma fuga y no repite la notificación (ensayo de la demo, 18-nov). Un problema distinto,
+    o el mismo después de volver a estar limpio, sí avisa."""
+    aviso = aviso or avisar
+    ultima_clase = None
     while True:
-        motivo = motivo_aviso(leer_estado(ruta_estado), time.time())
-        if motivo and motivo != ultimo:
-            avisar(motivo)
-        ultimo = motivo
+        d = diagnostico(leer_estado(ruta_estado), reloj())
+        clase = d[0] if d else None
+        if d and clase != ultima_clase:
+            aviso(d[1])
+        ultima_clase = clase
         if proceso.poll() is not None:
             return 0
-        time.sleep(2)
+        dormir(2)
 
 
 if __name__ == "__main__":
