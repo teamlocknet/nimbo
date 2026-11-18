@@ -108,7 +108,7 @@ entregar la USB. La clave privada nunca viaja en la USB ni entra al repositorio.
 |---|---|---|
 | RF-UPD-01 (rechazo) | pruebas automáticas + 14 lotes inválidos en VM sin tarjeta de red (16-nov, Juan José) | 14/14 rechazados, incluidas clave revocada y caducada (#89) |
 | RF-UPD-01 (instalar) | lote firmado con la clave de release en la ISO instalada, sin red | `ACEPTADO` e instalado ([evidencia](../../repro/evidencia/2026-11-16-rnf03-sin-red.md)) |
-| USB en la ISO instalada | conectar una USB en caliente; montaje a mano en solo lectura (VM, 17-nov) | no se monta sola ni sale en el gestor de archivos; con `mount -o ro`, `verificar` e `instalar` funcionan y la USB no se modifica ([evidencia](../../packages/nimbo-update-offline/evidencia/2026-11-17-usb-iso.md)) |
+| USB en la ISO instalada | conectar una USB en caliente; montaje a mano en solo lectura (VM, 17-nov) | no se monta sola ni sale en el gestor de archivos; con `mount -o ro`, un lote firmado por nimbo se verifica (`ACEPTADO`) y se instala, y la USB no se modifica ([evidencia](../../packages/nimbo-update-offline/evidencia/2026-11-17-usb-iso.md)) |
 | Bajada de versión | lote válido con una versión más vieja (VM, 11-nov) | apt se niega; no se instala |
 
 **Límite de v1:** un lote viejo pero bien firmado sigue siendo válido como lote; lo que impide
