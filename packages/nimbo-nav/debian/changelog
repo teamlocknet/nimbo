@@ -1,3 +1,10 @@
+nimbo-nav (0.1.2-1) unstable; urgency=medium
+
+  * Modo Tor: los paquetes sin dueño (RST/ICMP del kernel) de las conexiones de tor
+    ya no cuentan como fuga; tor marca sus conexiones con ct mark 0x6e74 (#101).
+
+ -- Juan José Duque <jd1020157@gmail.com>  Wed, 18 Nov 2026 12:00:00 -0500
+
 nimbo-nav (0.1.1-1) unstable; urgency=medium
 
   * Depende de xfce4-notifyd: el aviso de fuga se ve en la ISO (HU-08 CA-3, #96).
