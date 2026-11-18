@@ -56,7 +56,7 @@ Restricciones del proyecto (no negociables):
 | Opción | A favor | En contra |
 |---|---|---|
 | D1. Solo la configuración del navegador (proxy SOCKS con DNS remoto) | Simple | Si un ajuste falla, nadie lo nota; no cubre otros procesos |
-| **D2. Configuración del navegador + cortafuegos que falla cerrado en modo Tor + contador** | Con `nftables`: en modo Tor solo puede salir el usuario `debian-tor` (más loopback); cualquier otro paquete saliente **se descarta y se cuenta**. El contador es el detector: si sube, `nimbo-leakcheck` avisa | Toca la red del sistema (la tabla, no el paquete, que ya está): **es núcleo (checkpoint)** |
+| **D2. Configuración del navegador + cortafuegos que falla cerrado en modo Tor + contador** | Con `nftables`: en modo Tor solo puede salir el usuario `debian-tor` (más loopback, y desde el 18-nov los paquetes sin dueño de sus conexiones, #101); cualquier otro paquete saliente **se descarta y se cuenta**. El contador es el detector: si sube, `nimbo-leakcheck` avisa | Toca la red del sistema (la tabla, no el paquete, que ya está): **es núcleo (checkpoint)** |
 
 ## Decisión (aceptada el 10-nov con las condiciones de #45)
 
@@ -84,7 +84,12 @@ Restricciones del proyecto (no negociables):
    apagado (`security.OCSP.enabled = 0`), para no hacer peticiones de revocación fuera de la
    navegación.
 3. **D2:** en modo Tor, una tabla `nftables` propia de nimbo permite solo `lo` y el UID
-   `debian-tor`; el resto se descarta con contador. `nimbo-leakcheck` lee el contador y las
+   `debian-tor`; el resto se descarta con contador. *Cambio del 18-nov (#101, checkpoint aceptado
+   por Juan José):* también se aceptan los paquetes **sin proceso dueño** (RST e ICMP que genera
+   el kernel) de las conexiones que abrió `debian-tor`, reconocidas por la marca de conntrack
+   `0x6e74` que la tabla pone a esas conexiones. Antes contaban como fuga sin serlo (ensayo de
+   la demo; medido en VM: +12 → +0). Una conexión de otro usuario, o abierta antes del modo Tor,
+   no lleva la marca y sigue contando; no se aceptan RST en general ni `ct state established`. `nimbo-leakcheck` lee el contador y las
    consultas DNS. Si encuentra algo, **avisa** (notificación en el escritorio y código de salida
    distinto de 0) y lo deja en un registro. Mientras el modo Tor está activo, **nada más sale a
    la red**, incluido el navegador normal. Fuera del modo Tor, la tabla no existe y

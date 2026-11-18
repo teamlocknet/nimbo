@@ -11,6 +11,12 @@
 # link-local. ARP no pasa por una tabla inet.
 #
 # Sin "ct state established accept": dejaría salir conexiones abiertas antes del modo Tor.
+#
+# Conexiones de tor y paquetes sin dueño (ensayo de la demo, 18-nov): cuando una conexión de tor
+# se cierra, el RST lo genera el KERNEL, sin proceso dueño, y "meta skuid" no lo reconoce (igual
+# con los ICMP de error del kernel). Por eso tor MARCA en conntrack las conexiones que abre
+# (0x6e74, "nt") y se aceptan los paquetes de una conexión marcada aunque no tengan dueño. Una
+# conexión de otro usuario, o abierta antes del modo Tor, no tiene la marca: sigue siendo fuga.
 
 table inet nimbo_tor
 delete table inet nimbo_tor
@@ -23,7 +29,8 @@ table inet nimbo_tor {
 		type filter hook output priority filter; policy drop;
 
 		oif "lo" accept
-		meta skuid "debian-tor" accept
+		meta skuid "debian-tor" ct mark set 0x6e74 accept
+		ct mark 0x6e74 accept
 
 		udp sport 68 udp dport 67 accept
 		icmpv6 type { nd-router-solicit, nd-neighbor-solicit, nd-neighbor-advert, mld2-listener-report } ip6 daddr { ff02::/16, fe80::/10 } accept

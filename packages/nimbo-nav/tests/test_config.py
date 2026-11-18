@@ -120,7 +120,7 @@ def test_tabla_falla_cerrada_y_solo_deja_salir_a_tor():
     assert "table inet nimbo_tor" in t
     assert "policy drop;" in t
     assert 'oif "lo" accept' in t
-    assert 'meta skuid "debian-tor" accept' in t
+    assert re.search(r'meta skuid "debian-tor" (ct mark set 0x[0-9a-f]+ )?accept', t)
     # La última regla de la cadena cuenta y descarta lo que no encaje.
     assert re.search(r'counter name "fugas" drop', t)
 
@@ -129,6 +129,22 @@ def test_tabla_admite_arranque_de_red_sin_contarlo_como_fuga():
     t = _nft()
     assert "udp sport 68 udp dport 67 accept" in t
     assert re.search(r"icmpv6 type \{[^}]*nd-router-solicit[^}]*\}.*ip6 daddr \{ ff02::/16, fe80::/10 \} accept", t)
+
+
+def test_paquetes_sin_dueno_de_conexiones_de_tor_no_cuentan_como_fuga():
+    # Ensayo de la demo (18-nov): al cerrarse una conexión de tor, el RST lo manda el KERNEL,
+    # sin proceso dueño, y "meta skuid debian-tor" no lo reconoce: el vigilante lo contaba como
+    # fuga (journal "nimbo-fuga … RST"; en el pcap, la conexión de tor con su relé). Igual con
+    # los ICMP de error del kernel (observación de #84). Se marca la conexión que abre tor y
+    # se aceptan los paquetes de esa conexión aunque no tengan dueño.
+    t = _nft()
+    marca = re.search(r'meta skuid "debian-tor" ct mark set (0x[0-9a-f]+) accept', t)
+    assert marca, "tor debe marcar sus conexiones"
+    assert re.search(rf"^\s*ct mark {marca.group(1)} accept", t, re.M)
+    # La marca se acepta ANTES de la regla que cuenta y descarta.
+    assert t.index(f"ct mark {marca.group(1)} accept") < t.index('counter name "fugas" drop')
+    # Nada de aceptar cualquier RST: el de una conexión que no sea de tor sigue siendo fuga.
+    assert "tcp flags" not in t
 
 
 def test_tabla_no_deja_pasar_conexiones_ya_establecidas():
