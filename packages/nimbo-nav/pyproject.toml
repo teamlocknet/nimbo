@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nimbo-nav"
-version = "0.1.2"
+version = "0.1.3"
 description = "Navegación segura de nimbo: modo Tor que falla cerrado y detección de fugas (ADR-012)."
 readme = "README.md"
 requires-python = ">=3.11"
