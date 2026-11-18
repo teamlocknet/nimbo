@@ -46,9 +46,14 @@ def cmd_instalar(lote: Path, anillo: Path, ejecutar: Callable[[list[str]], None]
     # cambiar un .deb en la USB entre la verificación y la instalación.
     with tempfile.TemporaryDirectory(prefix="nimbo-update-") as tmp:
         copia = Path(tmp)
+        # apt lee los .deb como el usuario _apt: la copia debe ser legible por todos y
+        # escribible solo por root (si no, apt avisa "Download is performed unsandboxed as
+        # root"; medido en la ISO, 17-nov). Nadie más puede cambiarla.
+        os.chmod(copia, 0o755)
         for p in Path(lote).iterdir():
             if p.is_file() and (p.name in ("MANIFIESTO", "MANIFIESTO.asc") or p.suffix == ".deb"):
                 shutil.copy2(p, copia / p.name)
+                os.chmod(copia / p.name, 0o644)
         v = verificar(copia, anillo)
         if not v.aceptado:
             print(f"RECHAZADO: {v.motivo}. No se instaló nada.")
