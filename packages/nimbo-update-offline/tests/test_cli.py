@@ -1,5 +1,9 @@
 """CLI nimbo-update-offline: códigos de salida e instalación sin red (HU-14 CA-1)."""
+import os
 import pathlib
+import stat
+
+import pytest
 
 from nimbo_update_offline import cli
 
@@ -109,3 +113,27 @@ def test_instalar_con_el_lote_en_solo_lectura(lote, claves):
         for p in rutas:
             p.chmod(0o755 if p.is_dir() else 0o644)
     assert rc == 0
+
+
+@pytest.mark.skipif(os.name == "nt", reason="permisos POSIX: solo en Linux (CI bookworm)")
+def test_la_copia_que_recibe_apt_la_puede_leer_el_usuario_apt(lote, claves):
+    # apt descarga y lee los .deb como el usuario _apt. Si la copia está en un directorio 0700
+    # de root, apt avisa "N: Download is performed unsandboxed as root … couldn't be accessed
+    # by user '_apt'" (medido en la ISO, 17-nov, #100). La copia debe ser legible por todos
+    # y escribible solo por root (nadie más puede cambiarla entre verificar e instalar).
+    modos = {}
+
+    def ejecutar(argv):
+        for deb in argv[7:]:
+            d = pathlib.Path(deb)
+            modos[d.parent] = stat.S_IMODE(os.stat(d.parent).st_mode)
+            modos[d] = stat.S_IMODE(os.stat(d).st_mode)
+
+    rc = cli.main(["instalar", str(lote)], anillo_instalar=claves["anillo"],
+                  es_root=lambda: True, ejecutar=ejecutar)
+    assert rc == 0 and modos
+    for ruta, modo in modos.items():
+        assert modo & 0o004, f"{ruta} no es legible por otros ({oct(modo)})"
+        assert not modo & 0o022, f"{ruta} es escribible por otros ({oct(modo)})"
+        if ruta.is_dir():
+            assert modo & 0o001, f"{ruta}: _apt no puede entrar ({oct(modo)})"
