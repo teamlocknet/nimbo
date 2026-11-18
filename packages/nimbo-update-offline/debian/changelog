@@ -1,3 +1,10 @@
+nimbo-update-offline (0.1.2-1) unstable; urgency=medium
+
+  * instalar: la copia verificada es legible por _apt (0755/0644, solo la
+    escribe root); apt ya no avisa "Download is performed unsandboxed" (#103).
+
+ -- Juan José Duque <jd1020157@gmail.com>  Wed, 18 Nov 2026 12:00:00 -0500
+
 nimbo-update-offline (0.1.1-1) unstable; urgency=medium
 
   * Anillo de actualizaciones = clave de release 0C50...48C6 (ADR-013, 16-nov).
