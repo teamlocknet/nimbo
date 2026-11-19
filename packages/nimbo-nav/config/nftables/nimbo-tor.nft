@@ -17,6 +17,12 @@
 # con los ICMP de error del kernel). Por eso tor MARCA en conntrack las conexiones que abre
 # (0x6e74, "nt") y se aceptan los paquetes de una conexión marcada aunque no tengan dueño. Una
 # conexión de otro usuario, o abierta antes del modo Tor, no tiene la marca: sigue siendo fuga.
+#
+# ICMP de error a tráfico entrante (observación de #84, medido el 18-nov): si otro equipo manda
+# un paquete a un puerto cerrado, el kernel contesta "inalcanzable", sin dueño ni marca (la
+# conexión la empezó el otro). Se acepta solo ese ICMP de error, en dirección de RESPUESTA a una
+# conexión que vino de fuera: el otro ya conoce nuestra IP. Un ICMP de una conexión abierta
+# desde aquí va en dirección original y sigue contando; las respuestas con datos y los RST, también.
 
 table inet nimbo_tor
 delete table inet nimbo_tor
@@ -31,6 +37,7 @@ table inet nimbo_tor {
 		oif "lo" accept
 		meta skuid "debian-tor" ct mark set 0x6e74 accept
 		ct mark 0x6e74 accept
+		ct direction reply ct state related meta l4proto { icmp, ipv6-icmp } accept
 
 		udp sport 68 udp dport 67 accept
 		icmpv6 type { nd-router-solicit, nd-neighbor-solicit, nd-neighbor-advert, mld2-listener-report } ip6 daddr { ff02::/16, fe80::/10 } accept
