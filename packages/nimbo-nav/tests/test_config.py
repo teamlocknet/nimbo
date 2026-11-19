@@ -147,10 +147,24 @@ def test_paquetes_sin_dueno_de_conexiones_de_tor_no_cuentan_como_fuga():
     assert "tcp flags" not in t
 
 
+def test_icmp_de_error_a_trafico_entrante_no_cuenta_como_fuga():
+    # Observación de #84, medida el 18-nov (pruebas/prueba-icmp-entrante.sh): otro equipo manda
+    # UDP a un puerto cerrado y el KERNEL contesta "puerto inalcanzable". Ese ICMP no tiene dueño
+    # ni la marca de tor (la conexión la empezó el otro): se descartaba y contaba como fuga. Se
+    # acepta solo el ICMP de error en dirección de RESPUESTA a una conexión que vino de fuera.
+    t = _nft()
+    regla = re.search(r"^\s*ct direction reply ct state related meta l4proto \{ icmp, ipv6-icmp \} accept$", t, re.M)
+    assert regla, "falta aceptar los ICMP de error a tráfico entrante"
+    assert t.index(regla.group(0).strip()) < t.index('counter name "fugas" drop')
+
+
 def test_tabla_no_deja_pasar_conexiones_ya_establecidas():
     # Una regla 'ct state established accept' dejaría salir conexiones abiertas antes de
-    # activar el modo Tor: sería una fuga silenciosa.
-    assert "ct state" not in _nft()
+    # activar el modo Tor: sería una fuga silenciosa. El único 'ct state' admitido es el de
+    # los ICMP de error a tráfico entrante (prueba anterior).
+    estados = re.findall(r"^.*ct state.*$", _nft(), re.M)
+    assert all("ct direction reply ct state related meta l4proto" in l for l in estados)
+    assert "established" not in _nft()
 
 
 # --- RNF-01: nada del modo Tor arranca solo ----------------------------------------------
