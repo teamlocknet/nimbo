@@ -1,3 +1,11 @@
+nimbo-nav (0.1.4-1) unstable; urgency=medium
+
+  * Modo Tor: el ICMP de error que el kernel manda a tráfico que llega de fuera
+    (p. ej. "puerto inalcanzable" a un UDP) ya no cuenta como fuga; solo en
+    dirección de respuesta a una conexión que empezó fuera (observación de #84).
+
+ -- Juan José Duque <jd1020157@gmail.com>  Thu, 19 Nov 2026 12:00:00 -0500
+
 nimbo-nav (0.1.3-1) unstable; urgency=medium
 
   * nimbo-navegar-tor avisa una sola vez al empezar una fuga, no cada vez
