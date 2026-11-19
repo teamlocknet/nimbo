@@ -89,7 +89,13 @@ Restricciones del proyecto (no negociables):
    el kernel) de las conexiones que abrió `debian-tor`, reconocidas por la marca de conntrack
    `0x6e74` que la tabla pone a esas conexiones. Antes contaban como fuga sin serlo (ensayo de
    la demo; medido en VM: +12 → +0). Una conexión de otro usuario, o abierta antes del modo Tor,
-   no lleva la marca y sigue contando; no se aceptan RST en general ni `ct state established`. `nimbo-leakcheck` lee el contador y las
+   no lleva la marca y sigue contando; no se aceptan RST en general ni `ct state established`.
+   *Cambio del 19-nov (observación de #84, checkpoint aceptado por Juan José):* también se acepta
+   el **ICMP de error** que el kernel manda en **dirección de respuesta** a una conexión que empezó
+   fuera (`ct direction reply ct state related`, solo ICMP/ICMPv6), p. ej. "puerto inalcanzable" a
+   un UDP de otro par de WireGuard. Medido en QEMU (ISO de `main` `42e95ae`): el par recibía 0 de 3
+   ICMP y el contador subía +3. El otro equipo ya conoce nuestra IP; las respuestas con datos y los
+   RST a conexiones entrantes siguen contando. `nimbo-leakcheck` lee el contador y las
    consultas DNS. Si encuentra algo, **avisa** (notificación en el escritorio y código de salida
    distinto de 0) y lo deja en un registro. Mientras el modo Tor está activo, **nada más sale a
    la red**, incluido el navegador normal. Fuera del modo Tor, la tabla no existe y
