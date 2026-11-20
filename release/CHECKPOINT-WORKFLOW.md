@@ -7,19 +7,20 @@ no se ha ejecutado, mergeado ni publicado ningún release.
 ## Entrada y compuertas
 
 workflow_dispatch desde refs/heads/main, con tag, SHA completo, build_run y
-repro_run explícitos. Primer candidato aprobado: v1.0.0-rc1,
-03ff84cd1804908cbd1fd7cdb90c0e8c1734a5fa, build 42850483095,
-repro 42850482997. La consulta del 11-nov confirma main/push/success y las
-rutas build-iso.yml y repro-verify.yml para ese SHA.
+repro_run explícitos. Candidato vigente: **v1.0.0**,
+94f9b8fec60938baccae984f891cc3ac6960e109 (merge de #107), build 44654170836,
+repro 44654170829, ISO 63eeb31a33c4a9d4a6597573a6f567d66b6afbbb207286ae7920197414cc0f10.
+El primero fue v1.0.0-rc1 (03ff84c, build 42850483095, repro 42850482997),
+publicado como prerelease el 16-nov.
 
-Límite real del conjunto: **17-nov-2026 a las 16:11:04 UTC**, cuando caduca
-iso-sha-B, antes que la ISO. Fechas observadas en la revisión de Juan José:
+Límite real del conjunto v1.0.0: **27-nov-2026 a las 01:40:20 UTC**, cuando caduca
+iso-sha-B, antes que la ISO. Fechas consultadas en la API el 20-nov:
 
-| Artifact | Run | Caducidad UTC (17-nov-2026) |
+| Artifact | Run | Caducidad UTC (27-nov-2026) |
 |---|---|---|
-| iso-sha-B | 42850482997 | 16:11:04 |
-| nimbo-iso-03ff84c (13781341509) | 42850483095 | 16:11:17 |
-| iso-sha-A | 42850482997 | 16:12:03 |
+| iso-sha-B (14592483331) | 44654170829 | 01:40:20 |
+| iso-sha-A (14592023882) | 44654170829 | 01:41:18 |
+| nimbo-iso-94f9b8f (14592353595) | 44654170836 | 01:41:23 |
 
 Antes de firmar, consultar la API del repositorio fijo teamlocknet/nimbo:
 
@@ -30,7 +31,7 @@ Antes de firmar, consultar la API del repositorio fijo teamlocknet/nimbo:
 3. SHA de la ISO igual al archivo adjunto y a ambas piernas A/B de repro-verify;
    registrar intentos y boot_id, sin tratar un success aislado como MATCH.
 4. Evidencia QEMU versionada en main: comprobar que el fichero existe y nombra
-   el SHA-256 completo de la ISO. Ya está versionada por #73 en repro/evidencia/2026-11-10-qemu-instalado-03ff84c.md
+   el SHA-256 completo de la ISO. La de v1.0.0 está versionada por #108 en repro/evidencia/2026-11-20-qemu-instalado-94f9b8f.md
    (bloque NIMBO_APROBACION_QEMU). Su aprobación del
    environment es además la puerta humana; el fichero no la sustituye.
 5. Tag y release inexistentes: cualquier colisión aborta, nunca sobrescribe.
@@ -46,7 +47,7 @@ Antes de firmar, consultar la API del repositorio fijo teamlocknet/nimbo:
   de la subclave firmante y rechazar una primaria secreta utilizable. Acciones
   fijadas por SHA completo. Llavero temporal y limpieza al terminar, sin registrar
   secretos. Sin contents:write en este job.
-- Borrador: contents:write solo aquí, sin clave privada. Crear prerelease draft con el tag apuntando al SHA candidato (03ff84c),
+- Borrador: contents:write solo aquí, sin clave privada. Crear draft (prerelease solo si el tag es -rcN) con el tag apuntando al SHA candidato (94f9b8f para v1.0.0),
   nunca a la punta de main, y subir los cinco assets sin clobber. Conservar SHA, runs y notas de procedencia.
 - Comprobar: descargar de nuevo los cinco assets del borrador y ejecutar el
   verificador con la huella fijada por el canal independiente. Una subida o
@@ -71,19 +72,19 @@ NIMBO_APROBACION_QEMU contra el hash, SHA y runs indicados. R11-R14 se cubren co
 QEMU ausente/ambiguo, colisiones de tag/release y subida o publicación incompleta.
 Esto no sustituye una ejecución de Actions con environment y permisos reales.
 
-## Cinco assets de rc1 y plan B
+## Cinco assets de v1.0.0 y plan B
 
-nimbo-v1.0.0-rc1-amd64.iso, PROCEDENCIA.json, release-key.asc, SHA256SUMS y
+nimbo-v1.0.0-amd64.iso, PROCEDENCIA.json, release-key.asc, SHA256SUMS y
 SHA256SUMS.asc. El manifiesto cubre ISO, procedencia y certificado público.
 
 Si caduca cualquiera de los tres artifacts, re-ejecutar completos **los dos
-runs originales**, build-iso 42850483095 y repro-verify 42850482997, usando
+runs originales**, build-iso 44654170836 y repro-verify 44654170829, usando
 **Re-run all jobs**. No basta con reconstruir la ISO: hacen falta también los
 artifacts nuevos de ambas piernas A/B. El rerun conserva el run ID y aumenta
 run_attempt; se registran los intentos y los IDs nuevos de artifacts.
 
 Exigir de nuevo el mismo hash
-28760694ba8e20d13b98d04435d97937ae4e33ece521d62324c0ed33c484ae90.
+63eeb31a33c4a9d4a6597573a6f567d66b6afbbb207286ae7920197414cc0f10.
 Promover los runs/attempts aprobados con las mismas compuertas. artifact()
 descarta los expired antes de contar: un vigente y uno caducado permite elegir
 el vigente; dos vigentes del mismo nombre siguen siendo ambiguos y se rechazan.
@@ -109,7 +110,8 @@ el job del borrador exige que la huella del certificado publico tenga ese hash;
 ademas verifica la firma contra esa identidad completa. No se exportan claves
 privadas a los artifacts. Todas las acciones estan fijadas por SHA completo.
 
-Alcance inicial deliberado: solo v1.0.0-rc1 y 03ff84c con hash 28760694….
+Alcance deliberado: un solo candidato por vez. Vigente: v1.0.0 y 94f9b8f con
+hash 63eeb31a… (antes: v1.0.0-rc1, 03ff84c, 28760694…).
 Otro candidato requiere revisar las constantes y su evidencia. Si caduca el
 conjunto, reejecutar completos ambos runs originales que conservan evento
 push/main y SHA, y promover los runs/attempts aprobados con el mismo hash; un build disparado
@@ -176,7 +178,7 @@ pendiente; no se ha re-ejecutado ningun run ni usado la clave real.
 
 ## Ventana sin merges durante los reruns
 
-Los reruns de build 42850483095 y repro 42850482997, y el ensayo con los
+Los reruns de build 44654170836 y repro 44654170829 (antes, los de rc1), y el ensayo con los
 runs de 3825b0e (42525558358 y 42525558338), conservan ref = refs/heads/main.
 Comparten estos grupos con los builds disparados por pushes a main:
 

@@ -126,25 +126,26 @@ class Gates(unittest.TestCase):
             posts=[]
             def api(self,endpoint,payload=None):
                 if endpoint.startswith('git/matching'):
-                    return [dict(ref='refs/tags/v1.0.0-rc10',object=dict(type='commit',sha='0'*40))]+(
-                        [dict(ref='refs/tags/v1.0.0-rc1',object=obj)] if obj else [])
+                    # El señuelo comparte prefijo con el tag: matching-refs lo devuelve también.
+                    return [dict(ref='refs/tags/'+promover.EXPECTED_TAG+'-rc10',object=dict(type='commit',sha='0'*40))]+(
+                        [dict(ref='refs/tags/'+promover.EXPECTED_TAG,object=obj)] if obj else [])
                 API.posts.append(endpoint)
                 return dict(id=1,html_url='https://example.invalid/draft')
-            def pages(self,endpoint):return [{'tag_name':'v1.0.0-rc1'}] if rel else []
+            def pages(self,endpoint):return [{'tag_name':promover.EXPECTED_TAG}] if rel else []
         return API()
 
     def test_preexisting_tag_on_candidate_accepted(self):
         # El GITHUB_TOKEN no puede crear un tag sobre un commit con otros workflows (run 43899924167).
         api=self.tag_api(dict(type='commit',sha=promover.EXPECTED_SHA))
-        self.assertTrue(promover.no_collision(api,'v1.0.0-rc1',promover.EXPECTED_SHA))
-        self.assertFalse(promover.no_collision(self.tag_api(None),'v1.0.0-rc1',promover.EXPECTED_SHA))
+        self.assertTrue(promover.no_collision(api,promover.EXPECTED_TAG,promover.EXPECTED_SHA))
+        self.assertFalse(promover.no_collision(self.tag_api(None),promover.EXPECTED_TAG,promover.EXPECTED_SHA))
 
     def test_preexisting_tag_elsewhere_annotated_or_with_release_rejected(self):
         for obj,rel in [(dict(type='commit',sha='0'*40),False),
                         (dict(type='tag',sha=promover.EXPECTED_SHA),False),
                         (dict(type='commit',sha=promover.EXPECTED_SHA),True)]:
             with self.assertRaises(ValueError):
-                promover.no_collision(self.tag_api(obj,rel),'v1.0.0-rc1',promover.EXPECTED_SHA)
+                promover.no_collision(self.tag_api(obj,rel),promover.EXPECTED_TAG,promover.EXPECTED_SHA)
 
     def test_validate_accepts_preexisting_tag_on_candidate(self):
         # Run 43904407697: validate() seguia llamando a no_collision sin el commit (TypeError).
@@ -177,6 +178,44 @@ class Gates(unittest.TestCase):
         self.assertEqual([e for e,_ in payloads],['releases'])
         self.assertNotIn('target_commitish',payloads[0][1])
         self.assertEqual(payloads[0][1]['tag_name'],promover.EXPECTED_TAG)
+
+    def test_borrador_final_no_es_prerelease(self):
+        # v1.0.0 final: el borrador de un tag final no sale como prerelease ni "candidato de pruebas".
+        final=promover.datos_release('v1.0.0','a'*40,'b'*64)
+        self.assertEqual((final['name'],final['draft'],final['prerelease']),('v1.0.0',True,False))
+        self.assertNotIn('pruebas',final['body'])
+        self.assertIn('a'*40,final['body']);self.assertIn('b'*64,final['body'])
+        rc=promover.datos_release('v1.0.0-rc2','a'*40,'b'*64)
+        self.assertEqual((rc['draft'],rc['prerelease']),(True,True))
+
+    def test_valores_por_defecto_del_workflow_son_el_candidato(self):
+        # El formulario de release.yml propone el mismo candidato que autoriza promover.py.
+        ruta=ROOT.parent/'.github/workflows/release.yml'
+        if not ruta.is_file():self.skipTest('sin el repositorio completo (CI monta solo release/)')
+        yml=ruta.read_text()
+        def defecto(campo):
+            import re
+            m=re.search(r'^      '+campo+r':\n(?:        .*\n)*?        default: \'?([^\'\n]+)\'?$',yml,re.M)
+            return m and m.group(1)
+        self.assertEqual(defecto('tag'),promover.EXPECTED_TAG)
+        self.assertEqual(defecto('commit'),promover.EXPECTED_SHA)
+        candidato=json.loads((ROOT/'CANDIDATO-VERIFICADO.json').read_text())
+        self.assertEqual(defecto('build_run'),str(candidato['build_run']))
+        self.assertEqual(defecto('repro_run'),str(candidato['repro_run']))
+
+    def test_candidato_v1_0_0_aprobado_en_qemu(self):
+        # v1.0.0 = main 94f9b8f (#107): MATCH x2 y evidencia QEMU del 20-nov.
+        self.assertEqual(promover.EXPECTED_TAG,'v1.0.0')
+        self.assertEqual(promover.EXPECTED_SHA,'94f9b8fec60938baccae984f891cc3ac6960e109')
+        self.assertEqual(promover.EXPECTED_HASH,'63eeb31a33c4a9d4a6597573a6f567d66b6afbbb207286ae7920197414cc0f10')
+        candidato=json.loads((ROOT/'CANDIDATO-VERIFICADO.json').read_text())
+        self.assertEqual((candidato['commit'],candidato['iso_sha256'],candidato['build_run'],candidato['repro_run']),
+            (promover.EXPECTED_SHA,promover.EXPECTED_HASH,44654170836,44654170829))
+        self.assertTrue(candidato['qemu_evidence_url'].endswith('/'+promover.EVIDENCE))
+        evidencia=ROOT.parent/promover.EVIDENCE
+        if not evidencia.is_file():self.skipTest('sin el repositorio completo (CI monta solo release/)')
+        aprobado=promover.qemu(evidencia.read_text(),promover.EXPECTED_SHA,promover.EXPECTED_HASH)
+        self.assertEqual((aprobado['run_build_iso'],aprobado['run_repro_verify']),('44654170836','44654170829'))
 
     def test_github_error_names_method_and_endpoint(self):
         fallo=subprocess.CompletedProcess(['gh'],1,b'',b'gh: Resource not accessible by integration (HTTP 403)\n')

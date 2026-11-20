@@ -6,22 +6,22 @@ on:
       tag:
         description: Tag candidato aprobado
         required: true
-        default: v1.0.0-rc1
+        default: v1.0.0
         type: string
       commit:
         description: SHA completo del candidato (no la punta de main)
         required: true
-        default: 03ff84cd1804908cbd1fd7cdb90c0e8c1734a5fa
+        default: 94f9b8fec60938baccae984f891cc3ac6960e109
         type: string
       build_run:
         description: Run build-iso.yml, push a main y en verde
         required: true
-        default: '42850483095'
+        default: '44654170836'
         type: string
       repro_run:
         description: Run repro-verify.yml con ambas piernas
         required: true
-        default: '42850482997'
+        default: '44654170829'
         type: string
 
 permissions:

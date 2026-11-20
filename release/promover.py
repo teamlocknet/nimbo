@@ -15,10 +15,10 @@ import zipfile
 import release as verifier
 
 REPO = "teamlocknet/nimbo"
-EVIDENCE = "repro/evidencia/2026-11-10-qemu-instalado-03ff84c.md"
-EXPECTED_SHA = "03ff84cd1804908cbd1fd7cdb90c0e8c1734a5fa"
-EXPECTED_HASH = "28760694ba8e20d13b98d04435d97937ae4e33ece521d62324c0ed33c484ae90"
-EXPECTED_TAG = "v1.0.0-rc1"
+EVIDENCE = "repro/evidencia/2026-11-20-qemu-instalado-94f9b8f.md"
+EXPECTED_SHA = "94f9b8fec60938baccae984f891cc3ac6960e109"
+EXPECTED_HASH = "63eeb31a33c4a9d4a6597573a6f567d66b6afbbb207286ae7920197414cc0f10"
+EXPECTED_TAG = "v1.0.0"
 
 
 class GitHub:
@@ -153,9 +153,9 @@ def contents(api, path, ref):
 
 
 def validate(api, tag, commit, build, repro, output):
-    # Alcance v1: evita usar la evidencia especifica de rc1 para otro producto.
+    # Un solo candidato aprobado por PR: evita usar la evidencia de un candidato para otro.
     if (tag, commit) != (EXPECTED_TAG, EXPECTED_SHA):
-        raise ValueError("este workflow solo promueve el candidato rc1 aprobado")
+        raise ValueError("este workflow solo promueve el candidato aprobado ("+EXPECTED_TAG+")")
     if type(build) is not int or type(repro) is not int or min(build, repro) <= 0:
         raise ValueError("runs invalidos")
     no_collision(api, tag, commit)
@@ -218,6 +218,15 @@ def public_identity(public, expected_hash):
     return verifier.fingerprint(values[0])
 
 
+def datos_release(tag, commit, digest):
+    """Nombre, borrador y texto del release: solo un -rcN sale como prerelease."""
+    rc = "-rc" in tag
+    tipo = "Candidato de pruebas" if rc else "Version final"
+    return dict(name=tag, draft=True, prerelease=rc,
+                body=tipo+". Commit "+commit+". ISO SHA-256 "+digest+
+                     ". Procedencia y verificacion en los assets. Pendiente comprobacion de descarga.")
+
+
 def draft(api, directory, expected):
     info=verifier.verify(directory,expected)
     if (info["tag"],info["commit"],info["iso_sha256"])!=(EXPECTED_TAG,EXPECTED_SHA,EXPECTED_HASH):
@@ -227,10 +236,7 @@ def draft(api, directory, expected):
         api.api("git/refs",dict(ref="refs/tags/"+info["tag"],sha=info["commit"]))
         datos["target_commitish"]=info["commit"]
     # Con el tag ya creado, target_commitish no se usa y GitHub rechazo el POST (run 43905814300).
-    release=api.api("releases",dict(datos,
-        name=info["tag"],draft=True,prerelease=True,
-        body="Candidato de pruebas. Commit "+info["commit"]+". ISO SHA-256 "+info["iso_sha256"]+
-             ". Procedencia y verificacion en los assets. Pendiente comprobacion de descarga."))
+    release=api.api("releases",dict(datos,**datos_release(info["tag"],info["commit"],info["iso_sha256"])))
     # gh no usa --clobber: una colision de asset falla.
     files=sorted(str(x) for x in Path(directory).iterdir())
     subprocess.run(["gh","release","upload",info["tag"],*files,"--repo",REPO],check=True,timeout=900)

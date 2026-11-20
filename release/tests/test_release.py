@@ -241,6 +241,15 @@ class ReleaseTests(unittest.TestCase):
             self.metadata.write_text(json.dumps(dict(self.provenance,qemu_evidence_url=url)))
             with self.assertRaises(ValueError): self.tool.metadata(self.metadata)
 
+    def test_tag_final_o_rc(self):
+        # v1.0.0 final (25-nov): ademas de los candidatos -rcN, el tag final x.y.z.
+        for tag in ["v1.0.0", "v1.0.0-rc1", "v1.2.10-rc12"]:
+            self.metadata.write_text(json.dumps(dict(self.provenance, tag=tag)))
+            self.assertEqual(self.tool.metadata(self.metadata)["tag"], tag)
+        for tag in ["v1.0", "1.0.0", "v1.0.0-beta", "v1.0.0-rc0", "v1.0.0 ", "v1.0.0-rc1-x"]:
+            self.metadata.write_text(json.dumps(dict(self.provenance, tag=tag)))
+            with self.assertRaises(ValueError): self.tool.metadata(self.metadata)
+
     def test_clave_publica_distinta(self):
         self.key.write_bytes(self.gpg("--armor", "--export", self.fingerprints[1]).stdout)
         with self.assertRaises(ValueError): self.prepare()
