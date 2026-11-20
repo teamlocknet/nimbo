@@ -126,25 +126,26 @@ class Gates(unittest.TestCase):
             posts=[]
             def api(self,endpoint,payload=None):
                 if endpoint.startswith('git/matching'):
-                    return [dict(ref='refs/tags/v1.0.0-rc10',object=dict(type='commit',sha='0'*40))]+(
-                        [dict(ref='refs/tags/v1.0.0-rc1',object=obj)] if obj else [])
+                    # El señuelo comparte prefijo con el tag: matching-refs lo devuelve también.
+                    return [dict(ref='refs/tags/'+promover.EXPECTED_TAG+'-rc10',object=dict(type='commit',sha='0'*40))]+(
+                        [dict(ref='refs/tags/'+promover.EXPECTED_TAG,object=obj)] if obj else [])
                 API.posts.append(endpoint)
                 return dict(id=1,html_url='https://example.invalid/draft')
-            def pages(self,endpoint):return [{'tag_name':'v1.0.0-rc1'}] if rel else []
+            def pages(self,endpoint):return [{'tag_name':promover.EXPECTED_TAG}] if rel else []
         return API()
 
     def test_preexisting_tag_on_candidate_accepted(self):
         # El GITHUB_TOKEN no puede crear un tag sobre un commit con otros workflows (run 43899924167).
         api=self.tag_api(dict(type='commit',sha=promover.EXPECTED_SHA))
-        self.assertTrue(promover.no_collision(api,'v1.0.0-rc1',promover.EXPECTED_SHA))
-        self.assertFalse(promover.no_collision(self.tag_api(None),'v1.0.0-rc1',promover.EXPECTED_SHA))
+        self.assertTrue(promover.no_collision(api,promover.EXPECTED_TAG,promover.EXPECTED_SHA))
+        self.assertFalse(promover.no_collision(self.tag_api(None),promover.EXPECTED_TAG,promover.EXPECTED_SHA))
 
     def test_preexisting_tag_elsewhere_annotated_or_with_release_rejected(self):
         for obj,rel in [(dict(type='commit',sha='0'*40),False),
                         (dict(type='tag',sha=promover.EXPECTED_SHA),False),
                         (dict(type='commit',sha=promover.EXPECTED_SHA),True)]:
             with self.assertRaises(ValueError):
-                promover.no_collision(self.tag_api(obj,rel),'v1.0.0-rc1',promover.EXPECTED_SHA)
+                promover.no_collision(self.tag_api(obj,rel),promover.EXPECTED_TAG,promover.EXPECTED_SHA)
 
     def test_validate_accepts_preexisting_tag_on_candidate(self):
         # Run 43904407697: validate() seguia llamando a no_collision sin el commit (TypeError).
