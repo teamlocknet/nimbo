@@ -9,7 +9,7 @@ claves reales. Juan José custodia y configura la identidad real de firma.
 
 Se distribuyen exactamente cinco archivos:
 
-- nimbo-vX.Y.Z-rcN-amd64.iso
+- nimbo-vX.Y.Z-amd64.iso (o nimbo-vX.Y.Z-rcN-amd64.iso para un candidato)
 - PROCEDENCIA.json
 - release-key.asc
 - SHA256SUMS (cubre los tres anteriores)
@@ -26,7 +26,7 @@ verificador usa un llavero temporal y exige una sola identidad primaria; admite
 firmas de sus subclaves vinculadas. No hereda el llavero del usuario ni busca
 claves en la red.
 
-PROCEDENCIA.json tiene: tag prerelease; commit completo; build_run; repro_run;
+PROCEDENCIA.json tiene: tag (final o -rcN); commit completo; build_run; repro_run;
 iso_sha256; leg_a_sha256; leg_b_sha256; qemu_iso_sha256; qemu_evidence_url;
 snapshot; source_date_epoch; base_image_digest. Los cuatro hashes deben ser
 iguales. La herramienta comprueba coherencia, **no autentica por sí sola la
@@ -107,8 +107,10 @@ La batería ampliada también pasó en el contenedor bookworm anclado, ejecutada
 por Alejandro: 21 passed en 1.40 s, Python 3.11.2-1+b1, pytest 7.2.1-2 y
 GnuPG 2.2.40-1.1+deb12u2. Comando: ci/test-modulo-en-bookworm.sh release gnupg.
 
-La evidencia QEMU ya está versionada en repro/evidencia/2026-11-10-qemu-instalado-03ff84c.md,
-con bloque NIMBO_APROBACION_QEMU. CANDIDATO-VERIFICADO.json contiene el enlace
+Candidato vigente: **v1.0.0 = 94f9b8f**, ISO 63eeb31a…0f10 (build-iso 44654170836,
+repro-verify 44654170829). Su evidencia QEMU está en
+repro/evidencia/2026-11-20-qemu-instalado-94f9b8f.md (#108), con bloque
+NIMBO_APROBACION_QEMU; la de rc1 (03ff84c) sigue en la del 2026-11-10. CANDIDATO-VERIFICADO.json contiene el enlace
 blob fijado al commit que la incorpora; no depende del texto mutable de un PR.
 
 ## Operacion del workflow
@@ -138,9 +140,9 @@ obligatorias. El if de main en el YAML no basta: un dispatch desde otra rama
 usa su propio YAML y podría omitir esa condición. La política del environment
 impide que esa rama acceda a los secretos. Este PR no configura esos ajustes.
 
-El límite del candidato es **17-nov-2026, 16:11:04 UTC** (iso-sha-B), no la
-caducidad de la ISO a las 16:11:17. El plan B re-ejecuta **los dos runs completos**,
-build-iso 42850483095 y repro-verify 42850482997, con Re-run all jobs, para
+El límite del candidato v1.0.0 es **27-nov-2026, 01:40:20 UTC** (iso-sha-B), no la
+caducidad de la ISO a las 01:41:23. El plan B re-ejecuta **los dos runs completos**,
+build-iso 44654170836 y repro-verify 44654170829, con Re-run all jobs, para
 renovar ISO y A/B. Se exige el mismo hash aprobado. Ver CHECKPOINT-WORKFLOW.md
 para los ensayos propuestos en Actions y sobre los runs de 3825b0e.
 
@@ -160,8 +162,8 @@ se creó sin error. Por eso Juan José crea antes el **tag ligero** con su
 cuenta, exactamente en el commit del candidato:
 
 ```sh
-gh api repos/teamlocknet/nimbo/git/refs -f ref=refs/tags/v1.0.0-rc1 \
-  -f sha=03ff84cd1804908cbd1fd7cdb90c0e8c1734a5fa
+gh api repos/teamlocknet/nimbo/git/refs -f ref=refs/tags/v1.0.0 \
+  -f sha=94f9b8fec60938baccae984f891cc3ac6960e109
 ```
 
 `promover.py borrador` lo acepta solo si es un tag ligero que apunta a ese
