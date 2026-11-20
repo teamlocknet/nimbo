@@ -123,3 +123,14 @@ def test_el_deb_de_juguete_trae_sus_directorios(tmp_path):
         r = subprocess.run(["dpkg", "--root", str(raiz), "--force-not-root", "--force-script-chrootless",
                             "--log=/dev/null", "-i", str(deb)], capture_output=True, text=True)
         assert r.returncode == 0, r.stderr
+
+
+def test_el_deb_de_juguete_no_depende_de_la_hora(monkeypatch):
+    # "w:gz" de tarfile guarda en la cabecera gzip la hora actual: el .deb cambiaba en cada
+    # ejecución aunque los tars usen EPOCA (hallazgo 4 del ensayo de la demo, 17-nov).
+    import time
+    m = _modulo()
+    monkeypatch.setattr(time, "time", lambda: 1_000_000_000.0)
+    uno = m.deb_de_juguete()
+    monkeypatch.setattr(time, "time", lambda: 2_000_000_000.0)
+    assert m.deb_de_juguete() == uno

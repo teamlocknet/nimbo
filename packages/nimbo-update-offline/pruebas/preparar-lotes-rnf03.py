@@ -22,6 +22,7 @@ Solo usa la biblioteca estándar y gpg (el .deb de juguete se arma a mano: forma
 """
 from __future__ import annotations
 
+import gzip
 import hashlib
 import io
 import shutil
@@ -38,7 +39,9 @@ EPOCA = 1794326512  # fija: el .deb de juguete sale igual en cada ejecución
 
 def _tar_gz(miembros: dict[str, bytes]) -> bytes:
     buf = io.BytesIO()
-    with tarfile.open(fileobj=buf, mode="w:gz", format=tarfile.GNU_FORMAT) as t:
+    # gzip aparte, con mtime fijo: "w:gz" escribiría la hora actual en la cabecera.
+    with gzip.GzipFile(fileobj=buf, mode="wb", mtime=EPOCA) as gz, \
+            tarfile.open(fileobj=gz, mode="w", format=tarfile.GNU_FORMAT) as t:
         # dpkg no crea los directorios padre: cada uno va como entrada propia (VM, 16-nov).
         dirs = sorted({"/".join(n.split("/")[:i]) for n in miembros for i in range(1, n.count("/") + 1)})
         for d in dirs:
