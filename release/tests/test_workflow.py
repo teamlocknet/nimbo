@@ -198,6 +198,23 @@ class Gates(unittest.TestCase):
             return m and m.group(1)
         self.assertEqual(defecto('tag'),promover.EXPECTED_TAG)
         self.assertEqual(defecto('commit'),promover.EXPECTED_SHA)
+        candidato=json.loads((ROOT/'CANDIDATO-VERIFICADO.json').read_text())
+        self.assertEqual(defecto('build_run'),str(candidato['build_run']))
+        self.assertEqual(defecto('repro_run'),str(candidato['repro_run']))
+
+    def test_candidato_v1_0_0_aprobado_en_qemu(self):
+        # v1.0.0 = main 94f9b8f (#107): MATCH x2 y evidencia QEMU del 20-nov.
+        self.assertEqual(promover.EXPECTED_TAG,'v1.0.0')
+        self.assertEqual(promover.EXPECTED_SHA,'94f9b8fec60938baccae984f891cc3ac6960e109')
+        self.assertEqual(promover.EXPECTED_HASH,'63eeb31a33c4a9d4a6597573a6f567d66b6afbbb207286ae7920197414cc0f10')
+        candidato=json.loads((ROOT/'CANDIDATO-VERIFICADO.json').read_text())
+        self.assertEqual((candidato['commit'],candidato['iso_sha256'],candidato['build_run'],candidato['repro_run']),
+            (promover.EXPECTED_SHA,promover.EXPECTED_HASH,44654170836,44654170829))
+        self.assertTrue(candidato['qemu_evidence_url'].endswith('/'+promover.EVIDENCE))
+        evidencia=ROOT.parent/promover.EVIDENCE
+        if not evidencia.is_file():self.skipTest('sin el repositorio completo (CI monta solo release/)')
+        aprobado=promover.qemu(evidencia.read_text(),promover.EXPECTED_SHA,promover.EXPECTED_HASH)
+        self.assertEqual((aprobado['run_build_iso'],aprobado['run_repro_verify']),('44654170836','44654170829'))
 
     def test_github_error_names_method_and_endpoint(self):
         fallo=subprocess.CompletedProcess(['gh'],1,b'',b'gh: Resource not accessible by integration (HTTP 403)\n')
