@@ -1,3 +1,10 @@
+nimbo-nav (0.1.5-1) unstable; urgency=medium
+
+  * Navegar por Tor sin el modo Tor activo avisa también en pantalla: desde el
+    menú no hay terminal y el lanzador parecía no hacer nada.
+
+ -- Juan José Duque <jd1020157@gmail.com>  Thu, 19 Nov 2026 20:00:00 -0500
+
 nimbo-nav (0.1.4-1) unstable; urgency=medium
 
   * Modo Tor: el ICMP de error que el kernel manda a tráfico que llega de fuera
