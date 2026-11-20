@@ -1,11 +1,11 @@
 {
-  "commit": "03ff84cd1804908cbd1fd7cdb90c0e8c1734a5fa",
-  "build_run": 42850483095,
-  "repro_run": 42850482997,
-  "iso_sha256": "28760694ba8e20d13b98d04435d97937ae4e33ece521d62324c0ed33c484ae90",
-  "iso_bytes": 478150656,
+  "commit": "94f9b8fec60938baccae984f891cc3ac6960e109",
+  "build_run": 44654170836,
+  "repro_run": 44654170829,
+  "iso_sha256": "63eeb31a33c4a9d4a6597573a6f567d66b6afbbb207286ae7920197414cc0f10",
+  "iso_bytes": 572522496,
   "match": true,
   "distinct_boot_ids": true,
-  "qemu": "Evidencia versionada en main (#73), bloque NIMBO_APROBACION_QEMU; verificar-instalado OK, 0 fallos, Secure Boot exigido",
-  "qemu_evidence_url": "https://github.com/teamlocknet/nimbo/blob/b4d41e4c965c7c33b9871a314359164e96ea9e23/repro/evidencia/2026-11-10-qemu-instalado-03ff84c.md"
+  "qemu": "Evidencia versionada en main (#108), bloque NIMBO_APROBACION_QEMU; verificar-instalado OK, 0 fallos, Secure Boot exigido",
+  "qemu_evidence_url": "https://github.com/teamlocknet/nimbo/blob/a235640d468181e4c25f90359d427e9c04c7e958/repro/evidencia/2026-11-20-qemu-instalado-94f9b8f.md"
 }

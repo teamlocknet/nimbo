@@ -15,10 +15,10 @@ import zipfile
 import release as verifier
 
 REPO = "teamlocknet/nimbo"
-EVIDENCE = "repro/evidencia/2026-11-10-qemu-instalado-03ff84c.md"
-EXPECTED_SHA = "03ff84cd1804908cbd1fd7cdb90c0e8c1734a5fa"
-EXPECTED_HASH = "28760694ba8e20d13b98d04435d97937ae4e33ece521d62324c0ed33c484ae90"
-EXPECTED_TAG = "v1.0.0-rc1"
+EVIDENCE = "repro/evidencia/2026-11-20-qemu-instalado-94f9b8f.md"
+EXPECTED_SHA = "94f9b8fec60938baccae984f891cc3ac6960e109"
+EXPECTED_HASH = "63eeb31a33c4a9d4a6597573a6f567d66b6afbbb207286ae7920197414cc0f10"
+EXPECTED_TAG = "v1.0.0"
 
 
 class GitHub:
