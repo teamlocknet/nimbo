@@ -178,6 +178,27 @@ class Gates(unittest.TestCase):
         self.assertNotIn('target_commitish',payloads[0][1])
         self.assertEqual(payloads[0][1]['tag_name'],promover.EXPECTED_TAG)
 
+    def test_borrador_final_no_es_prerelease(self):
+        # v1.0.0 final: el borrador de un tag final no sale como prerelease ni "candidato de pruebas".
+        final=promover.datos_release('v1.0.0','a'*40,'b'*64)
+        self.assertEqual((final['name'],final['draft'],final['prerelease']),('v1.0.0',True,False))
+        self.assertNotIn('pruebas',final['body'])
+        self.assertIn('a'*40,final['body']);self.assertIn('b'*64,final['body'])
+        rc=promover.datos_release('v1.0.0-rc2','a'*40,'b'*64)
+        self.assertEqual((rc['draft'],rc['prerelease']),(True,True))
+
+    def test_valores_por_defecto_del_workflow_son_el_candidato(self):
+        # El formulario de release.yml propone el mismo candidato que autoriza promover.py.
+        ruta=ROOT.parent/'.github/workflows/release.yml'
+        if not ruta.is_file():self.skipTest('sin el repositorio completo (CI monta solo release/)')
+        yml=ruta.read_text()
+        def defecto(campo):
+            import re
+            m=re.search(r'^      '+campo+r':\n(?:        .*\n)*?        default: \'?([^\'\n]+)\'?$',yml,re.M)
+            return m and m.group(1)
+        self.assertEqual(defecto('tag'),promover.EXPECTED_TAG)
+        self.assertEqual(defecto('commit'),promover.EXPECTED_SHA)
+
     def test_github_error_names_method_and_endpoint(self):
         fallo=subprocess.CompletedProcess(['gh'],1,b'',b'gh: Resource not accessible by integration (HTTP 403)\n')
         with patch.object(promover.subprocess,'run',return_value=fallo):
