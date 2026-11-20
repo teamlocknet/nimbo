@@ -15,7 +15,7 @@ META = {"tag", "commit", "build_run", "repro_run", "iso_sha256", "leg_a_sha256",
         "leg_b_sha256", "qemu_iso_sha256", "qemu_evidence_url", "snapshot",
         "source_date_epoch", "base_image_digest"}
 HEX = re.compile(r"[0-9a-f]{64}")
-TAG = re.compile(r"v[0-9]+\.[0-9]+\.[0-9]+-rc[1-9][0-9]*")
+TAG = re.compile(r"v[0-9]+\.[0-9]+\.[0-9]+(-rc[1-9][0-9]*)?")  # final o candidato -rcN
 
 
 def regular(path, limit=None):
@@ -49,7 +49,7 @@ def metadata(path):
     if not isinstance(obj, dict) or set(obj) != META:
         raise ValueError("campos de procedencia desconocidos o ausentes")
     if not isinstance(obj["tag"], str) or not TAG.fullmatch(obj["tag"]):
-        raise ValueError("tag prerelease invalido")
+        raise ValueError("tag invalido")
     if not isinstance(obj["commit"], str) or not re.fullmatch(r"[0-9a-f]{40}", obj["commit"]):
         raise ValueError("commit completo requerido")
     for field in ["build_run", "repro_run", "source_date_epoch"]:
