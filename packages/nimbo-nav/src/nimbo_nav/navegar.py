@@ -94,6 +94,9 @@ def main(argv: list[str] | None = None, ruta_estado: Path = Path(RUTA_ESTADO),
     if not estado or not estado.get("modo_tor"):
         print("nimbo-navegar-tor: el modo Tor no está activo. Primero: "
               "sudo nimbo-red on && sudo nimbo-tor on")
+        # Desde el menú no hay terminal (Terminal=false): sin esto, el lanzador no hace nada.
+        avisar("el modo Tor no está activo y el navegador no se abre. En una terminal: "
+               "sudo nimbo-red on && sudo nimbo-tor on")
         return 2
 
     preparar_perfil(args.perfil, PLANTILLA)
