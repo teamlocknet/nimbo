@@ -16,7 +16,8 @@ def test_preparar_perfil_copia_la_plantilla(tmp_path):
     assert "network.proxy.type" in (perfil / "user.js").read_text(encoding="utf-8")
 
 
-def test_no_abre_si_el_modo_tor_esta_apagado(tmp_path, capsys):
+def test_no_abre_si_el_modo_tor_esta_apagado(tmp_path, capsys, monkeypatch):
+    monkeypatch.setattr(navegar, "avisar", lambda t: None)
     estado = tmp_path / "leakcheck.json"
     estado.write_text(json.dumps({"modo_tor": False}), encoding="utf-8")
     assert navegar.main([], ruta_estado=estado, lanzar=lambda *a: None) == 2
@@ -25,8 +26,23 @@ def test_no_abre_si_el_modo_tor_esta_apagado(tmp_path, capsys):
     assert "sudo nimbo-tor on" in salida
 
 
-def test_no_abre_sin_fichero_de_estado(tmp_path, capsys):
+def test_no_abre_sin_fichero_de_estado(tmp_path, capsys, monkeypatch):
+    monkeypatch.setattr(navegar, "avisar", lambda t: None)
     assert navegar.main([], ruta_estado=tmp_path / "no-existe.json", lanzar=lambda *a: None) == 2
+
+
+def test_sin_modo_tor_avisa_en_pantalla_y_no_solo_en_la_terminal(tmp_path, monkeypatch):
+    # Medición del 19-nov: desde el menú (Terminal=false) "Navegar por Tor" no hacía nada; el
+    # mensaje solo salía por stdout y nadie lo veía. Tiene que avisar también en pantalla.
+    avisos = []
+    monkeypatch.setattr(navegar, "avisar", avisos.append)
+    estado = tmp_path / "leakcheck.json"
+    estado.write_text(json.dumps({"modo_tor": False}), encoding="utf-8")
+    abiertos = []
+    assert navegar.main([], ruta_estado=estado, lanzar=abiertos.append) == 2
+    assert abiertos == []
+    assert len(avisos) == 1
+    assert "sudo nimbo-red on && sudo nimbo-tor on" in avisos[0]
 
 
 # --- El aviso no puede caerse (ISO 16-nov: sin servicio de notificaciones) -----------------
