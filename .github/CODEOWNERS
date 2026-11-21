@@ -2,14 +2,13 @@
 # GitHub aplica la ÚLTIMA regla que coincide: las rutas generales van primero y las
 # concretas después. Con varios dueños en una línea, basta la aprobación de uno.
 #
-# Reparto D18 (28-oct; maestro §1). Juan José revisa y mergea todos los PR, así que
-# figura en todas las áreas; el primero de cada línea es el dueño del módulo.
+# Reparto D18 (28-oct; maestro §1), actualizado el 21-nov. Juan José revisa y mergea todos
+# los PR, así que figura en todas las áreas; el primero de cada línea es el dueño del módulo.
 #   Juan José  -> @Duque-Londono
 #   Alejandro  -> @Alejandro-Murillo22
-#   Emmanuel   -> @Cardozo-Mosquera
 
 # docs/ es de todos
-/docs/                              @Duque-Londono @Alejandro-Murillo22 @Cardozo-Mosquera
+/docs/                              @Duque-Londono @Alejandro-Murillo22
 
 # Núcleo — Juan José (ISO, reproducibilidad, CI, LUKS + TPM)
 /iso/                               @Duque-Londono
@@ -26,8 +25,9 @@
 /apt-repo/                          @Alejandro-Murillo22 @Duque-Londono
 /release/                           @Alejandro-Murillo22 @Duque-Londono
 
-# Emmanuel — navegación segura, air-gapped con GPG, hardening 3B.2
-/packages/nimbo-nav/                @Cardozo-Mosquera @Duque-Londono
-/packages/nimbo-update-offline/     @Cardozo-Mosquera @Duque-Londono
-/security/air-gapped/               @Cardozo-Mosquera @Duque-Londono
-/security/hardening/                @Cardozo-Mosquera @Duque-Londono
+# Juan José desde el 21-nov — navegación segura, air-gapped con GPG, hardening 3B.2
+# (autor de estos módulos: Emmanuel Cardozo; ver CREDITOS.md)
+/packages/nimbo-nav/                @Duque-Londono
+/packages/nimbo-update-offline/     @Duque-Londono
+/security/air-gapped/               @Duque-Londono
+/security/hardening/                @Duque-Londono
