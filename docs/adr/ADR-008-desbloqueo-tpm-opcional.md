@@ -31,7 +31,8 @@ Opciones consideradas:
 ## Decisión
 
 Se usa **systemd-cryptenroll + dracut**, con un script `nimbo-tpm-setup` en **dos fases y
-un reinicio entre ellas**, sellado a **PCR 7+9**:
+un reinicio entre ellas**, sellado a **PCR 7+9** (desde el 21-nov, **PCR 7+8+9**: ver la
+Enmienda):
 
 - **PCR 7** (estado de Secure Boot y sus llaves) + **PCR 9** (lo que GRUB lee de `/boot`:
   kernel e initrd). Cambiar cualquier byte del initrd hace que el TPM se niegue.
@@ -79,6 +80,23 @@ Se valida en QEMU + swtpm (V2–V8) antes del hardware real. La integración de
 - **PCR 7 en hardware real:** una actualización del firmware o de las llaves de Secure Boot
   cambia el PCR 7 y obliga a usar la contraseña y `--reseal`.
 
+## Enmienda (2026-11-21, Juan José): sellado a PCR 7+8+9
+
+**Sustituye al sellado a PCR 7+9 de la Decisión.** Con PCR 7+9, editar el menú de GRUB
+(`init=/bin/sh`) arrancaba una shell de root con el disco abierto por el TPM y sin pedir
+ninguna contraseña: GRUB mide sus órdenes y la línea del kernel en **PCR 8**, que no estaba
+sellado. Reproducido en QEMU sobre la ISO de `v1.0.0`
+(`security/luks-tpm/evidencia/2026-11-21-pcr8-grub.md`).
+
+- **Decisión:** sellar también a PCR 8, en la fase 2 y en `--reseal`. Se descarta poner
+  contraseña a GRUB porque añade otra credencial que custodiar.
+- **Se gana:** cualquier edición de la línea del kernel hace que el TPM se niegue y pida la
+  contraseña. Medido: el ataque ya no abre, y V4 a V7 siguen en verde.
+- **Se paga:** un cambio en `grub.cfg` también obliga a usar la contraseña y `--reseal`.
+- **Migración:** un disco sellado a PCR 7+9 sigue expuesto hasta ejecutar `--reseal` con el
+  script corregido. El script del tag `v1.0.0` es anterior a este arreglo; la ISO no lo lleva.
+- **Pendiente:** confirmar en hardware real que PCR 8 es estable entre arranques.
+
 ## Fecha
 
-2026-11-04
+2026-11-04 (enmienda: 2026-11-21)
