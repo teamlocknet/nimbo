@@ -34,6 +34,10 @@ ejecución; ninguna clave entra al repositorio).
 clave de release **se instala sin red**, y se rechazan **14 de 14** lotes inválidos (los de
 arriba más firma de otro fichero, **clave revocada** y **clave caducada**).
 
+**Con la copia legible para `_apt`** (#103, medido el 19-nov): el lote firmado se instala sin la
+nota `N: Download is performed unsandboxed`
+(`repro/evidencia/2026-11-19-medicion-101-103.md`).
+
 ## Hallazgos
 
 1. **`--anillo` en `instalar` era una puerta trasera** (lo vio Juan José): con esa opción se

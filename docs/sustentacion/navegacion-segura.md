@@ -49,7 +49,16 @@ ISO de `main` `eb3bc36` (`b0df8d62…`, MATCH ×2), instalada con Calamares cifr
 | RNF-01 con `nimbo-nav` instalado | **0 puertos escuchando** en reposo |
 | RF-NAV-02: navegar por Tor (check.torproject.org, example.com, debian.org) | "Congratulations… configured to use Tor"; **7 105 paquetes, 0 DNS, 0 fuera del túnel** |
 | Fuga provocada | bloqueada; `nimbo-leakcheck` → FUGA detectada (código 1) |
-| HU-08 CA-3: el aviso **llega al usuario** | ❌ **no**: la ISO no trae servicio de notificaciones (hallazgo 7) |
+| HU-08 CA-3: el aviso **llega al usuario** | ❌ **no en esa ISO**: no traía servicio de notificaciones (hallazgo 7). Corregido y medido el 19-nov (abajo) |
+
+## Qué se midió después (18 a 20-nov)
+
+| Prueba | Resultado |
+|---|---|
+| Falso positivo al morir tor (#101) | fugas contadas: **+12 → +0**; una conexión directa real sigue contando (+2) |
+| ICMP de error a tráfico entrante (#104) | **+3 → +0** |
+| HU-08 CA-3 con el navegador Tor abierto (#96, #102) | **se ve en pantalla, una sola notificación** con 4 conexiones directas provocadas |
+| "Navegar por Tor" sin modo Tor, ISO de `v1.0.0` (#107) | avisa en pantalla y Firefox no se abre |
 
 ## Hallazgos (lo que solo salió en un Debian real)
 
@@ -77,12 +86,24 @@ ISO de `main` `eb3bc36` (`b0df8d62…`, MATCH ×2), instalada con Calamares cifr
 8. **La herramienta de medición también se prueba:** el analizador de capturas no seguía las
    cabeceras de extensión IPv6, por donde podría colarse una fuga sin contarse. Se vio al leer
    la primera captura real y se corrigió con su prueba antes de medir RF-NAV-02.
+9. **El kernel generaba "fugas" que no lo eran** (ensayo, 17-nov): al cerrarse una conexión de
+   tor, el RST del kernel no tiene proceso dueño y se contaba como fuga. No salía nada: fallaba
+   cerrado. Se marcan en conntrack las conexiones de tor (#101) y se acepta el ICMP de error a
+   tráfico entrante (#104).
+10. **Un aviso por paquete es ruido:** la notificación se repetía cada pocos segundos. Ahora
+    avisa una vez por fuga (#102).
+11. **Un lanzador que no hacía nada:** sin modo Tor, "Navegar por Tor" solo escribía en una
+    terminal que nadie veía. Ahora avisa en pantalla (#107).
 
 ## Lo que falta
 
-HU-08 CA-3 en la ISO nueva con `xfce4-notifyd` (#96): provocar una fuga con
-el navegador Tor abierto y ver el aviso en pantalla.
+Nada de RF-NAV-01/02. El aviso de fuga se midió sobre la ISO `42e95ae` con `nimbo-nav` 0.1.4-1; la
+versión de `v1.0.0` (0.1.5-1) solo añade el aviso del lanzador (#107).
 
-*Evidencia:* `packages/nimbo-nav/evidencia/2026-11-10-vm-rf-nav-01.md` (VM Debian) y
-`packages/nimbo-nav/evidencia/2026-11-16-iso-rf-nav.md` (ISO instalada) · *Diseño:* ADR-012 ·
+*Evidencia:* `packages/nimbo-nav/evidencia/2026-11-10-vm-rf-nav-01.md` (VM Debian),
+`packages/nimbo-nav/evidencia/2026-11-16-iso-rf-nav.md` (ISO instalada),
+`packages/nimbo-nav/evidencia/2026-11-18-rst-kernel.md`,
+`packages/nimbo-nav/evidencia/2026-11-18-icmp-entrante.md`,
+`repro/evidencia/2026-11-19-medicion-101-103.md` y
+`repro/evidencia/2026-11-20-qemu-instalado-94f9b8f.md` · *Diseño:* ADR-012 ·
 *Manual:* `docs/manuales/navegacion-segura.md`

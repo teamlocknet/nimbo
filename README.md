@@ -8,10 +8,12 @@ Sistema operativo de ciberseguridad basado en Debian — proyecto de grado del g
 
 - `docs/` — documentación: ADRs, documento maestro y manuales.
 - `iso/` — construcción de la imagen: `live-build`, `xfce4`, `calamares`.
-- `packages/` — paquetes propios: `nimbo-audit`, `nimbo-net`.
+- `packages/` — paquetes propios: `nimbo-audit`, `nimbo-nav`, `nimbo-net`, `nimbo-red`,
+  `nimbo-update-offline`.
 - `security/` — `luks-tpm`, `air-gapped`, `hardening`.
 - `repro/` — compilaciones reproducibles.
 - `apt-repo/` — repositorio APT de distribución.
+- `release/` — release firmado y procedencia.
 - `ci/` — utilidades de integración continua.
 - `.github/` — `CODEOWNERS` y workflows.
 
@@ -43,7 +45,21 @@ Procedencia de los recursos gráficos (branding del instalador): [`CREDITOS.md`]
 
 ## Referencias
 
-- Fuente de verdad: [`docs/documento-maestro/`](docs/documento-maestro/)
 - Decisiones de arquitectura: [`docs/adr/`](docs/adr/)
+- Guías de uso por módulo: [`docs/manuales/guias-de-uso.md`](docs/manuales/guias-de-uso.md)
+- Documento maestro histórico (v2.0, desactualizado):
+  [`docs/documento-maestro/`](docs/documento-maestro/)
 
-**Estado:** Fase 1 — cimientos.
+## Estado (21-nov-2026)
+
+[`v1.0.0`](https://github.com/teamlocknet/nimbo/releases/tag/v1.0.0) está publicado y firmado:
+commit `94f9b8f`, ISO `63eeb31a…0f10`, con el mismo SHA-256 en dos compilaciones independientes
+e instalada en QEMU con Secure Boot y LUKS
+([evidencia](repro/evidencia/2026-11-20-qemu-instalado-94f9b8f.md)).
+
+Pendiente:
+
+- Verificación en hardware real con TPM (en QEMU ya pasó).
+- Validación del repositorio APT `v1.0.0` en una VM limpia (RF-DIST-01). Ya está publicado y
+  firmado.
+- Validación con un Design Partner externo (RNF-06).
