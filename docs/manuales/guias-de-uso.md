@@ -13,7 +13,7 @@ necesites ese módulo.
 | Unir dos equipos con un túnel cifrado | `nimbo-net` | [Red privada del equipo](red-privada-equipo.md) |
 | Actualizar sin internet, desde una USB | `nimbo-update-offline` | [Actualización sin conexión](actualizacion-sin-conexion.md) |
 | Entender y comprobar el endurecimiento (sysctl, bloqueo de cuenta) | hardening 3B.2 | [Endurecimiento 3B.2](endurecimiento-3b2.md) |
-| Desbloquear el disco con el TPM (opcional) | `nimbo-tpm-setup` | [`security/luks-tpm`](../../security/luks-tpm/README.md) (de Juan José; guía de usuario pendiente) |
+| Desbloquear el disco con el TPM (opcional) | `nimbo-tpm-setup` | [Desbloqueo con TPM](desbloqueo-tpm.md) |
 
 Si algo de una guía no funciona o no se entiende, anótalo en el
 [formulario de hallazgos](formulario-hallazgos-design-partner.md).
