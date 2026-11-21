@@ -52,18 +52,22 @@ Decisión registrada en `docs/adr/ADR-000-codename-y-nombre.md` (Aceptado).
 
 ## 4. Equipo, dueños y CODEOWNERS
 
-Reparto vigente (D18, 28-oct; detalle en el maestro §1 y en el plan de trabajo):
+Reparto vigente (D18, 28-oct, actualizado el 21-nov; el plan de trabajo es anterior a este
+cambio):
 
 | Persona | GitHub | Responsabilidades |
 |---|---|---|
-| **Juan José** | `@Duque-Londono` | Núcleo de la ISO (receta, reproducibilidad, hermetismo, instalador), LUKS + TPM (`nimbo-tpm-setup`), verificación en QEMU y hardware real, revisión y merge de todos los PR, checkpoints, custodia de las claves reales de firma, documento maestro |
+| **Juan José** | `@Duque-Londono` | Núcleo de la ISO (receta, reproducibilidad, hermetismo, instalador), LUKS + TPM (`nimbo-tpm-setup`), verificación en QEMU y hardware real, revisión y merge de todos los PR, checkpoints, custodia de las claves reales de firma, documento maestro · **desde el 21-nov:** navegación segura, air-gapped con GPG, hardening 3B.2 y material del Design Partner |
 | **Alejandro** | `@Alejandro-Murillo22` | CLI `nimbo-audit` (`.deb`, integración a la ISO, `verify`) · distribución (repo APT y releases firmados) · red privada del equipo (`nimbo-net`) |
-| **Emmanuel** | `@Cardozo-Mosquera` | Navegación segura (navegador endurecido + Tor con detección de fugas) · air-gapped con GPG · hardening fino 3B.2 (sysctl/PAM) · documentación y material del Design Partner |
 | Todos | — | `docs/` |
 
-`.github/CODEOWNERS` sigue este reparto (10-nov): cada área tiene a su dueño **y** a Juan
-José, y basta la aprobación de uno. `main` exige una aprobación y nadie puede aprobar su
-propio PR. Cambiar `CODEOWNERS` toca `.github/` (núcleo): lo decide Juan José.
+**Emmanuel Cardozo** es el autor de navegación segura, actualización sin conexión y hardening
+3B.2, y ese crédito se mantiene en ADR, evidencias y [`CREDITOS.md`](CREDITOS.md). Ya no
+participa en el proyecto. **No escribas en ningún documento el motivo de su salida.**
+
+`.github/CODEOWNERS` sigue este reparto (21-nov): las áreas de Alejandro tienen a su dueño
+**y** a Juan José, y basta la aprobación de uno. `main` exige una aprobación y nadie puede
+aprobar su propio PR. Cambiar `CODEOWNERS` toca `.github/` (núcleo): lo decide Juan José.
 
 ## 5. Modelo de trabajo (roles — línea dura)
 
@@ -120,14 +124,14 @@ nimbo/
 │   └── calamares/           #   receta del instalador (engancha LUKS/TPM)
 ├── packages/                # módulos Python → .deb
 │   ├── nimbo-audit/         #   CLI de auditoría — Alejandro (ADR-010)
-│   ├── nimbo-nav/           #   navegación segura + modo Tor — Emmanuel (ADR-012)
+│   ├── nimbo-nav/           #   navegación segura + modo Tor — Juan José (ADR-012)
 │   ├── nimbo-net/           #   red privada del equipo (WireGuard) — Alejandro (ADR-011)
 │   ├── nimbo-red/           #   red por cable a demanda — Juan José (ADR-019)
-│   └── nimbo-update-offline/ #  actualización sin red con GPG — Emmanuel (ADR-013)
+│   └── nimbo-update-offline/ #  actualización sin red con GPG — Juan José (ADR-013)
 ├── security/
 │   ├── luks-tpm/            #   nimbo-tpm-setup + evidencias — Juan José
-│   ├── air-gapped/          #   documentación air-gapped (el código: packages/nimbo-update-offline) — Emmanuel
-│   └── hardening/           #   sysctl, PAM (3B.2) — Emmanuel (núcleo: checkpoint)
+│   ├── air-gapped/          #   documentación air-gapped (el código: packages/nimbo-update-offline) — Juan José
+│   └── hardening/           #   sysctl, PAM (3B.2) — Juan José (núcleo: checkpoint)
 ├── repro/                   # reproducibilidad: build-twice, diff-isos, espejo/ (ADR-016) — Juan José
 ├── apt-repo/                # config aptly → GitHub Pages — Alejandro
 ├── release/                 # release firmado: release.py, procedencia (ADR-015) — Alejandro + Juan José
@@ -139,7 +143,8 @@ nimbo/
         │                    #   `tests-release-bookworm`, `tests-build-scripts`
         ├── build-iso.yml    # compila la ISO en contenedor y la sube como artifact (caduca a los 7 días)
         ├── repro-verify.yml # compuerta MATCH ×2 (dos compilaciones, mismo SHA-256) + run semanal
-        └── release.yml      # release firmado a mano (environment `release`, ADR-015)
+        ├── release.yml      # release firmado a mano (environment `release`, ADR-015)
+        └── apt-repo.yml     # repositorio APT firmado en GitHub Pages (RF-DIST-01)
 ```
 
 **Arquitectura (DAS v2.0, 3 capas):** Capa 1 Debian bookworm (LTS) + systemd (endurecido) · Capa 2
@@ -162,7 +167,7 @@ evalúan en ADR-011, sin decidir) · **Calamares 3.3.8** (única excepción de b
 ## 8. Convenciones de Git
 
 - **Nunca trabajes directo en `main`.** Rama por tarea, desde `main` actualizado; PRs
-  pequeños y no apilados. Ramas por persona: `jj/…`, `alejandro/…`, `emmanuel/…`
+  pequeños y no apilados. Ramas por persona: `jj/…`, `alejandro/…`
   (también se usan `chore/…`, `feat/…`, `fix/…`, `docs/…`). Nadie hace *force-push* a
   ramas ajenas. `main` está protegida: exige una aprobación de `CODEOWNERS` y nadie
   aprueba su propio PR.
@@ -182,7 +187,8 @@ evalúan en ADR-011, sin decidir) · **Calamares 3.3.8** (única excepción de b
 ## 9. Estado actual y plan de fases
 
 El estado detallado y el calendario viven en el **maestro v2.4** (§0 y §8). Este resumen
-es del 16-nov-2026; si choca con el maestro, gana el maestro.
+es del 21-nov-2026; si choca con el maestro, gana el maestro. **Simulacro de presentación:
+miércoles 25-nov; el proyecto debe estar completo ese día.**
 
 - ✅ **Core OS:** ISO live + instalable (Calamares, LUKS2 argon2id, Secure Boot verificado),
   hermética (0 sospechosos, 0 listeners), <500 MB en reposo; 3C.2 idioma/zona/swap (#40).
@@ -190,27 +196,30 @@ es del 16-nov-2026; si choca con el maestro, gana el maestro.
   espejo propio del snapshot (ADR-016). Cada commit cambia el SHA de la ISO (epoch del
   commit): "lo verificado sigue valiendo" se comprueba comparando contenido (squashfs + initrd).
 - ✅ **LUKS + TPM:** `nimbo-tpm-setup` validado V2–V8 en QEMU (ADR-008); H-002 cerrado en
-  QEMU con RAM mínima de 1 GiB (ADR-009). Falta hardware real (17-nov).
+  QEMU con RAM mínima de 1 GiB (ADR-009). **Desde #112 sella a PCR 7+8+9:** con 7+9, editar
+  GRUB abría el disco. Guía: `docs/manuales/desbloqueo-tpm.md`. Falta hardware real (22-nov,
+  kit fuera del repo en `hardware_2026-11-22/`; **no usar el script del tag `v1.0.0`**).
 - ✅ **CLI `nimbo-audit`:** `init`/`capture`/`report`/`verify`, `.deb` (ADR-010) y dentro de
   la ISO (#42).
 - ✅ **ISO integrada (ADR-020, #81 y #83):** `nimbo-nav` (Firefox ESR endurecido + modo Tor
   con `nimbo-leakcheck`), `nimbo-net` (WireGuard), `nimbo-red` (red por cable a demanda,
   ADR-019) y `nimbo-update-offline` dentro de la ISO; Tor y WireGuard no arrancan solos.
-  ISO de la demo: `30b5958f…` (546 MiB), verificada en QEMU live e instalada.
-- 🟡 **Validación por requisito sobre esa ISO:** RF-RED-01 en dos instalaciones (#84);
-  RF-NAV-01/02 (Emmanuel) pendiente.
-- ✅ **Release firmado `v1.0.0-rc1` (ADR-015, `release.yml`):** publicado el 16-nov como
-  pre-release (tag en `03ff84c`, ISO `28760694…`), firmado con la clave de release (huella en
-  el `README.md`, clave pública en `release/`, #85). El tag lo crea Juan José antes de lanzar
-  el workflow (#86–#88).
-- ⏭️ **Prioridad Media, si da el tiempo (D15 = B):** RF-DIST-01, RNF-06.
+- ✅ **Validación por requisito sobre la ISO instalada:** RF-RED-01 (#84), RF-NAV-01/02 (#95)
+  y RF-UPD-01 + RNF-03 sin red (#89).
+- ✅ **Release firmado `v1.0.0` (ADR-015, `release.yml`):** publicado el 20-nov como versión
+  final (tag en `94f9b8f`, ISO `63eeb31a…0f10`, 546 MiB), firmado con la clave de release
+  (huella en el `README.md`, clave pública en `release/`). Es el que se presenta. Cualquier
+  cambio en la receta o en un paquete cambia el SHA: no tocarlos sin checkpoint.
+- 🟡 **RF-DIST-01:** APT `v1.0.0` publicado y firmado el 21-nov (`Valid-Until` 20-dic); falta
+  la validación en una VM limpia (Alejandro).
+- 🟡 **RNF-06:** cada módulo tiene su guía; falta la validación con un Design Partner externo
+  (Juan José lo busca; si no llega, se declara pendiente por causa externa).
 
 **Requisitos vigentes:** el `.docx` "Requisitos de sistema" (15 RF + 7 RNF) y sus historias
 de usuario. El criterio de aceptación lo manda ese documento; en fechas manda el plan de
 trabajo. Los comentarios de `cli.py` aún usan la numeración antigua (RF-01, RF-03…).
 
-**ADR 011–020 ya escritos.** Siguen en Propuesto: ADR-013 (air-gapped) y ADR-014
-(hardening 3B.2, #69 abierto). El siguiente número libre es el 021.
+**ADR 011–020 ya escritos.** El siguiente número libre es el 021.
 
 **Jefes de nivel:** reproducibilidad (🏁) · Design Partner (🔴 sin cerrar) · LUKS + TPM
 (✅ en QEMU; falta hardware real).
