@@ -20,3 +20,19 @@ para que su procedencia sea comprobable antes de una release firmada.
 - **Por qué existe este registro:** los PNG anteriores (Paso 3C.1, commit `2eb22cd`) no tenían
   fuente, metadatos ni registro de procedencia, y llevaban texto con una tipografía sin
   identificar. Se sustituyeron el 2026-10-23 por estos, con fuente versionada.
+
+## Reconocimiento a Emmanuel Cardozo
+
+nimbo también es obra de **Emmanuel Cardozo** (`Cardozo-Mosquera`), integrante de LockNet, que
+dejó en este repositorio 28 pull requests y las piezas que cuidan al usuario cuando sale a la red
+o recibe una actualización:
+
+- **Navegación segura** (`nimbo-nav`): el Firefox endurecido, el modo Tor y la detección de fugas.
+  Se empeñó en medir hasta que un navegador que hacía **38 011** conexiones sospechosas en reposo
+  llegó a **0**.
+- **Actualización sin conexión** (`nimbo-update-offline`): lotes firmados por USB que se rechazan
+  ante cualquier duda.
+- **Endurecimiento 3B.2:** los parámetros del kernel y el bloqueo de cuenta.
+- **Guías, material del Design Partner y páginas de sustentación** de sus módulos.
+
+Cada vez que nimbo abre su navegador y no le habla a nadie, ahí está su trabajo. Gracias, Emmanuel.
