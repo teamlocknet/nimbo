@@ -61,7 +61,9 @@ estricto no rompe la red del equipo.
 
 ## Lo que falta
 
-Nada de RF-CORE-04. ADR-014 pasa a Aceptado con los tres pendientes verificados (#69).
+Nada de RF-CORE-04. ADR-014 está Aceptado con los tres pendientes verificados (#69), y la ISO de
+`v1.0.0` instalada da otra vez **0 fallos de 44** (20-nov).
 
-*Evidencia:* `security/hardening/3b2/evidencia/2026-11-11-vm-3b2.md` · *Diseño:* ADR-014 ·
+*Evidencia:* `security/hardening/3b2/evidencia/2026-11-11-vm-3b2.md` y
+`repro/evidencia/2026-11-20-qemu-instalado-94f9b8f.md` · *Diseño:* ADR-014 ·
 *Manual:* `docs/manuales/endurecimiento-3b2.md`

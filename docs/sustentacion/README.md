@@ -15,6 +15,13 @@ el código (rojo → verde), y cada vez que se probó en un Debian real apareci�
 pruebas unitarias no podían ver: rutas que Firefox no leía, un fichero de `procps` que pisaba un
 parámetro, un falso positivo de DHCP. Encontrarlos y corregirlos con evidencia es la garantía.
 
+## Versión que se presenta
+
+[`v1.0.0`](https://github.com/teamlocknet/nimbo/releases/tag/v1.0.0): commit `94f9b8f`, ISO
+`63eeb31a33c4a9d4a6597573a6f567d66b6afbbb207286ae7920197414cc0f10`. Instalada en QEMU con Secure
+Boot y LUKS el 20-nov: `verificar-instalado` 0 fallos, `verify-hardening` 0 de 44 y 395 MiB en
+reposo ([evidencia](../../repro/evidencia/2026-11-20-qemu-instalado-94f9b8f.md)).
+
 ## Huella de la clave de release
 
 Segundo canal independiente de la huella (ADR-015); el primero es el README del repositorio.
