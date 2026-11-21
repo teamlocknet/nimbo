@@ -19,7 +19,8 @@ nimbo-tpm-setup --estado        # solo lectura
 - **Fase 1:** dracut y tpm2-tools desde el pool local, `tpm2-device=auto` en el crypttab y
   un initrd nuevo. No toca LUKS. Si algo falla, rollback automático.
 - **Fase 2:** clave de recuperación (hay que teclearla completa para confirmarla) y sellado
-  a PCR 7+9.
+  a PCR 7+8+9. PCR 8 hace que editar el menú de GRUB no abra el disco (enmienda de ADR-008).
+  Un disco sellado antes del 21-nov a PCR 7+9 debe resellarse con `--reseal`.
 - Códigos de salida: 0 OK · 1 error · 2 uso · 3 no aplica (sin cifrar) · 4 comprobación
   previa fallida.
 - Estado y log: `/var/lib/nimbo-tpm/`.
@@ -35,6 +36,8 @@ integración a la ISO va en un PR aparte (checkpoint de receta).
 | [2026-10-23](evidencia/2026-10-23-teclado-dracut.md) | Teclado español en el initrd de dracut: riesgo medido y descartado (V2) |
 | [2026-11-04](evidencia/2026-11-04-V3-V8.md) | V3–V8 en QEMU + swtpm: sellado, estabilidad, manipulación, actualización, resellado, sin LUKS2 |
 | [2026-11-04](evidencia/2026-11-04-h002-codigos-salida.md) | H-002: códigos de salida reales de cryptsetup en los fallos por memoria |
+| [2026-11-10](evidencia/2026-11-10-hermetismo-post-tpm.md) | Hermetismo tras `nimbo-tpm-setup` en QEMU |
+| [2026-11-21](evidencia/2026-11-21-pcr8-grub.md) | Editar GRUB abría el disco con PCR 7+9: rojo, arreglo a PCR 7+8+9 y V4–V7 en verde |
 
-Pendiente: hardware con TPM real (`docs/manuales/verificacion-hardware-real.md`, 17-nov) y
-volver a medir el hermetismo tras `nimbo-tpm-setup` (ver ADR-008).
+Pendiente: hardware con TPM real (`docs/manuales/verificacion-hardware-real.md`), incluido
+repetir allí el hermetismo tras `nimbo-tpm-setup` (ver ADR-008).

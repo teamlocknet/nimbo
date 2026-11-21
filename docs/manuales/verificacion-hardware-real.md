@@ -97,14 +97,19 @@ herramientas; `nimbo-tpm-setup` todavía no va dentro de la ISO.
 - [ ] **Fase 1 (dracut):** `sudo sh <usb>/nimbo-tpm-setup`. OK = termina sin rollback.
       Reiniciar: pide la contraseña como siempre y la contraseña con símbolos entra **a la
       primera** con el teclado físico (*QEMU 10/10, `…/2026-10-23-teclado-dracut.md`*).
-- [ ] **Fase 2 (sellado PCR 7+9):** `sudo sh <usb>/nimbo-tpm-setup` otra vez. Pide confirmar
+- [ ] **Fase 2 (sellado PCR 7+8+9):** `sudo sh <usb>/nimbo-tpm-setup` otra vez. Pide confirmar
       la clave de recuperación **entera**: apuntarla en papel, **sin foto**. OK = `FASE 2
       COMPLETA`.
 - [ ] **Desbloqueo automático, 3 arranques seguidos sin teclear (V4).** OK = llega al
       greeter sin pedir contraseña las tres veces. Anotar el tiempo hasta el greeter.
-      *Riesgo que solo se ve aquí:* si el firmware o GRUB cambian lo que mide el PCR 9 en
-      cada arranque (p. ej. `grubenv`), el TPM no abrirá nunca. En QEMU no pasó en 9
-      arranques.
+      *Riesgo que solo se ve aquí:* si el firmware o GRUB cambian lo que miden los PCR 8 o 9
+      en cada arranque (p. ej. `grubenv`), el TPM no abrirá nunca. En QEMU no pasó.
+- [ ] **Editar GRUB no abre el disco (enmienda de ADR-008):** al encender, pulsar una flecha
+      varias veces para detener el menú, `e`, ir al final de la línea `linux` (`Ctrl+E`),
+      añadir ` init=/bin/sh` y `Ctrl+X`. GRUB usa teclado US: `=` a la izquierda de
+      Backspace, `/` a la derecha del punto. OK = **pide la contraseña del disco**; no
+      teclearla y apagar. Si aparece un prompt `#` sin pedir nada, **es un fallo de
+      seguridad**: parar y no dar el TPM por bueno.
 - [ ] **Manipulación de `/boot` (V5):** `sudo sh <usb>/probar-tpm.sh --manipular-initrd` y
       reiniciar. OK = **pide la contraseña** (el TPM se niega) y la contraseña abre. Luego
       `sudo sh <usb>/probar-tpm.sh --restaurar-initrd`, reiniciar: vuelve a abrir solo (V6a).
