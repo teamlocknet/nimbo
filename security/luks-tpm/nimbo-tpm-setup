@@ -14,9 +14,9 @@
 #            initramfs-tools y al crypttab original, con log y verificación final.
 #   Reinicio — pide la contraseña como siempre: valida dracut y el teclado ANTES de que el
 #            TPM entre en juego.
-#   Fase 2 — sellar: clave de recuperación + token TPM2 con PCR 7+9 (opcional PIN).
+#   Fase 2 — sellar: clave de recuperación + token TPM2 con PCR 7+8+9 (opcional PIN).
 #
-# Decisiones (2026-10-23): PCR 7+9 en dos fases · PIN opcional (--con-pin) · dracut, no
+# Decisiones (2026-10-23; PCR 8 desde el 21-nov): PCR 7+8+9 en dos fases · PIN opcional (--con-pin) · dracut, no
 # clevis · Secure Boot EXIGIDO salvo --sin-secure-boot (aviso fuerte) · clave de
 # recuperación sí, confirmada entera · resellado manual (--reseal).
 #
@@ -323,7 +323,7 @@ EOF
 
 # --- fase 2: sellar ------------------------------------------------------------------------
 slots_lista() { cryptsetup luksDump "$DEV" 2>/dev/null | awk '/^Keyslots:/{f=1;next} /^Tokens:/{f=0} f && /^  [0-9]+: /{sub(":","",$1); print $1}'; }
-pcrs_actuales() { tpm2_pcrread sha256:7,9 2>/dev/null | awk '/: 0x/{gsub(/ /,""); print}' | tr '\n' ' '; }
+pcrs_actuales() { tpm2_pcrread sha256:7,8,9 2>/dev/null | awk '/: 0x/{gsub(/ /,""); print}' | tr '\n' ' '; }
 arranque_con_dracut() { journalctl -b -q -o cat -u dracut-cmdline.service 2>/dev/null | grep -q .; }
 
 # Pide la clave de recuperación COMPLETA y comprueba que ABRE el keyslot recién creado.
@@ -343,7 +343,7 @@ confirmar_recuperacion() {
 }
 
 fase2() {
-    log "== Fase 2: sellar la clave en el TPM (PCR 7+9) =="
+    log "== Fase 2: sellar la clave en el TPM (PCR 7+8+9) =="
     KVER=$(uname -r)
     [ "${KVER}" = "${KVER_FASE1:-$KVER}" ] || salir 1 "el kernel en uso ($KVER) no es el de la fase 1 (${KVER_FASE1}). Vuelve a la fase 1."
     img="/boot/initrd.img-$KVER"
@@ -376,11 +376,13 @@ fase2() {
         log "Clave de recuperación ya confirmada antes (keyslot $REC_SLOT)."
     fi
 
-    # 2) Token TPM2 sellado a PCR 7+9. La contraseña y la recuperación NO se tocan.
+    # 2) Token TPM2 sellado a PCR 7+8+9. La contraseña y la recuperación NO se tocan.
+    # PCR 8: GRUB mide ahí sus órdenes y la línea del kernel. Sin él, editar el menú
+    # (init=/bin/sh) arranca con el disco abierto por el TPM (medido el 21-nov).
     log ""
-    log "Sellando en el TPM (PCR 7+9${pin_flag:+, con PIN}). Te pedirá tu contraseña actual."
+    log "Sellando en el TPM (PCR 7+8+9${pin_flag:+, con PIN}). Te pedirá tu contraseña actual."
     # shellcheck disable=SC2086
-    systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7+9 $pin_flag "$DEV" || salir 1 "no se pudo sellar en el TPM. La contraseña y la clave de recuperación siguen valiendo."
+    systemd-cryptenroll --tpm2-device=auto --tpm2-pcrs=7+8+9 $pin_flag "$DEV" || salir 1 "no se pudo sellar en el TPM. La contraseña y la clave de recuperación siguen valiendo."
 
     # 3) Verificación antes de reiniciar.
     tiene_token_tpm || salir 1 "no aparece el token systemd-tpm2 en la cabecera LUKS."
@@ -407,7 +409,7 @@ fase2() {
 
 # --- --reseal ------------------------------------------------------------------------------
 cmd_reseal() {
-    log "== Resellado (PCR 7+9) con el estado de ESTE arranque =="
+    log "== Resellado (PCR 7+8+9) con el estado de ESTE arranque =="
     tiene_token_tpm || salir 1 "no hay token TPM que resellar: ejecuta primero sudo nimbo-tpm-setup."
     KVER=$(uname -r)
     img="/boot/initrd.img-$KVER"
@@ -422,7 +424,7 @@ cmd_reseal() {
     # Enrolar y borrar el token anterior en la misma orden: el viejo solo se borra si el
     # nuevo se creó bien.
     # shellcheck disable=SC2086
-    systemd-cryptenroll --wipe-slot=tpm2 --tpm2-device=auto --tpm2-pcrs=7+9 $pin_flag "$DEV" \
+    systemd-cryptenroll --wipe-slot=tpm2 --tpm2-device=auto --tpm2-pcrs=7+8+9 $pin_flag "$DEV" \
         || salir 1 "no se pudo resellar. El token anterior y la contraseña siguen como estaban."
     if [ "${CON_PIN:-0}" != 1 ]; then
         cryptsetup open --test-passphrase --token-only "$DEV" 2>/dev/null \
