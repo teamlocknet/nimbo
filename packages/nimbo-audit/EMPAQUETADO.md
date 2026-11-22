@@ -39,8 +39,8 @@ un bug de Debian. No se inventa un número ni se oculta el aviso.
 
 Construir dos veces sin modificar las entradas; conservar ambos directorios:
 
-    sha256sum /ruta/build-A/nimbo-audit_0.1.0-1_all.deb /ruta/build-B/nimbo-audit_0.1.0-1_all.deb
-    cmp /ruta/build-A/nimbo-audit_0.1.0-1_all.deb /ruta/build-B/nimbo-audit_0.1.0-1_all.deb
+    sha256sum /ruta/build-A/nimbo-audit_0.2.0-1_all.deb /ruta/build-B/nimbo-audit_0.2.0-1_all.deb
+    cmp /ruta/build-A/nimbo-audit_0.2.0-1_all.deb /ruta/build-B/nimbo-audit_0.2.0-1_all.deb
 
 cmp devuelve 0 si son idénticos. No regenerar el changelog entre builds.
 Logs y binarios quedan fuera del repositorio. Revisar los logs antes de compartirlos.
