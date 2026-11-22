@@ -6,6 +6,7 @@ al pie de cada página). Lo que todavía no se ha medido sobre la ISO integrada 
 
 | Página | Requisitos |
 |---|---|
+| [**Matriz de trazabilidad**](matriz-trazabilidad.md) | Los 22 requisitos, con su estado y su evidencia |
 | [Navegación segura](navegacion-segura.md) | RF-NAV-01, RF-NAV-02 |
 | [Endurecimiento del sistema (3B.2)](endurecimiento-3b2.md) | RF-CORE-04 |
 | [Actualización sin conexión](actualizacion-sin-conexion.md) | RF-UPD-01 |
