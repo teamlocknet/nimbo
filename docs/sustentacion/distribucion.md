@@ -30,6 +30,8 @@
 | Los cinco `.deb` publicados | Coinciden con el SHA-256 de la procedencia |
 | Vigencia del APT | `Valid-Until` 20-dic-2026 |
 | Ensayo del candidato (16-nov) | Instalación en VM bookworm limpia; dos compilaciones con los mismos `.deb` |
+| Instalación desde Pages (22-nov) | Cinco versiones exactas en Debian 12 limpio, **37/37** comprobaciones |
+| Rechazos con APT real (22-nov) | `InRelease`, `.deb` y clave alterados: **código 100**. Control válido: 0. Repositorios locales con claves efímeras |
 
 Huella primaria: `0C50 B739 1A9B 8CFF 8A36  A627 D3B9 111F EC57 48C6`.
 
@@ -44,9 +46,10 @@ Huella primaria: `0C50 B739 1A9B 8CFF 8A36  A627 D3B9 111F EC57 48C6`.
 
 ## Lo que falta
 
-**Instalar desde el APT `v1.0.0` en una VM limpia**, con las pruebas negativas. La publicación ya
-está verificada desde fuera; RF-DIST-01 se cierra con esa validación (Alejandro).
+Nada para cerrar RF-DIST-01: la validación en VM limpia se hizo el 22-nov (#119). El APT caduca el
+20-dic-2026; si se usa después, hay que renovarlo con la aprobación de Juan José.
 
-*Evidencia:* `apt-repo/evidencia/2026-11-16-bookworm/RESULTADOS.md` y
+*Evidencia:* `apt-repo/evidencia/2026-11-22-v1.0.0/RESULTADOS.md`,
+`apt-repo/evidencia/2026-11-16-bookworm/RESULTADOS.md` y
 [release `v1.0.0`](https://github.com/teamlocknet/nimbo/releases/tag/v1.0.0) · *Diseño:* ADR-015 ·
 *Procedimiento:* `release/README.md` y `apt-repo/README.md`

@@ -1,12 +1,12 @@
 # Matriz de trazabilidad — requisitos de nimbo `v1.0.0`
 
-**Corte:** 21-nov-2026. **Fuente de los criterios:** documento "Requisitos de sistema" (15 RF y
+**Corte:** 22-nov-2026. **Fuente de los criterios:** documento "Requisitos de sistema" (15 RF y
 7 RNF). **Versión:** `v1.0.0`, commit `94f9b8f`, ISO `63eeb31a…0f10`.
 
 | Estado | Significa | Requisitos |
 |---|---|---|
-| ✅ | Criterio de aceptación cumplido y con evidencia versionada | **19** |
-| 🟡 | Parte cumplida; se dice exactamente qué falta | **3** |
+| ✅ | Criterio de aceptación cumplido y con evidencia versionada | **20** |
+| 🟡 | Parte cumplida; se dice exactamente qué falta | **2** |
 | 🔴 | Sin cumplir | **0** |
 
 La columna **"Medido sobre"** importa: cada commit cambia el SHA de la ISO, así que no todo se midió
@@ -30,7 +30,7 @@ sobre la ISO exacta del release. Cuando es otra, se dice cuál.
 | **RF-AUD-03** `report` | Alta | Detecta el 100 % de las alteraciones de las pruebas | ✅ | OK, MODIFICADO y AUSENTE probados | CI + ISO instalada | [Manual](../manuales/auditoria-con-evidencia.md) |
 | **RF-AUD-04** `verify` | Media | Un caso alterado falla y uno íntegro pasa | ✅ | Pasa. **Límite:** el índice no va firmado | CI + ISO instalada | [Validación](../manuales/validacion-verify.md) |
 | **RF-UPD-01** Actualización | Alta | Rechaza el 100 % de las firmas inválidas | ✅ | 14 de 14 lotes inválidos rechazados, sin red | `7d0da21c` (#89) | [16-nov](../../repro/evidencia/2026-11-16-rnf03-sin-red.md) |
-| **RF-DIST-01** Distribución | Media | La 1.0 se descarga, se verifica y se instala desde el repositorio | 🟡 | Release y APT `v1.0.0` publicados y firmados. **Falta instalar desde el APT en una VM limpia** | Publicado | [Release](https://github.com/teamlocknet/nimbo/releases/tag/v1.0.0), [APT](https://teamlocknet.github.io/nimbo/apt/) |
+| **RF-DIST-01** Distribución | Media | La 1.0 se descarga, se verifica y se instala desde el repositorio | ✅ | Cinco paquetes instalados desde Pages en Debian 12 limpio, 37/37 comprobaciones. `InRelease`, `.deb` y clave alterados: rechazados con código 100 | APT `v1.0.0` publicado, VM Debian 12 | [22-nov](../../apt-repo/evidencia/2026-11-22-v1.0.0/RESULTADOS.md), [Release](https://github.com/teamlocknet/nimbo/releases/tag/v1.0.0), [APT](https://teamlocknet.github.io/nimbo/apt/) |
 
 ## Requisitos no funcionales
 
@@ -44,12 +44,11 @@ sobre la ISO exacta del release. Cuando es otra, se dice cuál.
 | **RNF-06** Usabilidad | Media | El Design Partner instala y usa solo con la guía, en una jornada | 🟡 | Cada módulo tiene guía (CA-2). **Falta la validación de una persona externa** (CA-1) | — | [Guías](../manuales/guias-de-uso.md) |
 | **RNF-SEC-07** Reproducibilidad | Alta | Mismo SHA-256 en dos compilaciones independientes | ✅ | MATCH ×2 de la ISO del release | `v1.0.0` | [Run 44654170829](https://github.com/teamlocknet/nimbo/actions/runs/44654170829), [20-nov](../../repro/evidencia/2026-11-20-qemu-instalado-94f9b8f.md) |
 
-## Qué falta para cerrar los tres 🟡
+## Qué falta para cerrar los dos 🟡
 
 | Requisito | Falta | Quién |
 |---|---|---|
 | RF-CORE-06 | Prueba en hardware real. Decidir si el script entra en una versión posterior de la ISO | Juan José |
-| RF-DIST-01 | Validar el corte `v1.0.0` del APT en una VM limpia | Alejandro |
 | RNF-06 | Validación con una persona externa | Juan José |
 
 ## Límites declarados
@@ -59,3 +58,6 @@ sobre la ISO exacta del release. Cuando es otra, se dice cuál.
 - RF-UPD-01: un lote viejo pero bien firmado sigue siendo válido; `apt` se niega a bajar de versión,
   pero falta repetir esa prueba con un lote firmado y sin red.
 - RF-NAV-02: evita fugas de red; no protege frente a la huella del navegador.
+- RF-DIST-01: la VM es Debian 12 limpio, no la ISO de nimbo. Los rechazos se probaron con APT real
+  sobre repositorios locales con claves efímeras. El APT caduca el 20-dic-2026 y hay que renovarlo
+  si se usa después.
