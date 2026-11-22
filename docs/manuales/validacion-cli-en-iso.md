@@ -113,3 +113,17 @@ Pendiente para el commit publicado: MATCH en CI y pruebas QEMU live/instalado,
 hermetismo y RAM con el equipo revisor. La prueba de ayuda no sustituye un caso
 funcional completo de init/capture/verify en la sesion live o instalada.
 Esta medicion corresponde a cambios locales; el epoch del commit final sera otro.
+
+## Cierre sobre v1.0.0 (21-nov)
+
+Los pendientes de arriba quedan cerrados sobre la ISO del release (commit 94f9b8f,
+63eeb31a...0f10), que lleva nimbo-audit 0.1.0-1:
+
+- MATCH x2 entre ejecutores: repro-verify, run 44654170829.
+- QEMU instalado con Secure Boot y LUKS, 0 fallos, CLI con verify y manual:
+  repro/evidencia/2026-11-20-qemu-instalado-94f9b8f.md.
+- Live: 376 MiB, 0 sospechosos y 0 listeners:
+  repro/evidencia/2026-11-21-live-y-licencias-v1.0.0.md.
+- Caso funcional init/capture/report/verify con alteracion detectada, en la ISO
+  instalada del 16-nov: docs/manuales/auditoria-con-evidencia.md. No se repitio
+  sobre la ISO exacta de v1.0.0; el paquete nimbo-audit es la misma version.
