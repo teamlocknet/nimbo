@@ -1,0 +1,235 @@
+{
+  "fecha": "2026-11-22",
+  "total": 37,
+  "correctas": 37,
+  "comprobaciones": [
+    {
+      "comprobacion": "workflow terminado",
+      "observado": "success",
+      "esperado": "success",
+      "ok": true
+    },
+    {
+      "comprobacion": "dos builds iguales",
+      "observado": true,
+      "esperado": true,
+      "ok": true
+    },
+    {
+      "comprobacion": "cliente Bookworm",
+      "observado": true,
+      "esperado": true,
+      "ok": true
+    },
+    {
+      "comprobacion": "sin fuente nimbo previa",
+      "observado": false,
+      "esperado": false,
+      "ok": true
+    },
+    {
+      "comprobacion": "sin clave nimbo en llaveros APT previos",
+      "observado": false,
+      "esperado": false,
+      "ok": true
+    },
+    {
+      "comprobacion": "ausente antes: nimbo-audit",
+      "observado": "",
+      "esperado": "",
+      "ok": true
+    },
+    {
+      "comprobacion": "ausente antes: nimbo-nav",
+      "observado": "",
+      "esperado": "",
+      "ok": true
+    },
+    {
+      "comprobacion": "ausente antes: nimbo-net",
+      "observado": "",
+      "esperado": "",
+      "ok": true
+    },
+    {
+      "comprobacion": "ausente antes: nimbo-red",
+      "observado": "",
+      "esperado": "",
+      "ok": true
+    },
+    {
+      "comprobacion": "ausente antes: nimbo-update-offline",
+      "observado": "",
+      "esperado": "",
+      "ok": true
+    },
+    {
+      "comprobacion": "procedencia commit",
+      "observado": "94f9b8fec60938baccae984f891cc3ac6960e109",
+      "esperado": "94f9b8fec60938baccae984f891cc3ac6960e109",
+      "ok": true
+    },
+    {
+      "comprobacion": "procedencia final",
+      "observado": false,
+      "esperado": false,
+      "ok": true
+    },
+    {
+      "comprobacion": "tag final",
+      "observado": "v1.0.0",
+      "esperado": "v1.0.0",
+      "ok": true
+    },
+    {
+      "comprobacion": "huella primaria",
+      "observado": "0C50B7391A9B8CFF8A36A627D3B9111FEC5748C6",
+      "esperado": "0C50B7391A9B8CFF8A36A627D3B9111FEC5748C6",
+      "ok": true
+    },
+    {
+      "comprobacion": "exit: firma-inrelease",
+      "observado": 0,
+      "esperado": 0,
+      "ok": true
+    },
+    {
+      "comprobacion": "exit: firma-separada",
+      "observado": 0,
+      "esperado": 0,
+      "ok": true
+    },
+    {
+      "comprobacion": "exit: apt-update",
+      "observado": 0,
+      "esperado": 0,
+      "ok": true
+    },
+    {
+      "comprobacion": "exit: apt-download",
+      "observado": 0,
+      "esperado": 0,
+      "ok": true
+    },
+    {
+      "comprobacion": "exit: apt-install",
+      "observado": 0,
+      "esperado": 0,
+      "ok": true
+    },
+    {
+      "comprobacion": "exit: dpkg-instalados",
+      "observado": 0,
+      "esperado": 0,
+      "ok": true
+    },
+    {
+      "comprobacion": "exit: test-apt-transport",
+      "observado": 0,
+      "esperado": 0,
+      "ok": true
+    },
+    {
+      "comprobacion": "version instalada: nimbo-audit",
+      "observado": "0.1.0-1",
+      "esperado": "0.1.0-1",
+      "ok": true
+    },
+    {
+      "comprobacion": "hash descargado APT: nimbo-audit",
+      "observado": "a54cea66c33eaec8df82a5bddc26c403ae4cf3fbfa1dc0378e0f1429834cf131",
+      "esperado": "a54cea66c33eaec8df82a5bddc26c403ae4cf3fbfa1dc0378e0f1429834cf131",
+      "ok": true
+    },
+    {
+      "comprobacion": "version instalada: nimbo-nav",
+      "observado": "0.1.5-1",
+      "esperado": "0.1.5-1",
+      "ok": true
+    },
+    {
+      "comprobacion": "hash descargado APT: nimbo-nav",
+      "observado": "ec8e56b9f7d2cad1563ac9833c42e329c386bdcb94fa323bccaf839040132873",
+      "esperado": "ec8e56b9f7d2cad1563ac9833c42e329c386bdcb94fa323bccaf839040132873",
+      "ok": true
+    },
+    {
+      "comprobacion": "version instalada: nimbo-net",
+      "observado": "0.1.0-1",
+      "esperado": "0.1.0-1",
+      "ok": true
+    },
+    {
+      "comprobacion": "hash descargado APT: nimbo-net",
+      "observado": "bdf09ed9439565cf3366652f6fbe2385fe2dc64fd29dc2965d5ec1cf3f764ffd",
+      "esperado": "bdf09ed9439565cf3366652f6fbe2385fe2dc64fd29dc2965d5ec1cf3f764ffd",
+      "ok": true
+    },
+    {
+      "comprobacion": "version instalada: nimbo-red",
+      "observado": "0.1.1-1",
+      "esperado": "0.1.1-1",
+      "ok": true
+    },
+    {
+      "comprobacion": "hash descargado APT: nimbo-red",
+      "observado": "b9caa6a91fa3e3ba889c2d7ffdd1e499077857716e8919ca5fa84a7d46f359c0",
+      "esperado": "b9caa6a91fa3e3ba889c2d7ffdd1e499077857716e8919ca5fa84a7d46f359c0",
+      "ok": true
+    },
+    {
+      "comprobacion": "version instalada: nimbo-update-offline",
+      "observado": "0.1.2-1",
+      "esperado": "0.1.2-1",
+      "ok": true
+    },
+    {
+      "comprobacion": "hash descargado APT: nimbo-update-offline",
+      "observado": "6a0b36244bb647a1351c2f8dbe050cc4104d6ba7094a2926c56d214517eaf520",
+      "esperado": "6a0b36244bb647a1351c2f8dbe050cc4104d6ba7094a2926c56d214517eaf520",
+      "ok": true
+    },
+    {
+      "comprobacion": "rechazo: test_real_apt_rejects_deb_tampering",
+      "observado": 100,
+      "esperado": 100,
+      "ok": true
+    },
+    {
+      "comprobacion": "rechazo: test_real_apt_rejects_metadata_tampering",
+      "observado": 100,
+      "esperado": 100,
+      "ok": true
+    },
+    {
+      "comprobacion": "rechazo: test_real_apt_rejects_wrong_identity",
+      "observado": 100,
+      "esperado": 100,
+      "ok": true
+    },
+    {
+      "comprobacion": "control positivo APT",
+      "observado": [
+        0,
+        0
+      ],
+      "esperado": [
+        0,
+        0
+      ],
+      "ok": true
+    },
+    {
+      "comprobacion": "checkout del tag sin cambios",
+      "observado": true,
+      "esperado": true,
+      "ok": true
+    },
+    {
+      "comprobacion": "certificado independiente coincide con main al validar",
+      "observado": "3b404242b0cf7888b0a25950dda8c501ec66da0db822f0d79a2eaefa39b416bf",
+      "esperado": "3b404242b0cf7888b0a25950dda8c501ec66da0db822f0d79a2eaefa39b416bf",
+      "ok": true
+    }
+  ]
+}

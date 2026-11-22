@@ -1,0 +1,17 @@
+{
+  "argv": [
+    "gpgv",
+    "--homedir",
+    "/tmp/nimbo-verifica-final-4l_b_3bd",
+    "--keyring",
+    "/tmp/nimbo-verifica-final-4l_b_3bd/trusted.gpg",
+    "--status-fd",
+    "1",
+    "/var/tmp/nimbo-apt-final-evidencia/pages/apt/dists/bookworm/Release.gpg",
+    "/var/tmp/nimbo-apt-final-evidencia/pages/apt/dists/bookworm/Release"
+  ],
+  "cwd": "/var/tmp/nimbo-v1.0.0",
+  "exit_code": 0,
+  "fin_utc": "2026-11-22T17:57:58.805735+00:00",
+  "inicio_utc": "2026-11-22T17:57:58.693631+00:00"
+}

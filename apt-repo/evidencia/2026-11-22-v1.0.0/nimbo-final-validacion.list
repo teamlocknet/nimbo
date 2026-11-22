@@ -1,0 +1,1 @@
+deb [arch=amd64 signed-by=/usr/share/keyrings/nimbo-release.asc] https://teamlocknet.github.io/nimbo/apt/ bookworm main

@@ -1,0 +1,242 @@
+{
+  "conclusion": "success",
+  "jobs": [
+    {
+      "completedAt": "2026-11-20T21:55:24Z",
+      "conclusion": "success",
+      "databaseId": 136593407465,
+      "name": "tests",
+      "startedAt": "2026-11-20T21:54:56Z",
+      "status": "completed",
+      "steps": [
+        {
+          "conclusion": "success",
+          "name": "Set up job",
+          "number": 1,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "number": 2,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Release y APT en Bookworm anclado, sin secretos",
+          "number": 3,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "number": 6,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Complete job",
+          "number": 7,
+          "status": "completed"
+        }
+      ],
+      "url": "https://github.com/teamlocknet/nimbo/actions/runs/44824465730/job/136593407465"
+    },
+    {
+      "completedAt": "2026-11-20T21:57:53Z",
+      "conclusion": "success",
+      "databaseId": 136593667799,
+      "name": "preparar",
+      "startedAt": "2026-11-20T21:55:28Z",
+      "status": "completed",
+      "steps": [
+        {
+          "conclusion": "success",
+          "name": "Set up job",
+          "number": 1,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "number": 2,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Fijar commit; v1.0.0 nunca significa rc1",
+          "number": 3,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Dos builds independientes de los cinco modulos",
+          "number": 4,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Generar con aptly, verificar sin firma y fijar digests",
+          "number": 5,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Run actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9",
+          "number": 6,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "number": 12,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Complete job",
+          "number": 13,
+          "status": "completed"
+        }
+      ],
+      "url": "https://github.com/teamlocknet/nimbo/actions/runs/44824465730/job/136593667799"
+    },
+    {
+      "completedAt": "2026-11-21T22:41:42Z",
+      "conclusion": "success",
+      "databaseId": 136594845728,
+      "name": "firmar",
+      "startedAt": "2026-11-21T22:41:25Z",
+      "status": "completed",
+      "steps": [
+        {
+          "conclusion": "success",
+          "name": "Set up job",
+          "number": 1,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "number": 2,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Recibir exactamente el artifact verificado; no reconstruir",
+          "number": 3,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Firmar solo InRelease y Release.gpg con subclave vigente",
+          "number": 4,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Fijar artifact publico firmado",
+          "number": 5,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Run actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9",
+          "number": 6,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "number": 12,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Complete job",
+          "number": 13,
+          "status": "completed"
+        }
+      ],
+      "url": "https://github.com/teamlocknet/nimbo/actions/runs/44824465730/job/136594845728"
+    },
+    {
+      "completedAt": "2026-11-21T22:42:00Z",
+      "conclusion": "success",
+      "databaseId": 137010473632,
+      "name": "preparar-pages",
+      "startedAt": "2026-11-21T22:41:45Z",
+      "status": "completed",
+      "steps": [
+        {
+          "conclusion": "success",
+          "name": "Set up job",
+          "number": 1,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "number": 2,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Descargar, cotejar digests y verificar firma antes de Pages",
+          "number": 3,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Sitio completo; cada despliegue sustituye TODO Pages",
+          "number": 4,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Post Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "number": 8,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Complete job",
+          "number": 9,
+          "status": "completed"
+        }
+      ],
+      "url": "https://github.com/teamlocknet/nimbo/actions/runs/44824465730/job/137010473632"
+    },
+    {
+      "completedAt": "2026-11-21T22:42:21Z",
+      "conclusion": "success",
+      "databaseId": 137010551842,
+      "name": "desplegar",
+      "startedAt": "2026-11-21T22:42:05Z",
+      "status": "completed",
+      "steps": [
+        {
+          "conclusion": "success",
+          "name": "Set up job",
+          "number": 1,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Run actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e",
+          "number": 2,
+          "status": "completed"
+        },
+        {
+          "conclusion": "success",
+          "name": "Complete job",
+          "number": 3,
+          "status": "completed"
+        }
+      ],
+      "url": "https://github.com/teamlocknet/nimbo/actions/runs/44824465730/job/137010551842"
+    }
+  ],
+  "status": "completed",
+  "url": "https://github.com/teamlocknet/nimbo/actions/runs/44824465730"
+}

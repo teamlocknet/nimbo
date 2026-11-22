@@ -1,0 +1,182 @@
+[
+  {
+    "archivo": "pages/apt/dists/bookworm/Release",
+    "etag": "\"6b021e46-e5d\"",
+    "fecha_utc": "2026-11-22T17:57:55.583634+00:00",
+    "sha256": "f7f4f774fc8860fcf9ad79a2e6f173023bf0d98cfb32c648d6835e2f0b70fa46",
+    "size": 3677,
+    "url": "https://teamlocknet.github.io/nimbo/apt/dists/bookworm/Release",
+    "url_final": "https://teamlocknet.github.io/nimbo/apt/dists/bookworm/Release"
+  },
+  {
+    "archivo": "pages/apt/dists/bookworm/InRelease",
+    "etag": "\"6b021e46-f72\"",
+    "fecha_utc": "2026-11-22T17:57:56.132354+00:00",
+    "sha256": "d96e4f6cd5fb3d3b1b8821a91a2a25769893f62e0faf5849327773e383c2d200",
+    "size": 3954,
+    "url": "https://teamlocknet.github.io/nimbo/apt/dists/bookworm/InRelease",
+    "url_final": "https://teamlocknet.github.io/nimbo/apt/dists/bookworm/InRelease"
+  },
+  {
+    "archivo": "pages/apt/dists/bookworm/Release.gpg",
+    "etag": "\"6b021e46-e4\"",
+    "fecha_utc": "2026-11-22T17:57:56.658920+00:00",
+    "sha256": "a5b9c51ac20103cddaccf4272bb56d25dd190fb3ab93b84313151246d39a2ecb",
+    "size": 228,
+    "url": "https://teamlocknet.github.io/nimbo/apt/dists/bookworm/Release.gpg",
+    "url_final": "https://teamlocknet.github.io/nimbo/apt/dists/bookworm/Release.gpg"
+  },
+  {
+    "archivo": "pages/apt/release-key.asc",
+    "etag": "\"6b021e46-33f\"",
+    "fecha_utc": "2026-11-22T17:57:57.180722+00:00",
+    "sha256": "3b404242b0cf7888b0a25950dda8c501ec66da0db822f0d79a2eaefa39b416bf",
+    "size": 831,
+    "url": "https://teamlocknet.github.io/nimbo/apt/release-key.asc",
+    "url_final": "https://teamlocknet.github.io/nimbo/apt/release-key.asc"
+  },
+  {
+    "archivo": "pages/index.html",
+    "etag": "\"6b021e46-105\"",
+    "fecha_utc": "2026-11-22T17:57:57.691778+00:00",
+    "sha256": "08dac41bb455d14cc526d754f45c2773d17569b587fc6228c78a777a2cc5aa60",
+    "size": 261,
+    "url": "https://teamlocknet.github.io/nimbo/index.html",
+    "url_final": "https://teamlocknet.github.io/nimbo/index.html"
+  },
+  {
+    "archivo": "clave-canal-independiente.asc",
+    "etag": "\"d77294c1b2895273652b088d16b42299ae83a7dc201b5df3756bcf9e5dd3f5f4\"",
+    "fecha_utc": "2026-11-22T17:57:58.254241+00:00",
+    "sha256": "3b404242b0cf7888b0a25950dda8c501ec66da0db822f0d79a2eaefa39b416bf",
+    "size": 831,
+    "url": "https://raw.githubusercontent.com/teamlocknet/nimbo/23cd07974fad0037904ab71cdb75323a79957559/release/nimbo-release-publica.asc",
+    "url_final": "https://raw.githubusercontent.com/teamlocknet/nimbo/23cd07974fad0037904ab71cdb75323a79957559/release/nimbo-release-publica.asc"
+  },
+  {
+    "archivo": "pages/apt/dists/bookworm/main/binary-all/Packages",
+    "etag": "\"6b021e46-129d\"",
+    "fecha_utc": "2026-11-22T17:57:59.446351+00:00",
+    "sha256": "f18386759f65e1983f8ff357456fe7e3825ef36e7c3a7f514b0618959ce91474",
+    "size": 4765,
+    "url": "https://teamlocknet.github.io/nimbo/apt/dists/bookworm/main/binary-all/Packages",
+    "url_final": "https://teamlocknet.github.io/nimbo/apt/dists/bookworm/main/binary-all/Packages"
+  },
+  {
+    "archivo": "pages/apt/dists/bookworm/main/binary-all/Packages.bz2",
+    "etag": "\"6b021e46-907\"",
+    "fecha_utc": "2026-11-22T17:57:59.974198+00:00",
+    "sha256": "91501cc3e2adee3bcbe03efa8607c6caf41c665f156817769df6061b0f053fb5",
+    "size": 2311,
+    "url": "https://teamlocknet.github.io/nimbo/apt/dists/bookworm/main/binary-all/Packages.bz2",
+    "url_final": "https://teamlocknet.github.io/nimbo/apt/dists/bookworm/main/binary-all/Packages.bz2"
+  },
+  {
+    "archivo": "pages/apt/dists/bookworm/main/binary-all/Packages.gz",
+    "etag": "\"6b021e46-8a6\"",
+    "fecha_utc": "2026-11-22T17:58:00.509545+00:00",
+    "sha256": "e163436ba5c7d99bf5123361e70ddd52ac3ec69eb970e70027f4545f080e43a4",
+    "size": 2214,
+    "url": "https://teamlocknet.github.io/nimbo/apt/dists/bookworm/main/binary-all/Packages.gz",
+    "url_final": "https://teamlocknet.github.io/nimbo/apt/dists/bookworm/main/binary-all/Packages.gz"
+  },
+  {
+    "archivo": "pages/apt/dists/bookworm/main/binary-all/Release",
+    "etag": "\"6b021e46-5f\"",
+    "fecha_utc": "2026-11-22T17:58:01.073707+00:00",
+    "sha256": "6b9f50ab286d1dee37eb33bcff8875e12d70f9a1df8909e996c664332598d61e",
+    "size": 95,
+    "url": "https://teamlocknet.github.io/nimbo/apt/dists/bookworm/main/binary-all/Release",
+    "url_final": "https://teamlocknet.github.io/nimbo/apt/dists/bookworm/main/binary-all/Release"
+  },
+  {
+    "archivo": "pages/apt/dists/bookworm/main/binary-amd64/Packages",
+    "etag": "\"6b021e46-129d\"",
+    "fecha_utc": "2026-11-22T17:58:01.587853+00:00",
+    "sha256": "f18386759f65e1983f8ff357456fe7e3825ef36e7c3a7f514b0618959ce91474",
+    "size": 4765,
+    "url": "https://teamlocknet.github.io/nimbo/apt/dists/bookworm/main/binary-amd64/Packages",
+    "url_final": "https://teamlocknet.github.io/nimbo/apt/dists/bookworm/main/binary-amd64/Packages"
+  },
+  {
+    "archivo": "pages/apt/dists/bookworm/main/binary-amd64/Packages.bz2",
+    "etag": "\"6b021e46-907\"",
+    "fecha_utc": "2026-11-22T17:58:02.124147+00:00",
+    "sha256": "91501cc3e2adee3bcbe03efa8607c6caf41c665f156817769df6061b0f053fb5",
+    "size": 2311,
+    "url": "https://teamlocknet.github.io/nimbo/apt/dists/bookworm/main/binary-amd64/Packages.bz2",
+    "url_final": "https://teamlocknet.github.io/nimbo/apt/dists/bookworm/main/binary-amd64/Packages.bz2"
+  },
+  {
+    "archivo": "pages/apt/dists/bookworm/main/binary-amd64/Packages.gz",
+    "etag": "\"6b021e46-8a6\"",
+    "fecha_utc": "2026-11-22T17:58:02.625869+00:00",
+    "sha256": "e163436ba5c7d99bf5123361e70ddd52ac3ec69eb970e70027f4545f080e43a4",
+    "size": 2214,
+    "url": "https://teamlocknet.github.io/nimbo/apt/dists/bookworm/main/binary-amd64/Packages.gz",
+    "url_final": "https://teamlocknet.github.io/nimbo/apt/dists/bookworm/main/binary-amd64/Packages.gz"
+  },
+  {
+    "archivo": "pages/apt/dists/bookworm/main/binary-amd64/Release",
+    "etag": "\"6b021e46-61\"",
+    "fecha_utc": "2026-11-22T17:58:03.199656+00:00",
+    "sha256": "7042bcbeb63cdfba3b0c294c2a79b4e52a4088c0a015f923b7e4f8949566187c",
+    "size": 97,
+    "url": "https://teamlocknet.github.io/nimbo/apt/dists/bookworm/main/binary-amd64/Release",
+    "url_final": "https://teamlocknet.github.io/nimbo/apt/dists/bookworm/main/binary-amd64/Release"
+  },
+  {
+    "archivo": "pages/apt/dists/bookworm/PROCEDENCIA.json",
+    "etag": "\"6b021e46-464\"",
+    "fecha_utc": "2026-11-22T17:58:03.700397+00:00",
+    "sha256": "91d0e97d36d4091781aedf3228da190ee7dc0cd760951b37f653b1605d9d7fbe",
+    "size": 1124,
+    "url": "https://teamlocknet.github.io/nimbo/apt/dists/bookworm/PROCEDENCIA.json",
+    "url_final": "https://teamlocknet.github.io/nimbo/apt/dists/bookworm/PROCEDENCIA.json"
+  },
+  {
+    "archivo": "pages/apt/pool/main/n/nimbo-audit/nimbo-audit_0.1.0-1_all.deb",
+    "etag": "\"6b021e46-4f18\"",
+    "fecha_utc": "2026-11-22T17:58:04.319921+00:00",
+    "sha256": "a54cea66c33eaec8df82a5bddc26c403ae4cf3fbfa1dc0378e0f1429834cf131",
+    "size": 20248,
+    "url": "https://teamlocknet.github.io/nimbo/apt/pool/main/n/nimbo-audit/nimbo-audit_0.1.0-1_all.deb",
+    "url_final": "https://teamlocknet.github.io/nimbo/apt/pool/main/n/nimbo-audit/nimbo-audit_0.1.0-1_all.deb"
+  },
+  {
+    "archivo": "pages/apt/pool/main/n/nimbo-nav/nimbo-nav_0.1.5-1_all.deb",
+    "etag": "\"6b021e46-454c\"",
+    "fecha_utc": "2026-11-22T17:58:04.922039+00:00",
+    "sha256": "ec8e56b9f7d2cad1563ac9833c42e329c386bdcb94fa323bccaf839040132873",
+    "size": 17740,
+    "url": "https://teamlocknet.github.io/nimbo/apt/pool/main/n/nimbo-nav/nimbo-nav_0.1.5-1_all.deb",
+    "url_final": "https://teamlocknet.github.io/nimbo/apt/pool/main/n/nimbo-nav/nimbo-nav_0.1.5-1_all.deb"
+  },
+  {
+    "archivo": "pages/apt/pool/main/n/nimbo-net/nimbo-net_0.1.0-1_all.deb",
+    "etag": "\"6b021e46-2c50\"",
+    "fecha_utc": "2026-11-22T17:58:05.512274+00:00",
+    "sha256": "bdf09ed9439565cf3366652f6fbe2385fe2dc64fd29dc2965d5ec1cf3f764ffd",
+    "size": 11344,
+    "url": "https://teamlocknet.github.io/nimbo/apt/pool/main/n/nimbo-net/nimbo-net_0.1.0-1_all.deb",
+    "url_final": "https://teamlocknet.github.io/nimbo/apt/pool/main/n/nimbo-net/nimbo-net_0.1.0-1_all.deb"
+  },
+  {
+    "archivo": "pages/apt/pool/main/n/nimbo-red/nimbo-red_0.1.1-1_all.deb",
+    "etag": "\"6b021e46-1a5c\"",
+    "fecha_utc": "2026-11-22T17:58:06.096415+00:00",
+    "sha256": "b9caa6a91fa3e3ba889c2d7ffdd1e499077857716e8919ca5fa84a7d46f359c0",
+    "size": 6748,
+    "url": "https://teamlocknet.github.io/nimbo/apt/pool/main/n/nimbo-red/nimbo-red_0.1.1-1_all.deb",
+    "url_final": "https://teamlocknet.github.io/nimbo/apt/pool/main/n/nimbo-red/nimbo-red_0.1.1-1_all.deb"
+  },
+  {
+    "archivo": "pages/apt/pool/main/n/nimbo-update-offline/nimbo-update-offline_0.1.2-1_all.deb",
+    "etag": "\"6b021e46-27ac\"",
+    "fecha_utc": "2026-11-22T17:58:06.912952+00:00",
+    "sha256": "6a0b36244bb647a1351c2f8dbe050cc4104d6ba7094a2926c56d214517eaf520",
+    "size": 10156,
+    "url": "https://teamlocknet.github.io/nimbo/apt/pool/main/n/nimbo-update-offline/nimbo-update-offline_0.1.2-1_all.deb",
+    "url_final": "https://teamlocknet.github.io/nimbo/apt/pool/main/n/nimbo-update-offline/nimbo-update-offline_0.1.2-1_all.deb"
+  }
+]

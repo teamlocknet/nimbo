@@ -1,0 +1,6 @@
+Get:1 https://teamlocknet.github.io/nimbo/apt bookworm/main amd64 nimbo-audit all 0.1.0-1 [20.2 kB]
+Get:2 https://teamlocknet.github.io/nimbo/apt bookworm/main amd64 nimbo-nav all 0.1.5-1 [17.7 kB]
+Get:3 https://teamlocknet.github.io/nimbo/apt bookworm/main amd64 nimbo-net all 0.1.0-1 [11.3 kB]
+Get:4 https://teamlocknet.github.io/nimbo/apt bookworm/main amd64 nimbo-red all 0.1.1-1 [6748 B]
+Get:5 https://teamlocknet.github.io/nimbo/apt bookworm/main amd64 nimbo-update-offline all 0.1.2-1 [10.2 kB]
+Fetched 66.2 kB in 0s (257 kB/s)

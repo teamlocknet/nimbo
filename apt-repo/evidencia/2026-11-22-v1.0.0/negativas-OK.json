@@ -1,0 +1,7 @@
+{
+  "checkout_sin_cambios": true,
+  "exit_code": 0,
+  "rechazos_apt": 3,
+  "subprocesos_apt": 6,
+  "tests": 4
+}
