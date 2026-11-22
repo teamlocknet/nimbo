@@ -41,5 +41,6 @@ bookworm anclado (`debian@sha256:88200866…`). Lista completa:
 - El criterio de licencia es el componente de Debian. No se auditó a mano el fichero `copyright` de
   cada paquete.
 - El costo cero de la infraestructura (HT-04 CA-2) no se puede leer desde el repo: el repositorio
-  es público y usa GitHub Actions y Pages, pero la ausencia de cargos la confirma Juan José.
+  es público y usa GitHub Actions y Pages. **Juan José confirmó el 21-nov que no ha tenido ningún
+  costo.** Es una declaración del responsable, no una medición.
 - QEMU, no hardware real.
