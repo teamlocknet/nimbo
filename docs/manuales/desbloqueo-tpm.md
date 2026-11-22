@@ -80,6 +80,9 @@ sellar hasta saber qué cambió, porque el sellado confiaría en el arranque act
 Si actualizaste tú, teclea la contraseña o la clave de recuperación. Ya dentro, con la USB
 montada, ejecuta `sudo sh /mnt/nimbo-tpm-setup --reseal`. Debe decir `RESELLADO COMPLETO`.
 
+La clave de recuperación se teclea en minúsculas, con sus guiones y con la distribución de
+teclado del sistema. Si la rechaza, revisa Bloq Mayús y la tecla del guion, y vuelve a intentarlo.
+
 ## Mensajes frecuentes
 
 | Mensaje | Qué significa | Qué hacer |
@@ -105,15 +108,18 @@ Códigos de salida: `0` bien · `1` error · `2` orden mal escrita · `3` no apl
 
 ## Cómo se verificó
 
-Sobre la ISO de `v1.0.0` en QEMU, con Secure Boot y TPM emulado (21-nov,
-[evidencia](../../security/luks-tpm/evidencia/2026-11-21-pcr8-grub.md)):
+Sobre la ISO de `v1.0.0` en QEMU, con Secure Boot y TPM emulado (evidencia del
+[21-nov](../../security/luks-tpm/evidencia/2026-11-21-pcr8-grub.md) y del
+[22-nov](../../security/luks-tpm/evidencia/2026-11-22-recuperacion-grub-qemu.md)):
 
 | Prueba | Resultado |
 |---|---|
 | 3 arranques seguidos sin teclear | ✅ abre solo |
 | Editar GRUB con `init=/bin/sh` | ✅ el TPM se niega y pide la contraseña |
+| Cargar el kernel con `init=/bin/sh` desde la consola de GRUB | ✅ el TPM se niega y pide la contraseña |
+| Arrancar la entrada *recovery mode* | ✅ el TPM se niega y pide la contraseña |
 | `/boot` manipulado | ✅ pide la contraseña y esta abre |
 | Manipulación deshecha | ✅ abre solo |
 | Actualización legítima y `--reseal` | ✅ pide la contraseña y, tras resellar, abre solo |
-| Abrir el disco con la clave de recuperación al arrancar | *Pendiente: hardware real* |
+| Abrir el disco con la clave de recuperación al arrancar | ✅ abre el disco |
 | Todo lo anterior con un TPM real | *Pendiente: [guion de hardware](verificacion-hardware-real.md)* |
