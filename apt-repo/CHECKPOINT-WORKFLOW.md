@@ -53,8 +53,8 @@ La evidencia del 22-nov acredita el corte v1.0.0 publicado con la clave real:
 candidate=false, release_tag=v1.0.0 y commit
 94f9b8fec60938baccae984f891cc3ac6960e109. En VM Bookworm limpia se verificaron
 las firmas, los hashes y la instalación de las cinco versiones exactas desde
-Pages, además de los tres rechazos negativos con APT real. La aceptación de
-RF-DIST-01 queda para Juan José al revisar esta evidencia. Valid-Until:
+Pages, además de los tres rechazos negativos con APT real. Juan José aceptó
+RF-DIST-01 al revisar esta evidencia y mergear #119. Valid-Until:
 20-dic-2026 21:57:48 UTC. Para nuevas publicaciones: ejecutar primero
 publicar=false y revisar artifact; después, nuevo dispatch publicar=true y
 aprobación de Juan José.
@@ -79,7 +79,7 @@ de firma, de procedencia ni de caducidad.
   Bookworm limpia el 22-nov: 37/37 comprobaciones, cinco versiones instaladas
   y cuatro tests APT OK desde el checkout del tag; InRelease, deb y clave
   alterados rechazados con código 100. Salidas y códigos conservados en la
-  evidencia enlazada. Pendiente revisión y aceptación por Juan José.
+  evidencia enlazada. Revisado y aceptado por Juan José (#119).
 
 ## Notas del checkpoint #91
 

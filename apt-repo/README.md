@@ -2,8 +2,8 @@
 
 Dueño: Alejandro, con revisión de Juan José. Este directorio implementa el
 repositorio APT firmado. El corte final **v1.0.0** está publicado y su validación
-en VM Bookworm limpia consta en [la evidencia del 22-nov](evidencia/2026-11-22-v1.0.0/RESULTADOS.md);
-la aceptación de RF-DIST-01 corresponde a Juan José al revisarla.
+en VM Bookworm limpia consta en [la evidencia del 22-nov](evidencia/2026-11-22-v1.0.0/RESULTADOS.md).
+Juan José aceptó RF-DIST-01 al revisarla y mergear #119.
 
 Distribución: bookworm/main, amd64 y paquetes all. Incluye los cinco módulos de
 la lista única de la ISO. No añade una fuente APT a la ISO: conectarse y añadir
@@ -126,8 +126,8 @@ y [manual de aptly en Bookworm](https://manpages.debian.org/bookworm/aptly/aptly
 correctas, procedencia del tag y cinco versiones exactas instaladas en una VM
 Bookworm limpia. [Resultados, hashes y códigos de salida](evidencia/2026-11-22-v1.0.0/RESULTADOS.md):
 37/37 comprobaciones y los cuatro tests APT correctos. InRelease alterado, deb
-alterado y clave incorrecta rechazados con código 100. Pendiente la revisión y
-aceptación por Juan José.
+alterado y clave incorrecta rechazados con código 100. Revisado y aceptado por
+Juan José (#119).
 
 Para repetir en otro corte, comprobar descarga desde Pages, huella/firma,
 procedencia del tag e instalación de las cinco versiones exactas.

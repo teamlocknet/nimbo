@@ -50,16 +50,16 @@ Procedencia de los recursos gráficos (branding del instalador): [`CREDITOS.md`]
 - Documento maestro histórico (v2.0, desactualizado):
   [`docs/documento-maestro/`](docs/documento-maestro/)
 
-## Estado (21-nov-2026)
+## Estado (22-nov-2026)
 
 [`v1.0.0`](https://github.com/teamlocknet/nimbo/releases/tag/v1.0.0) está publicado y firmado:
 commit `94f9b8f`, ISO `63eeb31a…0f10`, con el mismo SHA-256 en dos compilaciones independientes
 e instalada en QEMU con Secure Boot y LUKS
-([evidencia](repro/evidencia/2026-11-20-qemu-instalado-94f9b8f.md)).
+([evidencia](repro/evidencia/2026-11-20-qemu-instalado-94f9b8f.md)). El repositorio APT `v1.0.0`
+está publicado, firmado y validado en una VM limpia
+([evidencia](apt-repo/evidencia/2026-11-22-v1.0.0/RESULTADOS.md)).
 
 Pendiente:
 
 - Verificación en hardware real con TPM (en QEMU ya pasó).
-- Validación del repositorio APT `v1.0.0` en una VM limpia (RF-DIST-01). Ya está publicado y
-  firmado.
 - Validación con un Design Partner externo (RNF-06).
