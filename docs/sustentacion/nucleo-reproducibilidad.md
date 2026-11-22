@@ -32,6 +32,7 @@
 | Hermetismo live | **0 sospechosos, 0 puertos** (12 paquetes, todos de arranque de la tarjeta) |
 | Hermetismo instalado | **0 DNS, 0 NTP, 0 web, 0 SYN** (2 paquetes IPv6 de enlace) |
 | Instalación cifrada con Secure Boot | `verificar-instalado`: **0 fallos** |
+| Instalación sin cifrar con Secure Boot | `verificar-instalado`: **0 fallos**, 388 MiB en reposo |
 | Licencias | 557 paquetes instalados y 38 en el pool, **todos en `main`** |
 
 ## Hallazgos
@@ -50,11 +51,11 @@
 
 ## Lo que falta
 
-- Repetir la **instalación sin cifrar** sobre `v1.0.0`: la última es de la ISO `a4af6b8`.
 - **Hardware real:** todo lo anterior se midió en QEMU.
 - RNF-03 se midió sobre la ISO de #89 (`7d0da21c`), no sobre la del release.
 
 *Evidencia:* `repro/evidencia/2026-11-20-qemu-instalado-94f9b8f.md`,
+`repro/evidencia/2026-11-21-qemu-sincifrar-94f9b8f.md`,
 `repro/evidencia/2026-11-21-live-y-licencias-v1.0.0.md`,
 `repro/evidencia/2026-11-16-rnf03-sin-red.md`,
 `repro/evidencia/2026-10-23-match-entre-anfitriones.md` · *Hallazgos:* `docs/hallazgos/` ·
