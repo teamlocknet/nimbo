@@ -210,8 +210,8 @@ miércoles 25-nov; el proyecto debe estar completo ese día.**
   final (tag en `94f9b8f`, ISO `63eeb31a…0f10`, 546 MiB), firmado con la clave de release
   (huella en el `README.md`, clave pública en `release/`). Es el que se presenta. Cualquier
   cambio en la receta o en un paquete cambia el SHA: no tocarlos sin checkpoint.
-- 🟡 **RF-DIST-01:** APT `v1.0.0` publicado y firmado el 21-nov (`Valid-Until` 20-dic); falta
-  la validación en una VM limpia (Alejandro).
+- ✅ **RF-DIST-01:** APT `v1.0.0` publicado y firmado el 21-nov (`Valid-Until` 20-dic) y
+  validado en una VM limpia el 22-nov (#119).
 - 🟡 **RNF-06:** cada módulo tiene su guía; falta la validación con un Design Partner externo
   (Juan José lo busca; si no llega, se declara pendiente por causa externa).
 
