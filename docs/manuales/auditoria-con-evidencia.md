@@ -43,6 +43,7 @@ Resumen: 1 OK, 0 MODIFICADO, 0 AUSENTE
 ├── evidencia/           copias de las evidencias + index.json (nombre, SHA-256, hora)
 ├── reportes/            informes generados
 ├── logs/  notas/        para tu trabajo
+├── custodia/            registro de acciones y, al cerrar, el sello (desde 0.2.0)
 ```
 
 ## Comprobar que nada se tocó
@@ -55,10 +56,35 @@ huella de cada evidencia y la compara con la registrada. **No escribe nada en el
 | `OK` | la evidencia es la misma que se registró | 0 si todas están OK |
 | `MODIFICADO` | el fichero cambió después de registrarse | 1 |
 | `AUSENTE` | el fichero ya no está | 1 |
+| `NO REGISTRADO` | hay un fichero en `evidencia/` que nadie registró (desde 0.2.0) | 1 |
 
 Pruébalo: añade una línea a la copia guardada (`echo X >> evidencia/evidencia1.txt`) y vuelve
 a ejecutar `nimbo-audit verify` → `MODIFICADO: evidencia1.txt`, `Resumen: 0 OK, 1 MODIFICADO,
-0 AUSENTE` y código 1 (medido en la ISO, 16-nov).
+0 AUSENTE` y código 1 (medido en la ISO con 0.1.0, 16-nov). Desde 0.2.0 las copias quedan en solo
+lectura: para esta prueba, ejecuta antes `chmod u+w evidencia/evidencia1.txt`.
+
+## Cerrar el caso con un sello (desde 0.2.0)
+
+Al terminar, firma el caso con **tu propia clave GPG**. Nunca uses la clave de release.
+
+```
+gpg --quick-generate-key "Tu nombre <tu@correo>" ed25519 sign never    # solo la primera vez
+gpg --fingerprint "tu@correo"                                          # copia la huella
+nimbo-audit seal --clave <HUELLA_SIN_ESPACIOS>
+```
+
+`seal` devuelve un **ancla** (un SHA-256). **Entrégala al cliente por otro canal**, por ejemplo
+en el acta o por correo. Para comprobar el caso más adelante:
+
+```
+nimbo-audit verify --ancla <ANCLA>
+```
+
+- Un caso sellado **no admite cambios**: `capture`, `report` e `init --force` se niegan. El trabajo
+  posterior va en un caso nuevo.
+- `Sello: ROTO` significa que algo cambió después de sellar, y lista qué.
+- **Sin `--ancla` o `--huella`, un sello válido solo prueba que el caso es coherente.** Quien
+  controle el equipo podría volver a sellarlo con otra clave.
 
 ## Errores frecuentes
 
@@ -70,9 +96,12 @@ a ejecutar `nimbo-audit verify` → `MODIFICADO: evidencia1.txt`, `Resumen: 0 OK
 
 ## Límites
 
-- Solo comprueba las evidencias **registradas**. Si alguien cambia a la vez una evidencia y
-  su huella en `index.json`, `verify` no lo detecta; tampoco acredita de dónde salió el fichero.
-- No vigila notas, logs ni `metadata.json`.
+- **Con 0.1.0** (la versión de la ISO `v1.0.0`): si alguien cambia a la vez una evidencia y su
+  huella en `index.json`, `verify` no lo detecta. Tampoco vigila notas, logs ni `metadata.json`.
+- **Con 0.2.0, en un caso sin sellar:** quien reescriba de forma coherente evidencia, índice y
+  registro no se detecta. Solo el sello con su ancla lo cierra.
+- La hora es la del equipo. `--analista` y `--origen` son declaraciones: lo que identifica de
+  forma verificable es la clave que firma, si su huella se conoce por otro canal.
 
 ## Cómo se verificó
 

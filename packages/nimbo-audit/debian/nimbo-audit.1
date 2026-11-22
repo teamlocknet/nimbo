@@ -18,6 +18,12 @@ nimbo-audit \- organiza auditorias y registra evidencias
 .br
 .B nimbo-audit verify
 .RI [ RUTA_DEL_CASO ]
+.RI [ opciones ]
+.br
+.B nimbo-audit seal
+.B --clave
+.I huella
+.RI [ opciones ]
 .SH DESCRIPTION
 Crea directorios de auditoria, registra archivos de evidencia con
 hashes SHA-256 y genera informes Markdown.
@@ -37,8 +43,15 @@ Genera un informe del trabajo y comprueba la integridad de la evidencia.
 .B verify
 Comprueba sin modificar el caso la integridad de la evidencia registrada.
 Acepta la ruta del caso; sin ruta busca el caso activo.
-Muestra OK, MODIFICADO o AUSENTE y un resumen.
+Muestra OK, MODIFICADO o AUSENTE y un resumen, los archivos no registrados
+y el estado del registro y del sello.
 Un indice ausente o invalido causa un error.
+Con --ancla o --huella comprueba el sello contra un dato externo.
+.TP
+.B seal
+Firma con GPG el SHA-256 de todos los archivos del caso y lo cierra a cambios.
+Exige la huella completa de la clave del analista y devuelve el ancla que se
+entrega al cliente por otro canal.
 .SH EXIT STATUS
 Para verify: 0 si coincide toda la evidencia registrada; 1 si falla la
 integridad o no se puede verificar el caso; 2 para errores de argumentos.
@@ -51,7 +64,9 @@ Muestra la ayuda. Cada subcomando admite su propia opcion --help.
 La exportacion opcional a PDF requiere pandoc y un motor PDF compatible.
 Los hashes permiten detectar cambios respecto al indice registrado;
 no acreditan por si solos la autenticidad del archivo original.
-Modificar a la vez la evidencia y el indice puede evadir la verificacion.
-La firma del indice queda fuera de alcance. Solo se comprueba lo registrado.
+En un caso sin sellar, reescribir de forma coherente evidencia, indice y
+registro puede evadir la verificacion.
+Sin --ancla o --huella, un sello valido solo prueba coherencia.
+La hora es la del equipo; --analista y --origen son declaraciones.
 .SH AUTHORS
 LockNet.

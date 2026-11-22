@@ -98,16 +98,32 @@ caso mediante enlaces. No se siguen enlaces del indice o metadata al exterior.
 Los fallos estructurales abortan con [ERROR]; no se presenta un resumen
 parcial como si verificara el caso completo.
 
-**Limites:** se verifica solo la evidencia registrada. Si alguien reescribe
-a la vez la evidencia y su hash en el indice, verify no lo detecta. Tampoco
-acredita el origen del archivo; firmar el indice queda fuera del alcance.
-No inventaria archivos no registrados, no verifica los hashes de notas,
-metadata o logs, ni garantiza una instantanea si otro proceso cambia el caso
-durante la lectura. Leer puede actualizar atime segun el sistema de archivos;
-la herramienta no escribe contenido ni genera reportes o logs.
+Desde 0.2.0 tambien falla con archivos no registrados en `evidencia/`, con un
+registro de custodia roto o con un sello roto.
+
+**Limites:** en un caso sin sellar, quien reescriba evidencia, indice y registro
+de forma coherente no se detecta. No garantiza una instantanea si otro proceso
+cambia el caso durante la lectura. Leer puede actualizar atime segun el sistema
+de archivos; la herramienta no escribe contenido ni genera reportes o logs.
 
 El registro de sesion RF-02 del ERS antiguo no forma parte de este subcomando.
 Su codigo existente no se elimina ni se implementa en A5.
+
+### Custodia y `seal` (ADR-021)
+
+```bash
+nimbo-audit seal --clave <HUELLA_COMPLETA> [--dir <raíz>] [--analista <nombre>]
+nimbo-audit verify [RUTA_DEL_CASO] [--ancla <SHA-256>] [--huella <HUELLA>]
+```
+
+`custodia/registro.jsonl` encadena por hash cada acción (quién, qué, cuándo y
+origen). `seal` firma con GPG el SHA-256 de todos los archivos del caso y
+devuelve el **ancla**, que se entrega al cliente por otro canal. Un caso sellado
+no admite `capture`, `report` ni `init --force`. La clave de release se rechaza.
+
+Sin `--ancla` o `--huella`, un sello válido solo prueba coherencia: quien controle
+el equipo podría volver a sellar con otra clave. La hora es la del equipo, y
+`--analista` y `--origen` son declaraciones.
 
 ## Desarrollo
 
