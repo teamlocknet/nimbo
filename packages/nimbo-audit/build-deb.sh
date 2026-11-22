@@ -31,7 +31,7 @@ docker run --rm \
     apt-get install -y -qq --no-install-recommends \
       build-essential fakeroot debhelper dh-python \
       pybuild-plugin-pyproject python3-all python3-setuptools \
-      python3-pytest python3-typer > /tmp/apt-install.log 2>&1 \
+      python3-pytest python3-typer gnupg > /tmp/apt-install.log 2>&1 \
       || { cat /tmp/apt-install.log; exit 1; }
 
     mkdir -p /build
@@ -40,7 +40,7 @@ docker run --rm \
     dpkg-buildpackage -us -uc -b
     cp /build/*.deb /build/*.buildinfo /build/*.changes /out/
     chown "$HOST_UID:$HOST_GID" /out/*
-    dpkg-deb -f /out/nimbo-audit_0.1.0-1_all.deb \
+    dpkg-deb -f /out/nimbo-audit_0.2.0-1_all.deb \
       Package Version Architecture Depends Suggests
     sha256sum /out/*.deb
   ' 2>&1 | tee "$salida/build.log"
