@@ -1,6 +1,6 @@
 # H-004 — El SHA de la ISO dependía de la fecha de los ficheros en la copia de trabajo
 
-**Fecha:** 2026-11-08 · **Estado:** cerrado (pendiente de merge) · **Decisión asociada:** ninguna nueva (arreglo de receta)
+**Fecha:** 2026-11-08 · **Estado:** cerrado (#37, 8-nov) · **Decisión asociada:** ninguna nueva (arreglo de receta)
 **Requisito:** RNF-SEC-07 (reproducibilidad bit a bit)
 
 ## En una frase
