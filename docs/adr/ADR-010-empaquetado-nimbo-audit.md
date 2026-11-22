@@ -1,6 +1,6 @@
 # ADR-010 — Empaquetado Debian de nimbo-audit
 
-Estado: propuesto · Responsable: Alejandro
+Estado: Aceptado (21-nov, Juan José; el paquete va en la ISO de `v1.0.0`) · Responsable: Alejandro
 
 ## Contexto
 
