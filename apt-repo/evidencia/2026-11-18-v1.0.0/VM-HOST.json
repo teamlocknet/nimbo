@@ -1,0 +1,12 @@
+{
+  "estado": "APAGADA_PREPARADA",
+  "snapshot": "lista-sin-clave-nimbo",
+  "memoria_mib": 3072,
+  "vcpus": 2,
+  "virtualizacion": "QEMU TCG; cliente Debian Bookworm, no ISO nimbo",
+  "disco_en_cache_privada": true,
+  "disco_incluido_en_git": false,
+  "semilla_http_cerrada": true,
+  "validacion_final_pendiente": true,
+  "preparar_cliente_sha256": "660331cf9ad77f525122dcbca70b01472b2bb692804cb51bccae65fc1740a97b"
+}

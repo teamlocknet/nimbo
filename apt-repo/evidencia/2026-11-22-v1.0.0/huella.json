@@ -1,0 +1,18 @@
+{
+  "argv": [
+    "gpg",
+    "--homedir",
+    "/tmp/nimbo-verifica-final-4l_b_3bd",
+    "--batch",
+    "--no-default-keyring",
+    "--keyring",
+    "/tmp/nimbo-verifica-final-4l_b_3bd/trusted.gpg",
+    "--with-colons",
+    "--fingerprint",
+    "--list-keys"
+  ],
+  "cwd": "/var/tmp/nimbo-v1.0.0",
+  "exit_code": 0,
+  "fin_utc": "2026-11-22T17:57:58.692076+00:00",
+  "inicio_utc": "2026-11-22T17:57:58.633957+00:00"
+}

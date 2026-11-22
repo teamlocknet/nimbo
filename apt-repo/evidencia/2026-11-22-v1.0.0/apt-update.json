@@ -1,0 +1,12 @@
+{
+  "argv": [
+    "apt-get",
+    "-o",
+    "APT::Update::Error-Mode=any",
+    "update"
+  ],
+  "cwd": "/var/tmp/nimbo-v1.0.0",
+  "exit_code": 0,
+  "fin_utc": "2026-11-22T17:58:41.182271+00:00",
+  "inicio_utc": "2026-11-22T17:58:31.340125+00:00"
+}

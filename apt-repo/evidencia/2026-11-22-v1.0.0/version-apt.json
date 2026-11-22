@@ -1,0 +1,12 @@
+{
+  "argv": [
+    "dpkg-query",
+    "-W",
+    "-f=${Package}\t${Version}\n",
+    "apt"
+  ],
+  "cwd": "/var/tmp/nimbo-v1.0.0",
+  "exit_code": 0,
+  "fin_utc": "2026-11-22T17:57:54.687786+00:00",
+  "inicio_utc": "2026-11-22T17:57:54.642500+00:00"
+}

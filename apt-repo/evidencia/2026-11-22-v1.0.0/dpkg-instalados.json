@@ -1,0 +1,16 @@
+{
+  "argv": [
+    "dpkg-query",
+    "-W",
+    "-f=${Package}\t${Version}\t${db:Status-Abbrev}\n",
+    "nimbo-audit",
+    "nimbo-nav",
+    "nimbo-net",
+    "nimbo-red",
+    "nimbo-update-offline"
+  ],
+  "cwd": "/var/tmp/nimbo-v1.0.0",
+  "exit_code": 0,
+  "fin_utc": "2026-11-22T18:00:42.091064+00:00",
+  "inicio_utc": "2026-11-22T18:00:42.032822+00:00"
+}

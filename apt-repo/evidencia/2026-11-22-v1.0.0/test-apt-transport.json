@@ -1,0 +1,17 @@
+{
+  "argv": [
+    "python3",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "apt-repo/tests",
+    "-p",
+    "test_apt_transport.py",
+    "-v"
+  ],
+  "cwd": "/var/tmp/nimbo-v1.0.0",
+  "exit_code": 0,
+  "fin_utc": "2026-11-22T18:02:18.587122+00:00",
+  "inicio_utc": "2026-11-22T18:02:03.601374+00:00"
+}

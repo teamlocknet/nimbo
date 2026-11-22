@@ -1,0 +1,11 @@
+{
+  "estado": "PREPARACION",
+  "aceptacion_final_realizada": false,
+  "tag": "v1.0.0",
+  "tag_existe_observado": false,
+  "commit_tag": null,
+  "run_publicacion_final": null,
+  "vm_preparada": true,
+  "fecha_preparacion": "2026-11-18",
+  "vm_estado": "APAGADA_LISTA_SIN_NIMBO"
+}

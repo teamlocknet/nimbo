@@ -1,0 +1,15 @@
+{
+  "argv": [
+    "apt-get",
+    "download",
+    "nimbo-audit=0.1.0-1",
+    "nimbo-nav=0.1.5-1",
+    "nimbo-net=0.1.0-1",
+    "nimbo-red=0.1.1-1",
+    "nimbo-update-offline=0.1.2-1"
+  ],
+  "cwd": "/var/tmp/nimbo-apt-final-evidencia/descargas-apt",
+  "exit_code": 0,
+  "fin_utc": "2026-11-22T17:58:42.814117+00:00",
+  "inicio_utc": "2026-11-22T17:58:41.402174+00:00"
+}

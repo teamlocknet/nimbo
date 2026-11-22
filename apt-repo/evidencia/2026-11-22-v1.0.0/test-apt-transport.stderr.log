@@ -1,0 +1,9 @@
+test_real_apt_rejects_deb_tampering (test_apt_transport.AptTransport.test_real_apt_rejects_deb_tampering) ... ok
+test_real_apt_rejects_metadata_tampering (test_apt_transport.AptTransport.test_real_apt_rejects_metadata_tampering) ... ok
+test_real_apt_rejects_wrong_identity (test_apt_transport.AptTransport.test_real_apt_rejects_wrong_identity) ... ok
+test_real_apt_update_and_download (test_apt_transport.AptTransport.test_real_apt_update_and_download) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 14.249s
+
+OK

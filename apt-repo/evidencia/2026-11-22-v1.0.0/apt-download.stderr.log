@@ -1,0 +1,1 @@
+W: Download is performed unsandboxed as root as file '/var/tmp/nimbo-apt-final-evidencia/descargas-apt/nimbo-audit_0.1.0-1_all.deb' couldn't be accessed by user '_apt'. - pkgAcquire::Run (13: Permission denied)

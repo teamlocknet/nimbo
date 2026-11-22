@@ -2,7 +2,10 @@
 
 Preparado después de los scripts, tests y evidencia en VM del 16-nov.
 Checkpoint aprobado y #91 mergeado. El candidato fue firmado y publicado
-con aprobación de Juan José en el run 43952639106. No es el corte final v1.0.0.
+con aprobación de Juan José en el run 43952639106. Después se publicó el
+corte final v1.0.0 en el [run 44824465730](https://github.com/teamlocknet/nimbo/actions/runs/44824465730);
+la validación en VM limpia del 22-nov está en
+[evidencia/2026-11-22-v1.0.0/RESULTADOS.md](evidencia/2026-11-22-v1.0.0/RESULTADOS.md).
 
 ## Entrada y jobs
 
@@ -36,8 +39,8 @@ La política de ramas protege los secretos incluso si otro YAML omitiera el if.
 Pages está activado con origen Actions; github-pages solo admite main.
 
 Pages sustituye el SITIO ENTERO en cada despliegue. El artifact contiene
-index.html, .nojekyll y apt/. Hoy está vacío; si aparece otro contenido antes
-del merge, hay que integrarlo en el artifact antes de publicar.
+index.html, .nojekyll y apt/. El sitio ya contiene el APT publicado; si se añade
+otro contenido, hay que integrarlo en el artifact antes de volver a publicar.
 
 ## Caducidad y estado de entrega
 
@@ -46,11 +49,15 @@ Esperar aprobación no renueva la fecha. Un artifact caducado se rechaza.
 La renovación la aprueba Juan José y empieza con nuevos metadatos verificados,
 sin alterar la procedencia de los paquetes si sus bytes se conservan.
 
-La evidencia actual acredita candidato de main con firma efímera. No equivale
-a un repositorio publicado con la clave real ni a RF-DIST-01 final. Para nuevas
-publicaciones: ejecutar primero publicar=false; revisar artifact. Para desplegar,
-nuevo dispatch publicar=true y aprobación de Juan José. La aceptación final
-requiere el modo v1.0.0, publicación y prueba contra las URL reales.
+La evidencia del 22-nov acredita el corte v1.0.0 publicado con la clave real:
+candidate=false, release_tag=v1.0.0 y commit
+94f9b8fec60938baccae984f891cc3ac6960e109. En VM Bookworm limpia se verificaron
+las firmas, los hashes y la instalación de las cinco versiones exactas desde
+Pages, además de los tres rechazos negativos con APT real. La aceptación de
+RF-DIST-01 queda para Juan José al revisar esta evidencia. Valid-Until:
+20-dic-2026 21:57:48 UTC. Para nuevas publicaciones: ejecutar primero
+publicar=false y revisar artifact; después, nuevo dispatch publicar=true y
+aprobación de Juan José.
 
 Plan B aprobado: si el workflow no llega al 23-nov, Juan José firma manualmente
 una vez el artifact verificado con estas herramientas. No se relaja la política
@@ -67,8 +74,12 @@ de firma, de procedencia ni de caducidad.
   completa correcta. actionlint 1.7.12 acepta el YAML; shellcheck no ejecutado.
 - Primera ejecución real y despliegue candidato completados: run 43952639106.
   Juan José verificó desde Bookworm limpio huella, update e instalación exacta;
-  otra clave fue rechazada. Queda repetir con v1.0.0, incluyendo dentro de la
-  VM las pruebas negativas de InRelease, deb y clave alterados.
+  otra clave fue rechazada.
+- Corte v1.0.0 publicado: run 44824465730, intento 1. Validación en la VM
+  Bookworm limpia el 22-nov: 37/37 comprobaciones, cinco versiones instaladas
+  y cuatro tests APT OK desde el checkout del tag; InRelease, deb y clave
+  alterados rechazados con código 100. Salidas y códigos conservados en la
+  evidencia enlazada. Pendiente revisión y aceptación por Juan José.
 
 ## Notas del checkpoint #91
 

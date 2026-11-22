@@ -1,0 +1,35 @@
+nimbo-audit:
+  Installed: (none)
+  Candidate: 0.1.0-1
+  Version table:
+     0.1.0-1 500
+        500 https://teamlocknet.github.io/nimbo/apt bookworm/main amd64 Packages
+        500 https://teamlocknet.github.io/nimbo/apt bookworm/main all Packages
+nimbo-nav:
+  Installed: (none)
+  Candidate: 0.1.5-1
+  Version table:
+     0.1.5-1 500
+        500 https://teamlocknet.github.io/nimbo/apt bookworm/main amd64 Packages
+        500 https://teamlocknet.github.io/nimbo/apt bookworm/main all Packages
+nimbo-net:
+  Installed: (none)
+  Candidate: 0.1.0-1
+  Version table:
+     0.1.0-1 500
+        500 https://teamlocknet.github.io/nimbo/apt bookworm/main amd64 Packages
+        500 https://teamlocknet.github.io/nimbo/apt bookworm/main all Packages
+nimbo-red:
+  Installed: (none)
+  Candidate: 0.1.1-1
+  Version table:
+     0.1.1-1 500
+        500 https://teamlocknet.github.io/nimbo/apt bookworm/main amd64 Packages
+        500 https://teamlocknet.github.io/nimbo/apt bookworm/main all Packages
+nimbo-update-offline:
+  Installed: (none)
+  Candidate: 0.1.2-1
+  Version table:
+     0.1.2-1 500
+        500 https://teamlocknet.github.io/nimbo/apt bookworm/main amd64 Packages
+        500 https://teamlocknet.github.io/nimbo/apt bookworm/main all Packages

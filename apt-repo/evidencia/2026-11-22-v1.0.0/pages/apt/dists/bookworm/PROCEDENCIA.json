@@ -1,0 +1,38 @@
+{
+  "base_image_digest": "sha256:88200866dfff7ea7f5cbcb6ec7c8a701889efe6fe859fe64d6990e4b07ea4171",
+  "candidate": false,
+  "commit": "94f9b8fec60938baccae984f891cc3ac6960e109",
+  "component": "main",
+  "format": 1,
+  "packages": [
+    {
+      "name": "nimbo-audit",
+      "sha256": "a54cea66c33eaec8df82a5bddc26c403ae4cf3fbfa1dc0378e0f1429834cf131",
+      "version": "0.1.0-1"
+    },
+    {
+      "name": "nimbo-nav",
+      "sha256": "ec8e56b9f7d2cad1563ac9833c42e329c386bdcb94fa323bccaf839040132873",
+      "version": "0.1.5-1"
+    },
+    {
+      "name": "nimbo-net",
+      "sha256": "bdf09ed9439565cf3366652f6fbe2385fe2dc64fd29dc2965d5ec1cf3f764ffd",
+      "version": "0.1.0-1"
+    },
+    {
+      "name": "nimbo-red",
+      "sha256": "b9caa6a91fa3e3ba889c2d7ffdd1e499077857716e8919ca5fa84a7d46f359c0",
+      "version": "0.1.1-1"
+    },
+    {
+      "name": "nimbo-update-offline",
+      "sha256": "6a0b36244bb647a1351c2f8dbe050cc4104d6ba7094a2926c56d214517eaf520",
+      "version": "0.1.2-1"
+    }
+  ],
+  "release_tag": "v1.0.0",
+  "snapshot": "20260901T000000Z",
+  "source_date_epoch": 1795138255,
+  "suite": "bookworm"
+}

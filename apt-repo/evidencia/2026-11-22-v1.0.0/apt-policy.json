@@ -1,0 +1,15 @@
+{
+  "argv": [
+    "apt-cache",
+    "policy",
+    "nimbo-audit",
+    "nimbo-nav",
+    "nimbo-net",
+    "nimbo-red",
+    "nimbo-update-offline"
+  ],
+  "cwd": "/var/tmp/nimbo-v1.0.0",
+  "exit_code": 0,
+  "fin_utc": "2026-11-22T17:58:41.400139+00:00",
+  "inicio_utc": "2026-11-22T17:58:41.183563+00:00"
+}

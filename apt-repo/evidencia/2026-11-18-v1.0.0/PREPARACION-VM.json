@@ -1,0 +1,52 @@
+{
+  "estado": "PREPARADA_SIN_VALIDACION_FINAL",
+  "fecha_utc": "2026-11-18T15:42:44.112999+00:00",
+  "sistema": {
+    "PRETTY_NAME": "\"Debian GNU/Linux 12 (bookworm)\"",
+    "NAME": "\"Debian GNU/Linux\"",
+    "VERSION_ID": "\"12\"",
+    "VERSION": "\"12 (bookworm)\"",
+    "VERSION_CODENAME": "bookworm",
+    "ID": "debian",
+    "HOME_URL": "\"https://www.debian.org/\"",
+    "SUPPORT_URL": "\"https://www.debian.org/support\"",
+    "BUG_REPORT_URL": "\"https://bugs.debian.org/\""
+  },
+  "kernel": "6.1.0-54-cloud-amd64",
+  "modulos": {
+    "nimbo-audit": "ausente",
+    "nimbo-red": "ausente",
+    "nimbo-update-offline": "ausente",
+    "nimbo-nav": "ausente",
+    "nimbo-net": "ausente"
+  },
+  "fuente_nimbo_instalada": false,
+  "clave_nimbo_instalada": false,
+  "huella_buscada": "0C50B7391A9B8CFF8A36A627D3B9111FEC5748C6",
+  "llaveros_publicos_revisados": [
+    "/etc/apt/trusted.gpg.d/debian-archive-trixie-security-automatic.asc",
+    "/etc/apt/trusted.gpg.d/debian-archive-bookworm-automatic.asc",
+    "/etc/apt/trusted.gpg.d/debian-archive-bullseye-security-automatic.asc",
+    "/etc/apt/trusted.gpg.d/debian-archive-bookworm-stable.asc",
+    "/etc/apt/trusted.gpg.d/debian-archive-bullseye-stable.asc",
+    "/etc/apt/trusted.gpg.d/debian-archive-trixie-stable.asc",
+    "/etc/apt/trusted.gpg.d/debian-archive-bullseye-automatic.asc",
+    "/etc/apt/trusted.gpg.d/debian-archive-bookworm-security-automatic.asc",
+    "/etc/apt/trusted.gpg.d/debian-archive-trixie-automatic.asc",
+    "/usr/share/keyrings/debian-archive-bookworm-stable.gpg",
+    "/usr/share/keyrings/debian-archive-trixie-stable.gpg",
+    "/usr/share/keyrings/debian-archive-bookworm-automatic.gpg",
+    "/usr/share/keyrings/debian-archive-trixie-automatic.gpg",
+    "/usr/share/keyrings/debian-archive-removed-keys.gpg",
+    "/usr/share/keyrings/debian-archive-bullseye-security-automatic.gpg",
+    "/usr/share/keyrings/debian-archive-trixie-security-automatic.gpg",
+    "/usr/share/keyrings/debian-archive-bullseye-automatic.gpg",
+    "/usr/share/keyrings/debian-archive-keyring.gpg",
+    "/usr/share/keyrings/debian-archive-bookworm-security-automatic.gpg",
+    "/usr/share/keyrings/debian-archive-bullseye-stable.gpg"
+  ],
+  "herramientas": "apt 2.6.2\naptly 1.5.0+ds1-1+b4\ngit 1:2.39.5-0+deb12u3\ngnupg 2.2.40-1.1+deb12u2\npython3 3.11.2-1+b1\nqemu-guest-agent 1:7.2+dfsg-7+deb12u18+b3\n",
+  "agente_local": "qemu-guest-agent activo; socket solo del host de laboratorio",
+  "validacion_tag_realizada": false,
+  "pruebas_negativas_finales_realizadas": false
+}

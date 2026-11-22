@@ -1,7 +1,9 @@
 # Repositorio APT nimbo — RF-DIST-01
 
 Dueño: Alejandro, con revisión de Juan José. Este directorio implementa el
-candidato; **no acredita todavía la publicación del tag final v1.0.0**.
+repositorio APT firmado. El corte final **v1.0.0** está publicado y su validación
+en VM Bookworm limpia consta en [la evidencia del 22-nov](evidencia/2026-11-22-v1.0.0/RESULTADOS.md);
+la aceptación de RF-DIST-01 corresponde a Juan José al revisarla.
 
 Distribución: bookworm/main, amd64 y paquetes all. Incluye los cinco módulos de
 la lista única de la ISO. No añade una fuente APT a la ISO: conectarse y añadir
@@ -71,9 +73,12 @@ El repositorio vencido se rechaza; la guía no ofrece un bypass.
 
 ## Cliente, después de la publicación aprobada
 
-Candidato publicado: https://teamlocknet.github.io/nimbo/apt/.
-Run aprobado: 43952639106. Valid-Until: 16-dic-2026, 20:45:23 UTC.
-La procedencia publicada identifica candidato=true; no es v1.0.0 final.
+Final v1.0.0 publicado: https://teamlocknet.github.io/nimbo/apt/.
+[Run aprobado 44824465730](https://github.com/teamlocknet/nimbo/actions/runs/44824465730),
+paquetes de 94f9b8fec60938baccae984f891cc3ac6960e109. La procedencia declara
+candidate=false y release_tag=v1.0.0. Valid-Until: **20-dic-2026, 21:57:48 UTC**.
+El candidato anterior se publicó en el run 43952639106; esta validación lo sustituye
+como evidencia del corte final.
 Obtener el certificado por el canal independiente,
 comprobar su huella y copiarlo como /usr/share/keyrings/nimbo-release.asc
 (archivo público, modo 0644). La fuente es:
@@ -117,8 +122,15 @@ y [manual de aptly en Bookworm](https://manpages.debian.org/bookworm/aptly/aptly
 
 ## Validación obligatoria del corte v1.0.0
 
-Repetir en una VM Bookworm limpia la descarga desde Pages, verificación de
-huella/firma y procedencia del tag, e instalación de las cinco versiones exactas.
+**Completada el 22-nov-2026:** descarga desde Pages, huella y ambas firmas
+correctas, procedencia del tag y cinco versiones exactas instaladas en una VM
+Bookworm limpia. [Resultados, hashes y códigos de salida](evidencia/2026-11-22-v1.0.0/RESULTADOS.md):
+37/37 comprobaciones y los cuatro tests APT correctos. InRelease alterado, deb
+alterado y clave incorrecta rechazados con código 100. Pendiente la revisión y
+aceptación por Juan José.
+
+Para repetir en otro corte, comprobar descarga desde Pages, huella/firma,
+procedencia del tag e instalación de las cinco versiones exactas.
 En ESA VM ejecutar también las pruebas negativas con APT real, desde el checkout
 del código de pruebas del corte:
 

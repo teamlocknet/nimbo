@@ -1,0 +1,14 @@
+Get:1 file:/etc/apt/mirrors/debian.list Mirrorlist [30 B]
+Get:5 file:/etc/apt/mirrors/debian-security.list Mirrorlist [39 B]
+Get:7 https://teamlocknet.github.io/nimbo/apt bookworm InRelease [3954 B]
+Hit:2 https://deb.debian.org/debian bookworm InRelease
+Get:3 https://deb.debian.org/debian bookworm-updates InRelease [55.4 kB]
+Get:4 https://deb.debian.org/debian bookworm-backports InRelease [59.4 kB]
+Get:6 https://deb.debian.org/debian-security bookworm-security InRelease [34.8 kB]
+Get:8 https://teamlocknet.github.io/nimbo/apt bookworm/main amd64 Packages [2311 B]
+Get:9 https://teamlocknet.github.io/nimbo/apt bookworm/main all Packages [2311 B]
+Get:10 https://deb.debian.org/debian-security bookworm-security/main Sources [299 kB]
+Get:11 https://deb.debian.org/debian-security bookworm-security/main amd64 Packages [378 kB]
+Get:12 https://deb.debian.org/debian-security bookworm-security/main Translation-en [237 kB]
+Fetched 1073 kB in 4s (296 kB/s)
+Reading package lists...
