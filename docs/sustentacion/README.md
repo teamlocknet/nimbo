@@ -1,4 +1,4 @@
-# Material de sustentación — módulos de Emmanuel (E10)
+# Material de sustentación
 
 Una página por módulo para la presentación final: **qué hace, cómo se prueba, qué se midió y
 qué hallazgos salieron**. Cada cifra sale de una evidencia versionada en el repositorio (se cita
@@ -10,8 +10,16 @@ al pie de cada página). Lo que todavía no se ha medido sobre la ISO integrada 
 | [Navegación segura](navegacion-segura.md) | RF-NAV-01, RF-NAV-02 |
 | [Endurecimiento del sistema (3B.2)](endurecimiento-3b2.md) | RF-CORE-04 |
 | [Actualización sin conexión](actualizacion-sin-conexion.md) | RF-UPD-01 |
+| [Núcleo y reproducibilidad](nucleo-reproducibilidad.md) | RF-CORE-01/02/03/05, RNF-01/02/03/05, RNF-SEC-07 |
+| [Desbloqueo con TPM](desbloqueo-tpm.md) | RF-CORE-06 |
+| [Auditoría con evidencia](auditoria.md) | RF-AUD-01 a RF-AUD-04 |
+| [Red privada del equipo](red-privada.md) | RF-RED-01 |
+| [Distribución firmada](distribucion.md) | RF-DIST-01 |
 
-**Hilo para contarlo en la sustentación:** en los tres módulos, la prueba se escribió antes que
+Las páginas de navegación, endurecimiento y actualización son obra de **Emmanuel Cardozo**
+([créditos](../../CREDITOS.md)).
+
+**Hilo para contarlo en la sustentación:** en esos tres módulos, la prueba se escribió antes que
 el código (rojo → verde), y cada vez que se probó en un Debian real apareció algo que las
 pruebas unitarias no podían ver: rutas que Firefox no leía, un fichero de `procps` que pisaba un
 parámetro, un falso positivo de DHCP. Encontrarlos y corregirlos con evidencia es la garantía.
