@@ -143,6 +143,7 @@ def test_modificacion_posterior_es_detectable(tmp_path: Path) -> None:
 
     # Alguien manipula la evidencia ya registrada.
     copia = root / "evidencia" / "captura.pcap"
+    copia.chmod(0o640)  # ADR-021: la copia queda en solo lectura
     copia.write_bytes(b"MANIPULADO")
 
     # El hash almacenado es el ancla: recomputar lo delata.

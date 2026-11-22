@@ -35,6 +35,11 @@ def verificar_evidencia(
     )
 
 
+def texto_seguro(texto: str) -> str:
+    """Neutraliza caracteres de control de nombres ajenos antes de mostrarlos."""
+    return "".join("?" if ord(c) < 32 or 127 <= ord(c) < 160 else c for c in texto)
+
+
 def resumir(verificadas: Sequence[EvidenciaVerificada]) -> dict[str, int]:
     resumen = {OK: 0, MODIFICADO: 0, AUSENTE: 0}
     for verificada in verificadas:

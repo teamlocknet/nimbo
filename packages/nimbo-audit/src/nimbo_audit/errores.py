@@ -48,3 +48,15 @@ class InterrupcionMemoriaError(NimboAuditError):
 
 class CasoInvalidoError(NimboAuditError):
     """El caso o su indice no permiten verificar integridad de forma fiable."""
+
+
+class RegistroError(NimboAuditError):
+    """El registro de custodia está roto o no se pudo escribir (ADR-021)."""
+
+
+class SelloError(NimboAuditError):
+    """No se pudo sellar el caso; el caso queda sin sellar (ADR-021)."""
+
+
+class CasoSelladoError(NimboAuditError):
+    """El caso está sellado y no admite cambios (ADR-021)."""

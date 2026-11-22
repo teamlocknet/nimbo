@@ -22,10 +22,12 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from nimbo_audit.comandos.base import Comando
+from nimbo_audit.errores import CasoSelladoError
 from nimbo_audit.modelos.evidencia import Evidencia
 from nimbo_audit.repositorio.engagement_repo import RepositorioEngagement
 from nimbo_audit.repositorio.evidencia_repo import RepositorioEvidencia
 from nimbo_audit.servicios.hashing import calcular_sha256
+from nimbo_audit.servicios.registro import RegistroCustodia, caso_sellado
 from nimbo_audit.servicios.reporte import renderizar_reporte
 
 # Reexportados para conservar los imports de los consumidores existentes.
@@ -62,11 +64,15 @@ class ComandoReport(Comando):
         evidencia_repo: RepositorioEvidencia,
         *,
         hasher: Hasher = calcular_sha256,
+        registro: RegistroCustodia | None = None,
+        analista: str = "",
     ) -> None:
         self._raiz = Path(raiz)
         self._engagement_repo = engagement_repo
         self._evidencia_repo = evidencia_repo
         self._hasher = hasher
+        self._registro = registro
+        self._analista = analista
         self._id = self._raiz.name
 
     # --- recopilación --------------------------------------------------------
@@ -93,8 +99,11 @@ class ComandoReport(Comando):
     # --- ejecución -----------------------------------------------------------
 
     def ejecutar(self) -> ResultadoReporte:
+        if caso_sellado(self._raiz):
+            raise CasoSelladoError("El caso está sellado: no admite un reporte nuevo.")
         engagement = self._engagement_repo.cargar(self._id)
-        verificadas = [self._verificar(e) for e in self._evidencia_repo.listar()]
+        evidencias = self._evidencia_repo.listar()
+        verificadas = [self._verificar(e) for e in evidencias]
         sesion = self._registros_sesion()
 
         contenido = renderizar_reporte(engagement, verificadas, sesion)
@@ -103,6 +112,11 @@ class ComandoReport(Comando):
         destino = self._raiz / REPORTES / nombre
         destino.parent.mkdir(parents=True, exist_ok=True)
         destino.write_text(contenido, encoding="utf-8")
+        if self._registro is not None:
+            self._registro.adoptar_si_falta(evidencias, self._analista)
+            self._registro.anadir(
+                "report", self._analista, nombre=nombre, sha256=self._hasher(destino)
+            )
 
         return ResultadoReporte(
             ruta_md=destino,
