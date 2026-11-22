@@ -53,7 +53,6 @@
 - Repetir la **instalación sin cifrar** sobre `v1.0.0`: la última es de la ISO `a4af6b8`.
 - **Hardware real:** todo lo anterior se midió en QEMU.
 - RNF-03 se midió sobre la ISO de #89 (`7d0da21c`), no sobre la del release.
-- Confirmar el **costo cero** de la infraestructura (RNF-04).
 
 *Evidencia:* `repro/evidencia/2026-11-20-qemu-instalado-94f9b8f.md`,
 `repro/evidencia/2026-11-21-live-y-licencias-v1.0.0.md`,

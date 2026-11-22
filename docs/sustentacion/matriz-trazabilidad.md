@@ -5,8 +5,8 @@
 
 | Estado | Significa | Requisitos |
 |---|---|---|
-| ✅ | Criterio de aceptación cumplido y con evidencia versionada | **17** |
-| 🟡 | Parte cumplida; se dice exactamente qué falta | **5** |
+| ✅ | Criterio de aceptación cumplido y con evidencia versionada | **18** |
+| 🟡 | Parte cumplida; se dice exactamente qué falta | **4** |
 | 🔴 | Sin cumplir | **0** |
 
 La columna **"Medido sobre"** importa: cada commit cambia el SHA de la ISO, así que no todo se midió
@@ -39,19 +39,18 @@ sobre la ISO exacta del release. Cuando es otra, se dice cuál.
 | **RNF-01** Hermetismo | Alta | Cero conexiones salientes y cero puertos en reposo | ✅ | Live: 0 sospechosos y 0 listeners. Instalado: 0 DNS, NTP, web o SYN | `v1.0.0` | [21-nov](../../repro/evidencia/2026-11-21-live-y-licencias-v1.0.0.md), [20-nov](../../repro/evidencia/2026-11-20-qemu-instalado-94f9b8f.md) |
 | **RNF-02** RAM | Alta | Menos de 500 MB en reposo, live e instalado | ✅ | Live **376 MiB** · Instalado **395 MiB** | `v1.0.0` | [21-nov](../../repro/evidencia/2026-11-21-live-y-licencias-v1.0.0.md), [20-nov](../../repro/evidencia/2026-11-20-qemu-instalado-94f9b8f.md) |
 | **RNF-03** Sin internet | Alta | Instalación y uso de cada módulo en VM sin red | ✅ | Instalación sin red y 5 módulos, 0 fallos de 37 | `7d0da21c` (#89) | [16-nov](../../repro/evidencia/2026-11-16-rnf03-sin-red.md) |
-| **RNF-04** Software libre, costo cero | Alta | Todo con licencia libre y costo de infraestructura cero | 🟡 | 557 + 38 paquetes, todos en `main`. **Falta que Juan José confirme el costo cero** | `v1.0.0` | [21-nov](../../repro/evidencia/2026-11-21-live-y-licencias-v1.0.0.md) |
+| **RNF-04** Software libre, costo cero | Alta | Todo con licencia libre y costo de infraestructura cero | ✅ | 557 + 38 paquetes, todos en `main`. Costo cero confirmado por Juan José (21-nov) | `v1.0.0` | [21-nov](../../repro/evidencia/2026-11-21-live-y-licencias-v1.0.0.md) |
 | **RNF-05** Plataforma | Alta | Pruebas en Python 3.11 y arranque en VM UEFI | ✅ | 311 pruebas de Python + 8 de compilación, en Python 3.11.2 | CI de `main` + `v1.0.0` | [21-nov](../../repro/evidencia/2026-11-21-live-y-licencias-v1.0.0.md) |
 | **RNF-06** Usabilidad | Media | El Design Partner instala y usa solo con la guía, en una jornada | 🟡 | Cada módulo tiene guía (CA-2). **Falta la validación de una persona externa** (CA-1) | — | [Guías](../manuales/guias-de-uso.md) |
 | **RNF-SEC-07** Reproducibilidad | Alta | Mismo SHA-256 en dos compilaciones independientes | ✅ | MATCH ×2 de la ISO del release | `v1.0.0` | [Run 44654170829](https://github.com/teamlocknet/nimbo/actions/runs/44654170829), [20-nov](../../repro/evidencia/2026-11-20-qemu-instalado-94f9b8f.md) |
 
-## Qué falta para cerrar los cinco 🟡
+## Qué falta para cerrar los cuatro 🟡
 
 | Requisito | Falta | Quién |
 |---|---|---|
 | RF-CORE-02 | Instalar `v1.0.0` sin cifrar y pasar `verificar-instalado --sin-cifrar` | Juan José |
 | RF-CORE-06 | Prueba en hardware real. Decidir si el script entra en una versión posterior de la ISO | Juan José |
 | RF-DIST-01 | Validar el corte `v1.0.0` del APT en una VM limpia | Alejandro |
-| RNF-04 | Confirmar que la infraestructura no tuvo costo | Juan José |
 | RNF-06 | Validación con una persona externa | Juan José |
 
 ## Límites declarados
