@@ -45,6 +45,16 @@ Construir dos veces sin modificar las entradas; conservar ambos directorios:
 cmp devuelve 0 si son idénticos. No regenerar el changelog entre builds.
 Logs y binarios quedan fuera del repositorio. Revisar los logs antes de compartirlos.
 
+## Entrega de 0.2.0 sobre la ISO v1.0.0
+
+El sistema instalado no trae gpg ni puede obtenerlo sin red. El lote debe llevar,
+además de nimbo-audit, estos paquetes del snapshot del proyecto:
+
+    gpg gpg-agent gpgconf pinentry-curses libassuan0 libnpth0
+
+libreadline8 y libsqlite3-0 ya están en el sistema instalado. Medido en
+evidencia/2026-11-22-custodia-iso-instalada.md.
+
 ## Evidencia y límites
 
 ADR-010 registra las pruebas ejecutadas por Alejandro. Los tres scripts

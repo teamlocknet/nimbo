@@ -67,6 +67,9 @@ lectura: para esta prueba, ejecuta antes `chmod u+w evidencia/evidencia1.txt`.
 
 Al terminar, firma el caso con **tu propia clave GPG**. Nunca uses la clave de release.
 
+> **Requisito:** un sistema instalado desde la ISO `v1.0.0` no trae `gpg` ni `gpg-agent` y no puede
+> obtenerlos sin red. La versión 0.2.0 debe llegar en un lote que los incluya.
+
 ```
 gpg --quick-generate-key "Tu nombre <tu@correo>" ed25519 sign never    # solo la primera vez
 gpg --fingerprint "tu@correo"                                          # copia la huella
@@ -107,4 +110,6 @@ nimbo-audit verify --ancla <ANCLA>
 
 Pruebas automáticas en CI con el Python de bookworm (job `tests-cli-bookworm`); ciclo
 completo y alteración detectada en la ISO instalada sin red (RNF-03, Juan José, 16-nov) y otra
-vez en la ISO de `main` `eb3bc36` siguiendo esta guía (Emmanuel, 16-nov).
+vez en la ISO de `main` `eb3bc36` siguiendo esta guía (Emmanuel, 16-nov). El sello de 0.2.0 se
+probó en una copia de la ISO `v1.0.0` instalada y sin red
+([evidencia del 22-nov](../../packages/nimbo-audit/evidencia/2026-11-22-custodia-iso-instalada.md)).

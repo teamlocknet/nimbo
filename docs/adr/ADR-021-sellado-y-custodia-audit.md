@@ -14,8 +14,9 @@ alterara la evidencia a propósito:
 4. No hay registro de acciones ni origen de cada archivo.
 5. Un archivo metido a mano en `evidencia/` no se señala y las copias se pueden editar.
 
-La ISO de `v1.0.0` ya está firmada y no debe cambiar antes del simulacro del 25-nov. `gpg`,
-`gpgv`, `gpg-agent` y `pinentry-curses` ya vienen en ella.
+La ISO de `v1.0.0` ya está firmada y no debe cambiar antes del simulacro del 25-nov. La sesión
+live trae `gpg`, `gpg-agent` y `pinentry-curses`, pero el instalador los retira como huérfanos:
+el sistema **instalado** solo conserva `gpgv` y no puede obtener los demás sin red.
 
 ## Decisión
 
@@ -32,7 +33,8 @@ Añadir custodia en `custodia/`, sin cambiar el formato de `evidencia/index.json
 - **Copias de evidencia en modo 0440.**
 - Los casos de 0.1.0 se siguen verificando como `SIN REGISTRO` y `SIN SELLAR`. Al capturar,
   reportar o sellar, entran en custodia con una entrada `adopcion`.
-- Se entrega como **0.2.0 por lote firmado**, sin tocar la ISO de `v1.0.0`.
+- Se entrega como **0.2.0 por lote firmado**, sin tocar la ISO de `v1.0.0`. El lote **debe incluir**
+  `gpg`, `gpg-agent`, `gpgconf`, `pinentry-curses`, `libassuan0` y `libnpth0`.
 
 ## Consecuencias
 
@@ -45,7 +47,14 @@ Añadir custodia en `custodia/`, sin cambiar el formato de `evidencia/index.json
 - El registro no impide truncar la cola de un caso sin sellar si el índice sigue coincidiendo.
 - Una clave caducada solo se acepta con `--ancla`. Una clave revocada invalida el sello.
 - Un caso sellado no se puede ampliar: el trabajo posterior va en un caso nuevo.
-- `gpg`, `gpg-agent` y `gpgv` pasan a ser dependencias del paquete.
+- `gpg`, `gpg-agent` y `gpgv` pasan a ser dependencias del paquete. Instalar `gpg-agent` habilita
+  sus sockets de usuario, así que el hermetismo debe medirse otra vez con el lote aplicado.
+
+## Validación
+
+Sello y ataque en la ISO instalada, y lote instalado con `apt` en una copia limpia:
+[evidencia del 22-nov](../../packages/nimbo-audit/evidencia/2026-11-22-custodia-iso-instalada.md).
+Falta aplicar el lote firmado con `nimbo-update-offline`.
 
 ## Fecha
 
