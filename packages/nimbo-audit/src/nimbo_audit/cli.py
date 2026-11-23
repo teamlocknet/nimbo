@@ -4,6 +4,7 @@ excepciones propias a mensajes limpios `[OK]` / `[ERROR]` (sin traceback crudo).
 
 from __future__ import annotations
 
+import getpass
 from pathlib import Path
 from typing import Optional
 
@@ -12,6 +13,7 @@ import typer
 from nimbo_audit.comandos.capture import ComandoCapture, resolver_engagement_activo
 from nimbo_audit.comandos.init import ComandoInit
 from nimbo_audit.comandos.report import ComandoReport
+from nimbo_audit.comandos.seal import ComandoSeal
 from nimbo_audit.comandos.verify import ComandoVerify
 from nimbo_audit.errores import (
     ArchivoNoAccesibleError,
@@ -26,6 +28,9 @@ from nimbo_audit.errores import (
 from nimbo_audit.repositorio.engagement_repo import RepositorioEngagementJSON
 from nimbo_audit.repositorio.evidencia_repo import RepositorioEvidenciaJSON
 from nimbo_audit.servicios.pdf import exportar_pdf
+from nimbo_audit.servicios.registro import ROTO, SIN_REGISTRO, RegistroCustodia
+from nimbo_audit.servicios.sello import SIN_SELLAR
+from nimbo_audit.servicios.verificacion import texto_seguro
 
 app = typer.Typer(
     help="CLI de auditoría (codename nimbo): inicializa y gestiona engagements.",
@@ -45,6 +50,24 @@ def _base_por_defecto() -> Path:
     return Path.home() / "audits"
 
 
+_OPCION_ANALISTA = typer.Option(
+    None,
+    "--analista",
+    envvar="NIMBO_ANALISTA",
+    help="Quién realiza la acción (por defecto, el analista del caso).",
+)
+
+
+def _analista(raiz: Path, valor: Optional[str]) -> str:
+    """Identidad declarada; la que se puede probar es la clave que firma el sello."""
+    if valor:
+        return valor
+    try:
+        return RepositorioEngagementJSON(raiz.parent).cargar(raiz.name).analista
+    except (NimboAuditError, OSError, ValueError, KeyError):
+        return getpass.getuser()
+
+
 @app.command(help="Inicializa un engagement de auditoría (RF-01 / CU-01).")
 def init(
     cliente: str = typer.Argument(..., help="Nombre/identificador del engagement."),
@@ -59,10 +82,16 @@ def init(
         "-d",
         help="Directorio base de engagements (por defecto ~/audits).",
     ),
+    analista: Optional[str] = typer.Option(
+        None,
+        "--analista",
+        envvar="NIMBO_ANALISTA",
+        help="Analista responsable (por defecto, el usuario del sistema).",
+    ),
 ) -> None:
     base = dir if dir is not None else _base_por_defecto()
     repo = RepositorioEngagementJSON(base)
-    comando = ComandoInit(cliente, repo, force=force)
+    comando = ComandoInit(cliente, repo, force=force, analista=analista, con_registro=True)
 
     try:
         ruta = comando.ejecutar()
@@ -98,6 +127,10 @@ def capture(
         "-d",
         help="Raíz del engagement (por defecto se detecta subiendo desde el directorio actual).",
     ),
+    analista: Optional[str] = _OPCION_ANALISTA,
+    origen: Optional[str] = typer.Option(
+        None, "--origen", help="De dónde salió la evidencia (equipo, sistema, persona)."
+    ),
 ) -> None:
     try:
         raiz = resolver_engagement_activo(Path.cwd(), dir)
@@ -110,7 +143,13 @@ def capture(
         raise typer.Exit(code=1)
 
     repo = RepositorioEvidenciaJSON(raiz)
-    comando = ComandoCapture(archivo, repo)
+    comando = ComandoCapture(
+        archivo,
+        repo,
+        registro=RegistroCustodia(raiz),
+        analista=_analista(raiz, analista),
+        origen=origen,
+    )
 
     try:
         evidencia = comando.ejecutar()
@@ -162,6 +201,7 @@ def report(
         "-y",
         help="No preguntar: genera el reporte aunque el engagement no tenga datos.",
     ),
+    analista: Optional[str] = _OPCION_ANALISTA,
 ) -> None:
     try:
         raiz = resolver_engagement_activo(Path.cwd(), dir)
@@ -177,6 +217,8 @@ def report(
         raiz,
         RepositorioEngagementJSON(raiz.parent),
         RepositorioEvidenciaJSON(raiz),
+        registro=RegistroCustodia(raiz),
+        analista=_analista(raiz, analista),
     )
 
     # CU-03 1a: engagement sin evidencia ni sesión -> avisar y confirmar.
@@ -216,11 +258,19 @@ def verify(
     ruta_del_caso: Optional[Path] = typer.Argument(
         None, help="Ruta del caso; sin ruta se detecta el caso activo."
     ),
+    ancla: Optional[str] = typer.Option(
+        None, "--ancla", help="SHA-256 del sello que recibió el cliente al cerrar el caso."
+    ),
+    huella: Optional[str] = typer.Option(
+        None, "--huella", help="Huella de la clave que debe haber firmado el sello."
+    ),
 ) -> None:
     try:
         raiz = resolver_engagement_activo(Path.cwd(), ruta_del_caso)
         repo = RepositorioEvidenciaJSON(raiz)
-        resultado = ComandoVerify(raiz, repo.listar_validado).ejecutar()
+        resultado = ComandoVerify(
+            raiz, repo.listar_validado, ancla=ancla, huella=huella
+        ).ejecutar()
     except (NimboAuditError, OSError, RuntimeError, ValueError, MemoryError) as exc:
         typer.echo(f"[ERROR] No se pudo verificar el caso: {exc}", err=True)
         raise typer.Exit(code=1)
@@ -233,8 +283,64 @@ def verify(
         f"Resumen: {resumen['OK']} OK, "
         f"{resumen['MODIFICADO']} MODIFICADO, {resumen['AUSENTE']} AUSENTE"
     )
+    for nombre in resultado.no_registrados:
+        typer.echo(f"NO REGISTRADO: {texto_seguro(nombre)}")
+    _mostrar_custodia(resultado)
     if not resultado.integro:
         raise typer.Exit(code=1)
+
+
+def _mostrar_custodia(resultado) -> None:
+    registro = resultado.registro
+    if registro.estado == SIN_REGISTRO:
+        typer.echo(f"Registro: {SIN_REGISTRO}")
+    elif registro.estado == ROTO:
+        typer.echo(f"Registro: ROTO ({registro.detalle})")
+    else:
+        typer.echo(f"Registro: VALIDO ({registro.entradas} entradas)")
+
+    sello = resultado.sello
+    if sello.estado == SIN_SELLAR:
+        typer.echo(f"Sello: {SIN_SELLAR}")
+        return
+    firmante = f" (firmante {sello.firmante})" if sello.firmante else ""
+    typer.echo(f"Sello: {sello.estado}{texto_seguro(firmante)}")
+    for problema in sello.problemas:
+        typer.echo(f"  {texto_seguro(problema)}")
+    if sello.ancla:
+        typer.echo(f"Ancla: {sello.ancla}")
+    if sello.estado != ROTO and not sello.anclado:
+        typer.echo(
+            "[AVISO] Sin --ancla o --huella esto solo prueba que el caso es coherente. "
+            "Compara el ancla con la que recibió el cliente."
+        )
+
+
+@app.command(help="Firma el caso con GPG y lo cierra a cambios (ADR-021).")
+def seal(
+    clave: str = typer.Option(
+        ..., "--clave", help="Huella completa de la clave GPG del analista."
+    ),
+    dir: Optional[Path] = typer.Option(
+        None,
+        "--dir",
+        "-d",
+        help="Raíz del engagement (por defecto se detecta subiendo desde el directorio actual).",
+    ),
+    analista: Optional[str] = _OPCION_ANALISTA,
+) -> None:
+    try:
+        raiz = resolver_engagement_activo(Path.cwd(), dir)
+        resultado = ComandoSeal(
+            raiz, RepositorioEvidenciaJSON(raiz), clave, _analista(raiz, analista)
+        ).ejecutar()
+    except (NimboAuditError, OSError, RuntimeError, ValueError, MemoryError) as exc:
+        typer.echo(f"[ERROR] No se pudo sellar el caso: {exc}", err=True)
+        raise typer.Exit(code=1)
+
+    typer.echo(f"[OK] Caso sellado por {resultado.firmante}")
+    typer.echo(f"Ancla: {resultado.ancla}")
+    typer.echo("Entrega esta ancla al cliente por un canal distinto al del caso.")
 
 
 def main() -> None:

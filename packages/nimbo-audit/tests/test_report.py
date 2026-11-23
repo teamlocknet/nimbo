@@ -134,6 +134,7 @@ def test_report_detecta_modificacion(tmp_path: Path) -> None:
     root = _engagement(tmp_path)
     _capturar(root, tmp_path, "captura.pcap", b"original")
     # Alguien manipula la evidencia ya registrada.
+    (root / "evidencia" / "captura.pcap").chmod(0o640)  # ADR-021: solo lectura
     (root / "evidencia" / "captura.pcap").write_bytes(b"MANIPULADO")
 
     res = _reportar(root)

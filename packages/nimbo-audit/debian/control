@@ -10,6 +10,7 @@ Build-Depends:
  python3-setuptools,
  python3-pytest,
  python3-typer,
+ gnupg,
 Standards-Version: 4.6.2
 Homepage: https://github.com/teamlocknet/nimbo
 Rules-Requires-Root: no
@@ -20,6 +21,9 @@ Depends:
  ${python3:Depends},
  ${misc:Depends},
  python3-typer (>= 0.7),
+ gpg,
+ gpg-agent,
+ gpgv,
 Suggests: pandoc
 Description: CLI para organizar auditorias y registrar evidencias
  Crea directorios de auditoria, captura archivos con hashes SHA-256

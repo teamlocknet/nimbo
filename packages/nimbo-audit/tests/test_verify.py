@@ -70,6 +70,7 @@ def test_verify_estados_y_no_modifica_caso(tmp_path, cli_runner, estado):
     raiz = _caso(tmp_path)
     if estado == "byte":
         # Misma longitud: exactamente un byte alterado.
+        (raiz / "evidencia" / "uno.bin").chmod(0o640)  # ADR-021: solo lectura
         (raiz / "evidencia" / "uno.bin").write_bytes(b"AXC")
     elif estado == "borrado":
         (raiz / "evidencia" / "uno.bin").unlink()
@@ -173,11 +174,19 @@ def test_verify_indice_ausente_no_es_caso_integro(tmp_path, cli_runner):
 
 
 def test_verify_indice_vacio_valido(tmp_path, cli_runner):
-    raiz = _caso(tmp_path)
-    _editar_indice(raiz, lambda d: d.update(evidencias=[]))
+    raiz = ComandoInit("vacio", RepositorioEngagementJSON(tmp_path)).ejecutar()
+    (raiz / "evidencia" / "index.json").write_text('{"version": 1, "evidencias": []}')
     resultado = cli_runner.invoke(app, ["verify", str(raiz)])
     assert resultado.exit_code == 0
     assert "Resumen: 0 OK, 0 MODIFICADO, 0 AUSENTE" in resultado.stdout
+
+
+def test_verify_vaciar_el_indice_no_oculta_la_evidencia(tmp_path, cli_runner):
+    raiz = _caso(tmp_path)
+    _editar_indice(raiz, lambda d: d.update(evidencias=[]))
+    resultado = cli_runner.invoke(app, ["verify", str(raiz)])
+    assert resultado.exit_code == 1
+    assert "NO REGISTRADO: uno.bin" in resultado.stdout
 
 
 @pytest.mark.parametrize("hash_invalido", ["", "a"*63, "a"*65, "z"*64, "a"*63+"\n"])
@@ -256,6 +265,7 @@ def test_verify_ayuda(tmp_path, cli_runner):
 
 def test_verify_no_cambia_report(tmp_path, cli_runner):
     raiz = _caso(tmp_path)
+    (raiz / "evidencia" / "uno.bin").chmod(0o640)  # ADR-021: solo lectura
     (raiz / "evidencia" / "uno.bin").write_bytes(b"AXC")
     report_args = ["report", "--dir", str(raiz)]
     assert cli_runner.invoke(app, report_args).exit_code == 0

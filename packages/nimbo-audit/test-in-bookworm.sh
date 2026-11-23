@@ -72,7 +72,7 @@ exec "$ENGINE" run --rm \
         rm -f /etc/apt/sources.list.d/debian.sources
         printf "Acquire::Check-Valid-Until \"false\";\nAcquire::Retries \"5\";\n" > /etc/apt/apt.conf.d/99nimbo-snapshot
         apt-get update -qq
-        apt-get install -y -qq --no-install-recommends python3-typer python3-pytest >/dev/null
+        apt-get install -y -qq --no-install-recommends python3-typer python3-pytest gnupg >/dev/null
         echo ">> Versiones de bookworm (APT):"
         dpkg-query -W -f="   \${Package} \${Version}\n" python3 python3-typer python3-click python3-pytest
         echo

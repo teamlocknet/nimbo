@@ -14,7 +14,7 @@ if [ "$#" -ne 1 ]; then
   exit 2
 fi
 artefactos=$(cd "$1" && pwd)
-test -f "$artefactos/nimbo-audit_0.1.0-1_all.deb"
+test -f "$artefactos/nimbo-audit_0.2.0-1_all.deb"
 
 docker run --rm \
   -v "$artefactos:/paquetes:ro" \
@@ -33,7 +33,7 @@ docker run --rm \
     echo path-include /usr/share/man/man1/nimbo-audit.1.gz >> /etc/dpkg/dpkg.cfg.d/zz-nimbo-test-manual
     apt-get update -qq
     apt-get install -y --no-install-recommends \
-      /paquetes/nimbo-audit_0.1.0-1_all.deb
+      /paquetes/nimbo-audit_0.2.0-1_all.deb
     cd /tmp
     unset PYTHONPATH
     command -v nimbo-audit

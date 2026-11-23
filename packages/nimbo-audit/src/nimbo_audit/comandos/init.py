@@ -12,9 +12,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from nimbo_audit.comandos.base import Comando
-from nimbo_audit.errores import EngagementExistenteError, NombreInvalidoError
+from nimbo_audit.errores import (
+    CasoSelladoError,
+    EngagementExistenteError,
+    NombreInvalidoError,
+)
 from nimbo_audit.modelos.engagement import Engagement
 from nimbo_audit.repositorio.engagement_repo import RepositorioEngagement
+from nimbo_audit.servicios.registro import RegistroCustodia, caso_sellado
 
 # Caracteres permitidos en el identificador del engagement: letras, dígitos,
 # punto, guion y guion bajo. Rechaza separadores de ruta, espacios y control.
@@ -32,12 +37,14 @@ class ComandoInit(Comando):
         force: bool = False,
         analista: str | None = None,
         ahora: datetime | None = None,
+        con_registro: bool = False,
     ) -> None:
         self._cliente = cliente
         self._repo = repo
         self._force = force
         self._analista = analista
         self._ahora = ahora
+        self._con_registro = con_registro
 
     def ejecutar(self) -> Path:
         self._validar_nombre(self._cliente)
@@ -45,6 +52,8 @@ class ComandoInit(Comando):
         if self._repo.existe(self._cliente):
             if not self._force:
                 raise EngagementExistenteError(self._cliente)
+            if caso_sellado(self._repo.ruta(self._cliente)):
+                raise CasoSelladoError("El caso está sellado: --force no lo borra.")
             # --force: el borrado es responsabilidad del repo, que opera sobre el
             # Path ya resuelto y validado dentro de base_dir (no sobre el nombre crudo).
             self._repo.eliminar(self._cliente)
@@ -54,7 +63,10 @@ class ComandoInit(Comando):
             fecha_inicio=self._marca_temporal(),
             analista=self._analista or getpass.getuser(),
         )
-        return self._repo.crear_estructura(engagement)
+        raiz = self._repo.crear_estructura(engagement)
+        if self._con_registro:
+            RegistroCustodia(raiz, ahora=self._ahora).anadir("init", engagement.analista)
+        return raiz
 
     @staticmethod
     def _validar_nombre(cliente: str) -> None:

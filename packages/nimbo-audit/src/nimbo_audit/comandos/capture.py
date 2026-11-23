@@ -25,11 +25,13 @@ from nimbo_audit.errores import (
     ArchivoNoAccesibleError,
     EngagementNoActivoError,
     InterrupcionMemoriaError,
+    RegistroError,
 )
 from nimbo_audit.modelos.evidencia import Evidencia
 from nimbo_audit.repositorio.engagement_repo import METADATA
 from nimbo_audit.repositorio.evidencia_repo import RepositorioEvidencia
 from nimbo_audit.servicios.hashing import calcular_sha256
+from nimbo_audit.servicios.registro import RegistroCustodia
 
 Hasher = Callable[..., str]
 
@@ -71,11 +73,17 @@ class ComandoCapture(Comando):
         *,
         hasher: Hasher = calcular_sha256,
         ahora: datetime | None = None,
+        registro: RegistroCustodia | None = None,
+        analista: str = "",
+        origen: str | None = None,
     ) -> None:
         self._archivo = Path(archivo)
         self._repo = repo
         self._hasher = hasher
         self._ahora = ahora
+        self._registro = registro
+        self._analista = analista
+        self._origen = origen
 
     def ejecutar(self) -> Evidencia:
         # CU-02 3a: si el archivo no existe/no accesible, abortar sin tocar nada.
@@ -89,9 +97,26 @@ class ComandoCapture(Comando):
         except MemoryError as exc:
             raise InterrupcionMemoriaError(str(self._archivo)) from exc
 
-        return self._repo.registrar(
+        previas = self._repo.listar()
+        evidencia = self._repo.registrar(
             self._archivo, self._archivo.name, sha256, self._marca_temporal()
         )
+        if self._registro is not None:
+            try:
+                self._registro.adoptar_si_falta(previas, self._analista)
+                self._registro.anadir(
+                    "capture",
+                    self._analista,
+                    nombre=evidencia.nombre,
+                    sha256=evidencia.sha256,
+                    origen=self._origen,
+                    ruta_origen=str(self._archivo.resolve()),
+                )
+            except RegistroError:
+                # Rollback: una evidencia sin su entrada rompería la custodia.
+                self._repo.retirar(evidencia)
+                raise
+        return evidencia
 
     def _marca_temporal(self) -> str:
         momento = self._ahora or datetime.now(timezone.utc)

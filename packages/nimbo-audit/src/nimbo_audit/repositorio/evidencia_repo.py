@@ -23,8 +23,13 @@ import shutil
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-from nimbo_audit.errores import CasoInvalidoError, EvidenciaDuplicadaError
+from nimbo_audit.errores import (
+    CasoInvalidoError,
+    CasoSelladoError,
+    EvidenciaDuplicadaError,
+)
 from nimbo_audit.modelos.evidencia import Evidencia
+from nimbo_audit.servicios.registro import caso_sellado
 from nimbo_audit.servicios.verificacion import ruta_interna
 
 INDEX = "index.json"
@@ -50,6 +55,10 @@ class RepositorioEvidencia(ABC):
         Operación con integridad: rechaza duplicados, escribe el índice de forma
         atómica y revierte la copia si el índice no se pudo actualizar.
         """
+
+    @abstractmethod
+    def retirar(self, evidencia: Evidencia) -> None:
+        """Deshace un `registrar` que no pudo completar su custodia."""
 
 
 class RepositorioEvidenciaJSON(RepositorioEvidencia):
@@ -126,6 +135,8 @@ class RepositorioEvidenciaJSON(RepositorioEvidencia):
     # --- escritura -----------------------------------------------------------
 
     def registrar(self, origen: Path, nombre: str, sha256: str, timestamp: str) -> Evidencia:
+        if caso_sellado(self._root):
+            raise CasoSelladoError("El caso está sellado: no admite evidencia nueva.")
         destino = self._dir / nombre
         # Integridad: ni un registro previo ni un archivo ya presente se pisan.
         if self.existe(nombre) or destino.exists():
@@ -141,12 +152,17 @@ class RepositorioEvidenciaJSON(RepositorioEvidencia):
 
         shutil.copy2(origen, destino)
         try:
+            os.chmod(destino, 0o440)  # ADR-021: la copia no se edita por accidente
             self._guardar(self._cargar() + [evidencia])
         except OSError:
             # Rollback: no dejar un archivo huérfano si el índice no se actualizó.
             destino.unlink(missing_ok=True)
             raise
         return evidencia
+
+    def retirar(self, evidencia: Evidencia) -> None:
+        self._guardar([e for e in self._cargar() if e.nombre != evidencia.nombre])
+        (self._root / evidencia.ruta).unlink(missing_ok=True)
 
     def _guardar(self, evidencias: list[Evidencia]) -> None:
         datos = {
