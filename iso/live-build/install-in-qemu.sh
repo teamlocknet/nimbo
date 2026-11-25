@@ -40,8 +40,9 @@
 # de herramientas (en el guest: /mnt/lotes). Dentro: sudo sh /mnt/rnf03-en-vm.sh
 #
 # DOS VMs EN LA MISMA RED (nimbo-net): NIMBO_RED_ENLACE=escuchar:PUERTO en la primera y
-# NIMBO_RED_ENLACE=conectar:PUERTO en la segunda, con el mismo puerto y en ese orden. La
-# primera lleva la salida a internet de las dos; si se apaga, la segunda se queda sin red.
+# NIMBO_RED_ENLACE=conectar:PUERTO en la segunda, con el mismo puerto y en ese orden. Es una
+# red privada sin salida a internet (solo DHCP); si se apaga la primera, la segunda se queda
+# sin red.
 #
 # AUTOMATIZACIÓN (evidencia): NIMBO_QEMU_MONITOR=<ruta.sock> expone el monitor de QEMU
 # (screendump, sendkey) y NIMBO_QEMU_SERIAL=<espec> sustituye la consola serie a fichero
@@ -185,7 +186,7 @@ qemu_base() {
     mapfile -t RED_ARGS <<< "$red"
     [ -n "${NIMBO_PCAP:-}" ] && echo ">> Captura: $NIMBO_PCAP (todo el tráfico del guest)"
     [ "${NIMBO_SIN_RED:-}" = 1 ] && echo ">> Red    : NINGUNA (-nic none, RNF-03)"
-    [ -n "${NIMBO_RED_ENLACE:-}" ] && echo ">> Red    : enlace con otra VM ($NIMBO_RED_ENLACE, 127.0.0.1)"
+    [ -n "${NIMBO_RED_ENLACE:-}" ] && echo ">> Red    : enlace con otra VM ($NIMBO_RED_ENLACE, 127.0.0.1), sin internet"
     qemu-system-x86_64 \
         "${kvm[@]}" \
         "${MACHINE[@]}" -m "$mem" -smp 2 \
