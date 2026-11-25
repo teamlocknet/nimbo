@@ -49,10 +49,13 @@ else
     # 24-nov: dos VMs en la misma red (nimbo-net entre A y B), con la topología del
     # laboratorio de #84: A lleva la red user-mode y un concentrador que escucha en
     # 127.0.0.1; B se conecta a él. Cada una con su MAC, o el DHCP las confunde.
+    # 24-nov, primer ensayo: sin restrict=on, la red user-mode recibe copia del tráfico
+    # entre A y B (el concentrador repite a todos), lo trata como salida a internet y
+    # corta las conexiones TCP con un RST. Con restrict=on lo descarta (como en #84).
     a="$(args NIMBO_RED_ENLACE=escuchar:47000)"
-    [[ "$a" == *"-netdev user,id=n0"* && "$a" == *"socket,id=cable,listen=127.0.0.1:47000"* \
+    [[ "$a" == *"-netdev user,id=n0,restrict=on"* && "$a" == *"socket,id=cable,listen=127.0.0.1:47000"* \
        && "$a" == *"hubport,id=nic,hubid=0"* && "$a" == *"mac=52:54:00:11:00:01"* ]] \
-        && ok "NIMBO_RED_ENLACE=escuchar: red user-mode + concentrador en 127.0.0.1" \
+        && ok "NIMBO_RED_ENLACE=escuchar: red user-mode aislada (restrict=on) + concentrador en 127.0.0.1" \
         || falla "NIMBO_RED_ENLACE=escuchar: '$a'"
 
     a="$(args NIMBO_RED_ENLACE=conectar:47000)"
