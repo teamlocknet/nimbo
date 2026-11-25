@@ -169,7 +169,29 @@ nimbo_video_args() {
 #   tráfico del guest (mismo mecanismo que verify-hermetismo-in-qemu.sh). NIMBO_SIN_RED=1
 #   quita la tarjeta (`-nic none`): RNF-03 (16-nov), "funciona en una VM sin red". Las dos
 #   juntas no tienen sentido (sin tarjeta no hay tráfico que capturar) y dan ERROR.
+#   NIMBO_RED_ENLACE=escuchar:PUERTO|conectar:PUERTO (24-nov) pone dos VMs en la misma red,
+#   con la topología del laboratorio de #84: la que escucha lleva la red user-mode (DHCP y
+#   salida) y un concentrador en 127.0.0.1:PUERTO; la que conecta solo tiene el cable hacia
+#   ella. Arrancar primero la que escucha. No se combina con NIMBO_SIN_RED ni NIMBO_PCAP.
 nimbo_red_args() {
+    if [ -n "${NIMBO_RED_ENLACE:-}" ]; then
+        [ -z "${NIMBO_SIN_RED:-}${NIMBO_PCAP:-}" ] \
+            || { echo "ERROR: NIMBO_RED_ENLACE no se combina con NIMBO_SIN_RED ni NIMBO_PCAP"; return 1; }
+        [[ "$NIMBO_RED_ENLACE" =~ ^(escuchar|conectar):([0-9]{4,5})$ ]] \
+            && [ "${BASH_REMATCH[2]}" -ge 1024 ] && [ "${BASH_REMATCH[2]}" -le 65535 ] \
+            || { echo "ERROR: NIMBO_RED_ENLACE='$NIMBO_RED_ENLACE' (escuchar:PUERTO o conectar:PUERTO, 1024-65535)"; return 1; }
+        local puerto="${BASH_REMATCH[2]}"
+        if [ "${BASH_REMATCH[1]}" = escuchar ]; then
+            printf '%s\n' -netdev user,id=n0 -netdev hubport,id=up,hubid=0,netdev=n0 \
+                -netdev socket,id=cable,listen=127.0.0.1:"$puerto" \
+                -netdev hubport,id=hc,hubid=0,netdev=cable -netdev hubport,id=nic,hubid=0 \
+                -device virtio-net-pci,netdev=nic,mac=52:54:00:11:00:01
+        else
+            printf '%s\n' -netdev socket,id=cable,connect=127.0.0.1:"$puerto" \
+                -device virtio-net-pci,netdev=cable,mac=52:54:00:11:00:02
+        fi
+        return 0
+    fi
     case "${NIMBO_SIN_RED:-}" in
         "") ;;
         1)  [ -z "${NIMBO_PCAP:-}" ] \
